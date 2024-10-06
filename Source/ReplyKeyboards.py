@@ -6,7 +6,7 @@ class ReplyKeyboards:
 	def __init__(self):
 		pass
 
-	def AddMenu(self) -> types.ReplyKeyboardMarkup:
+	def Share(self) -> types.ReplyKeyboardMarkup:
 		# Кнопочное меню.
 		Menu = types.ReplyKeyboardMarkup(resize_keyboard = True)
 

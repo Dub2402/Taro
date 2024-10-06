@@ -29,9 +29,10 @@ class InlineKeyboards:
 		Wands = types.InlineKeyboardButton("Жезлы", callback_data = "Wands")
 		Pentacles = types.InlineKeyboardButton("Пентакли", callback_data = "Order_Layout")
 		Arcanas = types.InlineKeyboardButton("Старшие арканы", callback_data = "Arcanas")
+		Back = types.InlineKeyboardButton("Назад", callback_data = "Back_MainMenu")
 	
 		# Добавление кнопок в меню.
-		Menu.add(Сups, Swords, Wands, Pentacles, Arcanas, row_width= 1) 
+		Menu.add(Сups, Swords, Wands, Pentacles, Arcanas, Back, row_width= 1) 
 
 		return Menu
 
@@ -228,7 +229,6 @@ class InlineKeyboards:
 
 		return Menu
 	
-
 	def SendThirdArcanas(self) -> types.InlineKeyboardMarkup:
 
 		# Кнопочное меню.
@@ -249,7 +249,23 @@ class InlineKeyboards:
 
 		return Menu
 	
+	def SendValueCard(self) -> types.InlineKeyboardMarkup:
 
+		# Кнопочное меню.
+		Menu = types.InlineKeyboardMarkup()
+
+		GeneralMeaning = types.InlineKeyboardButton("1. Общее значение", callback_data = "GeneralMeaning")
+		PersonalState  = types.InlineKeyboardButton("2. Личностное состояние ", callback_data = "PersonalState")
+		DeepLevel = types.InlineKeyboardButton("3. На глубоком уровне", callback_data = "DeepLevel")
+		WorkCareer = types.InlineKeyboardButton("4. В работе и карьере", callback_data = "WorkCareer")
+		Finance = types.InlineKeyboardButton("5. В финансах", callback_data = "Finance")
+		Love = types.InlineKeyboardButton("6. В сфере любви ", callback_data = "Love")
+		HealthStatus  = types.InlineKeyboardButton("7. Состояние здоровья ", callback_data = "HealthStatus")
+		Inverted = types.InlineKeyboardButton("8. Перевернутая карта", callback_data = "Inverted")
+		Back = types.InlineKeyboardButton("Назад", callback_data = "Back")
+
+		# Добавление кнопок в меню.
+		Menu.add(GeneralMeaning, PersonalState, DeepLevel, WorkCareer, Finance, Love, HealthStatus, Inverted, Back, row_width= 1) 
+
+		return Menu
 	
-
-
