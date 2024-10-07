@@ -21,15 +21,15 @@ def ProcessCommandStart(Message: types.Message):
 	User = usermanager.auth(Message.from_user)
 	DeleteMessage = Bot.send_message(
 		Message.chat.id,
-		text = "Тестовый текст.",
-		reply_markup = InlineKeyboard.SettingsMenu()
+		text = "Тестовый текст для меню.",
+		reply_markup = InlineKeyboard.SendMainMenu()
 	)
 
 	Bot.send_message(
 		Message.chat.id,
-		text = "Тестовый текст.",
+		text = "Тестовый текст для кнопки поделиться с друзьями.",
 		reply_markup = ReplyKeyboard.Share())
-	messagemanager.AddDelMessages(User, DeleteMessage)
+	messagemanager.AddDelMessages(User, DeleteMessage.id)
 	
 	
 @Bot.message_handler(content_types = ["text"], regexp = "📢 Поделиться с друзьями")
@@ -69,89 +69,150 @@ def InlineButtonCardDay(Call: types.CallbackQuery):
 @Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("Value_Card"))
 def InlineButtonValueCard(Call: types.CallbackQuery):
 	User = usermanager.auth(Call.from_user)
-	
-	Message = Bot.send_message(
+	DeleteMessage = Bot.send_message(
 						Call.message.chat.id,
 						text = "Тестовый текст.",
 						reply_markup = InlineKeyboard.SendTypeCard()
 						)
-	Deleted_messages = User.get_property("Deleted_messages")
-	for ID in Deleted_messages():
-		try:
-			Bot.delete_message(Call.message.chat.id, ID)
-		except: 
-			pass
-	Deleted_messages = list()	
-	User.set_property("Deleted_messages", Deleted_messages)
+	
+	messagemanager.DelListMessages(User, Bot, Call)
+	messagemanager.AddDelMessages(User, DeleteMessage.id)
 
 	Bot.answer_callback_query(Call.id)
 
-# @Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("Value_Card"))
-# def InlineButtonRemoveReminder(Call: types.CallbackQuery):
-# 	User = usermanager.auth(Call.from_user)
-# 	Message = Bot.send_message(
-# 						Call.message.chat.id,
-# 						text = "Тестовый текст.",
-# 						reply_markup = InlineKeyboard.SendTypeCard()
-# 						)
+@Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("Сups"))
+def InlineButtonСups(Call: types.CallbackQuery):
+	User = usermanager.auth(Call.from_user)
+	if "_" in Call.data:
+		CardID = Call.data.split("_")[-1]
+		DeleteMessage = Bot.send_message(
+							Call.message.chat.id,
+							text = f"{Call.data}{CardID}"
+							)
+	else:
+		DeleteMessage = Bot.send_message(
+							Call.message.chat.id,
+							text = "Тестовый текст.",
+							reply_markup = InlineKeyboard.SendFirstСups()
+							)
+		
+		messagemanager.DelListMessages(User, Bot, Call)
+		messagemanager.AddDelMessages(User, DeleteMessage.id)
+	Bot.answer_callback_query(Call.id)
+
+
+@Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("Swords"))
+def InlineButtonSwords(Call: types.CallbackQuery):
+	User = usermanager.auth(Call.from_user)
+	if "_" in Call.data:
+		CardID = Call.data.split("_")[-1]
+		DeleteMessage = Bot.send_message(
+							Call.message.chat.id,
+							text = f"{Call.data}{CardID}"
+							)
+	else:
+		DeleteMessage = Bot.send_message(
+							Call.message.chat.id,
+							text = "Тестовый текст.",
+							reply_markup = InlineKeyboard.SendFirstSwords()
+							)
+		
+		messagemanager.DelListMessages(User, Bot, Call)
+		messagemanager.AddDelMessages(User, DeleteMessage.id)
+	Bot.answer_callback_query(Call.id)
+
+
+@Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("Wands"))
+def InlineButtonWands(Call: types.CallbackQuery):
+	User = usermanager.auth(Call.from_user)
+	if "_" in Call.data:
+		CardID = Call.data.split("_")[-1]
+		DeleteMessage = Bot.send_message(
+							Call.message.chat.id,
+							text = f"{Call.data}{CardID}"
+							)
+	else:
+		DeleteMessage = Bot.send_message(
+							Call.message.chat.id,
+							text = "Тестовый текст.",
+							reply_markup = InlineKeyboard.SendFirstWands()
+							)
+		
+		messagemanager.DelListMessages(User, Bot, Call)
+		messagemanager.AddDelMessages(User, DeleteMessage.id)
+	Bot.answer_callback_query(Call.id)
+
+
+@Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("Pentacles"))
+def InlineButtonPentacles(Call: types.CallbackQuery):
+	User = usermanager.auth(Call.from_user)
+	if "_" in Call.data:
+		CardID = Call.data.split("_")[-1]
+		DeleteMessage = Bot.send_message(
+							Call.message.chat.id,
+							text = f"{Call.data}{CardID}"
+							)
+	else:
+		DeleteMessage = Bot.send_message(
+							Call.message.chat.id,
+							text = "Тестовый текст.",
+							reply_markup = InlineKeyboard.SendFirstPentacles()
+							)
+		
+		messagemanager.DelListMessages(User, Bot, Call)
+		messagemanager.AddDelMessages(User, DeleteMessage.id)
+	Bot.answer_callback_query(Call.id)
+
+
+@Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("Arcanas"))
+def InlineButtonArcanas(Call: types.CallbackQuery):
+	User = usermanager.auth(Call.from_user)
+	if "_" in Call.data:
+		CardID = Call.data.split("_")[-1]
+		DeleteMessage = Bot.send_message(
+							Call.message.chat.id,
+							text = f"{Call.data}{CardID}"
+							)
+	else:
+		DeleteMessage = Bot.send_message(
+							Call.message.chat.id,
+							text = "Тестовый текст.",
+							reply_markup = InlineKeyboard.SendFirstArcanas()
+							)
+		
+		messagemanager.DelListMessages(User, Bot, Call)
+		messagemanager.AddDelMessages(User, DeleteMessage.id)
+	Bot.answer_callback_query(Call.id)
+
+@Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("Back"))
+def InlineButtonArcanas(Call: types.CallbackQuery):
+	User = usermanager.auth(Call.from_user)
+	Target = Call.data.split("_")[-1]
+
+	DeleteMessage = Bot.send_message(
+						Call.message.chat.id,
+						text = "Тестовый текст.",
+						reply_markup = InlineKeyboard.ChoiceFunction(Target)
+						)
 	
-# 	Bot.answer_callback_query(Call.id)
+	messagemanager.DelListMessages(User, Bot, Call)
+	messagemanager.AddDelMessages(User, DeleteMessage.id)
+	Bot.answer_callback_query(Call.id)
 
+@Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("Further"))
+def InlineButtonArcanas(Call: types.CallbackQuery):
+	User = usermanager.auth(Call.from_user)
+	Target = Call.data.split("_")[-1]
 
-# @Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("Value_Card"))
-# def InlineButtonRemoveReminder(Call: types.CallbackQuery):
-# 	User = usermanager.auth(Call.from_user)
-# 	Message = Bot.send_message(
-# 						Call.message.chat.id,
-# 						text = "Тестовый текст.",
-# 						reply_markup = InlineKeyboard.SendTypeCard()
-# 						)
+	DeleteMessage = Bot.send_message(
+						Call.message.chat.id,
+						text = "Тестовый текст.",
+						reply_markup = InlineKeyboard.ChoiceFunction(Target)
+						)
 	
-# 	Bot.answer_callback_query(Call.id)
-
-
-# @Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("Value_Card"))
-# def InlineButtonRemoveReminder(Call: types.CallbackQuery):
-# 	User = usermanager.auth(Call.from_user)
-# 	Message = Bot.send_message(
-# 						Call.message.chat.id,
-# 						text = "Тестовый текст.",
-# 						reply_markup = InlineKeyboard.SendTypeCard()
-# 						)
-	
-# 	Bot.answer_callback_query(Call.id)
-
-# @Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("Value_Card"))
-# def InlineButtonRemoveReminder(Call: types.CallbackQuery):
-# 	User = usermanager.auth(Call.from_user)
-# 	Message = Bot.send_message(
-# 						Call.message.chat.id,
-# 						text = "Тестовый текст.",
-# 						reply_markup = InlineKeyboard.SendTypeCard()
-# 						)
-	
-# 	Bot.answer_callback_query(Call.id)
-
-# @Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("Value_Card"))
-# def InlineButtonRemoveReminder(Call: types.CallbackQuery):
-# 	User = usermanager.auth(Call.from_user)
-# 	Message = Bot.send_message(
-# 						Call.message.chat.id,
-# 						text = "Тестовый текст.",
-# 						reply_markup = InlineKeyboard.SendTypeCard()
-# 						)
-	
-# 	Bot.answer_callback_query(Call.id)
-
-# Генерация кнопок.
-		Сups = types.InlineKeyboardButton("Кубки", callback_data = "Сups")
-		Swords = types.InlineKeyboardButton("Мечи", callback_data = "Swords")
-		Wands = types.InlineKeyboardButton("Жезлы", callback_data = "Wands")
-		Pentacles = types.InlineKeyboardButton("Пентакли", callback_data = "Order_Layout")
-		Arcanas = types.InlineKeyboardButton("Старшие арканы", callback_data = "Arcanas")
-		Back = types.InlineKeyboardButton("Назад", callback_data = "Back_MainMenu")
-
-
+	messagemanager.DelListMessages(User, Bot, Call)
+	messagemanager.AddDelMessages(User, DeleteMessage.id)
+	Bot.answer_callback_query(Call.id)
 
 
 
