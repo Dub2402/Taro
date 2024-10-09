@@ -206,7 +206,7 @@ class InlineKeyboards:
 		KnightPentacles = types.InlineKeyboardButton("12. Рыцарь жезлов", callback_data = "Pentacles_12")
 		QueenPentacles = types.InlineKeyboardButton("13. Королева жезлов", callback_data = "Pentacles_13")
 		KingPentacles = types.InlineKeyboardButton("14. Король жезлов", callback_data = "Pentacles_14")
-		Back = types.InlineKeyboardButton("Назад", callback_data = "SendFirstWands")
+		Back = types.InlineKeyboardButton("Назад", callback_data = "Back_SendFirstPentacles")
 		BackTypeCard = types.InlineKeyboardButton("К мастям", callback_data = "Back_SendTypeCard")
 
 		# Добавление кнопок в меню.
@@ -219,9 +219,9 @@ class InlineKeyboards:
 		Menu = types.InlineKeyboardMarkup()
 
 		# Генерация кнопок.
-		Fool = types.InlineKeyboardButton("0. Шут", callback_data = "Arcanas_1")
-		Mage = types.InlineKeyboardButton("I. Маг", callback_data = "Arcanas_2")
-		HighPriestess = types.InlineKeyboardButton("II. Верховная жрица", callback_data = "Arcanas_3")
+		Fool = types.InlineKeyboardButton("𝟬. Шут", callback_data = "Arcanas_1")
+		Mage = types.InlineKeyboardButton("Ⅰ. Маг", callback_data = "Arcanas_2")
+		HighPriestess = types.InlineKeyboardButton("Ⅱ. Верховная жрица", callback_data = "Arcanas_3")
 		Empress = types.InlineKeyboardButton("Ⅲ. Императрица", callback_data = "Arcanas_4")
 		Emperor = types.InlineKeyboardButton("Ⅳ. Император", callback_data = "Arcanas_5")
 		HighPriest = types.InlineKeyboardButton("Ⅴ. Верховный жрец", callback_data = "Arcanas_6")
@@ -281,7 +281,7 @@ class InlineKeyboards:
 		Menu = types.InlineKeyboardMarkup()
 
 		GeneralMeaning = types.InlineKeyboardButton("1. Общее значение", callback_data = "GeneralMeaning")
-		PersonalState  = types.InlineKeyboardButton("2. Личностное состояние ", callback_data = "PersonalState")
+		PersonalState  = types.InlineKeyboardButton("2. Личностное состояние", callback_data = "PersonalState")
 		DeepLevel = types.InlineKeyboardButton("3. На глубоком уровне", callback_data = "DeepLevel")
 		WorkCareer = types.InlineKeyboardButton("4. В работе и карьере", callback_data = "WorkCareer")
 		Finance = types.InlineKeyboardButton("5. В финансах", callback_data = "Finance")
@@ -294,4 +294,3 @@ class InlineKeyboards:
 		Menu.add(GeneralMeaning, PersonalState, DeepLevel, WorkCareer, Finance, Love, HealthStatus, Inverted, Back, row_width= 1) 
 
 		return Menu
-	
