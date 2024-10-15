@@ -71,6 +71,8 @@ class Cards():
 
                 CardName = filename.split(".")[1].upper()
                 User.set_property("Current_place", Call.data)
+                User.set_property("Card_name", CardName)
+                
                 self.__Bot.send_photo(
                     Call.message.chat.id, 
                     photo = open(f"Materials/Values/{Type}/{filename}/image.jpg", "rb"), 

@@ -11,8 +11,8 @@ class InlineKeyboards:
 		Functions = {
 			self.SendMainMenu.__name__: self.SendMainMenu,
 			self.SendTypeCard.__name__: self.SendTypeCard,
-			self.SendFirstСups.__name__: self.SendFirstСups,
-			self.SendSecondСups.__name__: self.SendSecondСups,
+			self.SendFirstCups.__name__: self.SendFirstCups,
+			self.SendSecondCups.__name__: self.SendSecondCups,
 			self.SendFirstSwords.__name__: self.SendFirstSwords,
 			self.SendSecondSwords.__name__: self.SendSecondSwords,
 			self.SendFirstWands.__name__: self.SendFirstWands,
@@ -26,6 +26,18 @@ class InlineKeyboards:
 		}
 
 		return Functions[Target]()
+	
+	def AddShare(self) -> types.InlineKeyboardMarkup:
+		Menu = types.InlineKeyboardMarkup()
+
+		Share = types.InlineKeyboardButton(
+			"Поделиться", 
+			switch_inline_query='\n\nТестовый текст для кнопки поделиться.'
+			)
+		
+		Menu.add(Share)
+
+		return Menu
 		
 	def SendMainMenu(self) -> types.InlineKeyboardMarkup:
 		# Кнопочное меню.
@@ -46,7 +58,7 @@ class InlineKeyboards:
 		Menu = types.InlineKeyboardMarkup()
 
 		# Генерация кнопок.
-		Сups = types.InlineKeyboardButton("Кубки", callback_data = "Cups")
+		Cups = types.InlineKeyboardButton("Кубки", callback_data = "Cups")
 		Swords = types.InlineKeyboardButton("Мечи", callback_data = "Swords")
 		Wands = types.InlineKeyboardButton("Жезлы", callback_data = "Wands")
 		Pentacles = types.InlineKeyboardButton("Пентакли", callback_data = "Pentacles")
@@ -54,16 +66,16 @@ class InlineKeyboards:
 		Back = types.InlineKeyboardButton("Назад", callback_data = "Back_SendMainMenu")
 	
 		# Добавление кнопок в меню.
-		Menu.add(Сups, Swords, Wands, Pentacles, Arcanas, Back, row_width= 1) 
+		Menu.add(Cups, Swords, Wands, Pentacles, Arcanas, Back, row_width= 1) 
 
 		return Menu
 
-	def SendFirstСups(self) -> types.InlineKeyboardMarkup:
+	def SendFirstCups(self) -> types.InlineKeyboardMarkup:
 		# Кнопочное меню.
 		Menu = types.InlineKeyboardMarkup()
 
 		# Генерация кнопок.
-		AceСups = types.InlineKeyboardButton("1. Туз кубков", callback_data = "Cups_1")
+		AceCups = types.InlineKeyboardButton("1. Туз кубков", callback_data = "Cups_1")
 		TwoCups = types.InlineKeyboardButton("2. Двойка кубков", callback_data = "Cups_2")
 		ThreeCups = types.InlineKeyboardButton("3. Тройка кубков", callback_data = "Cups_3")
 		FourCups = types.InlineKeyboardButton("4. Четверка кубков", callback_data = "Cups_4")
@@ -74,7 +86,7 @@ class InlineKeyboards:
 		Back = types.InlineKeyboardButton("Назад", callback_data = "Back_SendTypeCard")
 
 		# Добавление кнопок в меню.
-		Menu.add(AceСups, TwoCups, ThreeCups, FourCups, FiveCups, SixCups, SevenCups, Further, Back, row_width= 1) 
+		Menu.add(AceCups, TwoCups, ThreeCups, FourCups, FiveCups, SixCups, SevenCups, Further, Back, row_width= 1) 
 
 		return Menu
 
@@ -304,7 +316,7 @@ class InlineKeyboards:
 		PersonalLife  = types.InlineKeyboardButton("Личная жизнь", url = "https://t.me/m/XVa5Zsn0OTli")
 		NearFuture  = types.InlineKeyboardButton("Ближайшее будущее", url = "https://t.me/m/6cDunvn0ZThi", callback_data = "NearFuture")
 		FarFuture  = types.InlineKeyboardButton("Дальнее будущее ", url = "https://t.me/m/_1rfsRNfY2Ri", callback_data = "FarFuture")
-		WorkCareer = types.InlineKeyboardButton("Карьера и работа", url = "https://t.me/m/_1rfsRNfY2Ri", callback_data = "WorkCareer")
+		WorkCareer = types.InlineKeyboardButton("Карьера и работа", url = "https://t.me/m/o4AQSvQ_NGIy", callback_data = "WorkCareer")
 		BlackStripe  = types.InlineKeyboardButton("Чёрная полоса", url = "https://t.me/m/5Dr14DlUNGUy", callback_data = "BlackStripe")
 		Finance  = types.InlineKeyboardButton("Финансы", url = "https://t.me/m/3JgIK6ycYjVi", callback_data = "Finance")
 		YourQuestion = types.InlineKeyboardButton("Свой вопрос", url = "https://t.me/m/jIn3AGYkNmNi", callback_data = "YourQuestion")
