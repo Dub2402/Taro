@@ -1,7 +1,8 @@
 .venv
 .git
 __pycache__
-Materials/Photo
-Materials/Texts
-Materials/Values
 
+Materials
+Data
+Instant.json
+Tarobot.jpg
