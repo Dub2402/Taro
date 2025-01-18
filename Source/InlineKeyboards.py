@@ -46,10 +46,11 @@ class InlineKeyboards:
 		# Генерация кнопок.
 		CardDay = types.InlineKeyboardButton("Карта дня", callback_data = "Card_Day")
 		ValueCard = types.InlineKeyboardButton("Значения карт", callback_data = "Value_Card")
-		OrderLayout = types.InlineKeyboardButton("Заказать расклад", callback_data = "Order_Layout")
+		OrderLayout = types.InlineKeyboardButton("Расклад от Мастера", callback_data = "Order_Layout")
+		Online_layout = types.InlineKeyboardButton("Расклад онлайн", callback_data = "Online_Layout")
 	
 		# Добавление кнопок в меню.
-		Menu.add(CardDay, ValueCard, OrderLayout, row_width= 1) 
+		Menu.add(CardDay, ValueCard, OrderLayout, Online_layout, row_width= 1) 
 
 		return Menu
 

@@ -1,13 +1,21 @@
-from telebot import types
-from dublib.Methods.JSON import ReadJSON
+from dublib.Methods.Filesystem import ReadJSON
+from dublib.Methods.System import Clear
+from dublib.TelebotUtils.Cache import TeleCache
 from dublib.TelebotUtils import UsersManager
-import telebot
-import os
+from dublib.Polyglot import Markdown
+
 from Source.InlineKeyboards import InlineKeyboards
 from Source.ReplyKeyboards import ReplyKeyboards
 from Source.Cards import Cards
-from dublib.Polyglot import Markdown
-from dublib.Methods.System import Clear
+from Source.Neurowork import Neurowork
+
+import telebot
+import os
+import re
+import dateparser
+from telebot import types
+from time import sleep
+
 
 Settings = ReadJSON("Settings.json")
 
@@ -15,9 +23,22 @@ Bot = telebot.TeleBot(Settings["token"])
 usermanager = UsersManager("Data/Users")
 InlineKeyboard = InlineKeyboards()
 ReplyKeyboard = ReplyKeyboards()
-Card = Cards(Bot, InlineKeyboard)
+
+Cacher = TeleCache()
+Cacher.set_options(Settings["token"], Settings["chat_id"])
+
+Card = Cards(Bot, InlineKeyboard, Cacher)
+neurowork = Neurowork(Bot, Cacher)
 
 Clear()
+
+# Получение структуры данных кэшированного файла.
+try:
+	File = Cacher.get_cached_file(Settings["qr_id"], type = types.InputMediaPhoto)
+	# Получение ID кэшированного файла.
+	FileID = Cacher[Settings["qr_id"]]
+except Exception:
+	pass
 
 @Bot.message_handler(commands=["start"])
 def ProcessCommandStart(Message: types.Message):
@@ -28,11 +49,53 @@ def ProcessCommandStart(Message: types.Message):
 		reply_markup = InlineKeyboard.SendMainMenu()
 	)
 
+	User.set_property("Question", None)
+	User.set_property("Generation", False)
+
 	Bot.send_message(
 		Message.chat.id,
 		text = "Тестовый текст для кнопки поделиться с друзьями.",
 		reply_markup = ReplyKeyboard.Share())
 	
+@Bot.message_handler(commands=["card"])
+def ProcessCommandStart(Message: types.Message):
+	User = usermanager.auth(Message.from_user)
+	if len(Message.text.split(" ")) == 2:
+		user_date = Message.text.split(" ")[-1]
+		try:
+			datekey = dateparser.parse(user_date, settings={'DATE_ORDER': 'DMY','STRICT_PARSING': True}).strftime("%d.%m.%Y")
+			InstantCard = Card.GetInstantCard(datekey)
+			if InstantCard:
+				Bot.send_photo(
+								Message.chat.id,
+								photo = InstantCard["photo"],
+								caption = InstantCard["text"], 
+								parse_mode= 'HTML'
+							)
+			else:
+				try:
+					Photo, Text = Card.GetCard(datekey)
+					Message = Bot.send_photo(
+								Message.chat.id,
+								photo = open(f"{Photo}", "rb"),
+								caption = Text, 
+								parse_mode= 'HTML'
+							)
+					Card.AddCard(Message.photo[0].file_id, datekey)
+				except: 
+					Bot.send_message(
+						Message.chat.id,
+						text = "Такой даты пока не существует."
+						)
+		except:
+			Bot.send_message(
+				Message.chat.id,
+				text = "Команда введена неправильно. Формат команды: /card 21.01.2025"
+				)
+	else: 
+		Bot.send_message(
+		Message.chat.id,
+		text = "Команда введена неправильно. Формат команды: /card 21.01.2025")
 	
 @Bot.message_handler(content_types = ["text"], regexp = "📢 Поделиться с друзьями")
 def ProcessShareWithFriends(Message: types.Message):
@@ -40,12 +103,33 @@ def ProcessShareWithFriends(Message: types.Message):
 
 	Bot.send_photo(
 		Message.chat.id, 
-		photo = Settings["qr_id"],
+		photo = FileID,
 		caption = '@Taro100\\_bot\n@Taro100\\_bot\n@Taro100\\_bot\n\nТаробот \\| Значения карт \\| Карта дня\nБот, который открывает магию карт абсолютно для каждого ✨️', 
 		reply_markup = InlineKeyboard.AddShare(), 
 		parse_mode = "MarkDownV2"
 		)
 	
+@Bot.message_handler(content_types=["text"])
+def ProcessText(Message: types.Message):
+	User = usermanager.auth(Message.from_user)
+	if User.expected_type == "Question":
+		User.set_property("Question", Message.text)
+		User.set_expected_type(None)
+		Bot.send_chat_action(Message.chat.id, action = "typing")
+		Completed = neurowork.AnswerForUser(Message.chat.id, User.get_property("Question"), User)
+		if Completed:
+			User.set_property("Generation", False)
+	else: 
+		if User.get_property("Generation"):
+			print(9)
+		else:
+			User.set_property("Question", Message.text)
+			User.set_expected_type(None)
+			Bot.send_chat_action(Message.chat.id, action = "typing")
+			Completed = neurowork.AnswerForUser(Message.chat.id, User.get_property("Question"), User)
+			if Completed:
+				User.set_property("Generation", False)
+			
 @Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("Card_Day"))
 def InlineButtonCardDay(Call: types.CallbackQuery):
 	User = usermanager.auth(Call.from_user)
@@ -53,18 +137,21 @@ def InlineButtonCardDay(Call: types.CallbackQuery):
 	InstantCard = Card.GetInstantCard()
 	if InstantCard:
 		Bot.send_photo(
-						Call.message.chat.id,
-						photo = InstantCard["photo"],
-						caption = InstantCard["text"]
-					)
+							Call.message.chat.id,
+							photo = InstantCard["photo"],
+							caption = InstantCard["text"], 
+							parse_mode= 'HTML'
+						)
 	else:
 		Photo, Text = Card.GetCard()
 		Message = Bot.send_photo(
 						Call.message.chat.id,
 						photo = open(f"{Photo}", "rb"),
-						caption = Text
+						caption = Text, 
+						parse_mode= 'HTML'
 					)
 		Card.AddCard(Message.photo[0].file_id)
+		
 	Bot.send_message(Call.message.chat.id, text= "Тестовый текст", reply_markup = InlineKeyboard.SendMainMenu())
 	Bot.answer_callback_query(Call.id)
 
@@ -383,6 +470,20 @@ def InlineButtonInverted(Call: types.CallbackQuery):
 def InlineButtonRemoveReminder(Call: types.CallbackQuery):
 	User = usermanager.auth(Call.from_user)
 	Bot.edit_message_reply_markup(Call.message.chat.id, Call.message.id, reply_markup = InlineKeyboard.SendOrderLayout())
+	
+	Bot.answer_callback_query(Call.id)
+
+@Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("Online_Layout"))
+def InlineButtonRemoveReminder(Call: types.CallbackQuery):
+	User = usermanager.auth(Call.from_user)
+	Bot.send_chat_action(Call.message.chat.id, action = "typing")
+	
+	if not User.get_property("Generation"):
+		Bot.send_message(
+			Call.message.chat.id,
+			"Дорогой мой друг, задай мне вопрос, который больше всего тебя сейчас волнует!")
+		User.set_expected_type("Question")
+		User.set_property("Generation", True)
 	
 	Bot.answer_callback_query(Call.id)
 
