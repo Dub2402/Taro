@@ -1,4 +1,4 @@
-from dublib.Methods.JSON import ReadJSON, WriteJSON
+from dublib.Methods.Filesystem import ReadJSON, WriteJSON
 from dublib.TelebotUtils import UsersManager
 from dublib.TelebotUtils.Cache import TeleCache
 
