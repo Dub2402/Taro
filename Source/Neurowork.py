@@ -63,7 +63,7 @@ class Neurowork:
 							break
 					else:
 						if Result:
-							CardNumber = self.__GetTextByCardNumber(int(NumberCard)) + " " + "Карта"
+							CardNumber = self.__GetTextByCardNumber(int(NumberCard)) + " " + "карта"
 							CardName = self.__NameCard(collection, int(NumberCard))
 							Text = self.GenerationCardLayout(CardNumber, CardName, user_text)
 							self.__bot.send_photo(
@@ -88,11 +88,20 @@ class Neurowork:
 	def PreparationText(self, user_text) -> tuple[str, bool]:
 
 		Text_response = None
+		
+		texts = [
+			"Ну что ж, давай погрузимся в тайны Таро и раскроем, что карты говорят о том....",
+			"Ухх.. Хороший какой вопрос! Сейчас посмотрим, какой ответ тебе даст расклад на...",
+			"Спасибо, очень интересно! Сейчас разложим карты и узнаем какой совет они дадут тебе ..",
+			"Ничего себе! Вот это я понимаю запрос к картам. Давай-ка сейчас и узнаем, что расклад скажет о ...",
+			"Вот это ситуация! Довольно любопытный должен получится расклад на твой вопрос о..."
+		]
+		random_text = random.choice(texts)
 
 		while Text_response is None:
 			Result = False
-			Request = "У тебя есть шаблон: Дорогой друг, давай погрузимся в тайны Таро и раскроем, что карты говорят о [question]."
-			Request += f"Тебе задали вопрос: {user_text}. Выведи шаблон учитывая, что спрашивающий имеет ввиду не тебя в вопросе, не добавляй восклицательный знак и двоеточие. Согласуй, учитывая правила русского языка."
+			Request = f"У тебя есть шаблон: {random_text} [question]."
+			Request += f"Тебе задали вопрос: {user_text}. Выведи шаблон учитывая, что спрашивающий имеет ввиду не тебя в вопросе, не добавляй восклицательный знак и двоеточие, а также не используй форматирование. Согласуй, учитывая правила русского языка."
 			Request += "Если вопрос похож на случайно введённый или не имеющий значения, или это один символ - выведи: Ваше сообщение не совсем понятно. Если у вас есть вопрос или тема, которую вы хотите обсудить, пожалуйста, напишите об этом. Я с радостью помогу вам!"
 			Response = self.__Client.chat.completions. create(model = "gpt-4", provider = g4f.Provider.Ai4Chat, messages = [{"role": "user", "content": Request}])
 			Text_response = Response.choices[0].message.content.strip().replace("\n", "\n\n")
@@ -107,10 +116,10 @@ class Neurowork:
 	def GenerationCardLayout(self, number: str, card: str, user_text: str) -> str:
 
 		Request = f"Проанализируй эти данные: {number}, {card} и {user_text} и предоставь ответ в следующем формате:"
-		Request += f"{number}, {card}, может указывать на [помести сюда своё мнение о том, на что может указывать значение карты о заданном вопросе]."
+		Request += f"{number}, «{card}», может указывать на [помести сюда своё мнение о том, на что может указывать значение карты о заданном вопросе]."
 		Request += "Не более 250 символов в тексте. Не меняй первые два словосочетания!!!"
 		Response = self.__Client.chat.completions.create(model = "gpt-4", provider = g4f.Provider.Ai4Chat, messages = [{"role": "user", "content": Request}])
-		Text_response = Response.choices[0].message.content.strip().replace("\n", "\n\n")
+		Text_response = Response.choices[0].message.content.strip().replace("\n", "\n\n").replace("«", "«<b>").replace("»", "</b>»")
 
 		return Text_response
 	

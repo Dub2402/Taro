@@ -1,5 +1,11 @@
 {
     "token":"",
     "qr_id": "",
-    "chat_id": null
+    "start_id": "",
+    "chat_id": null,
+    "mailing_time": "08:00",
+    "subscription_chanel": null,
+    "subscription_link": "",
+    "password": ""
+
 }

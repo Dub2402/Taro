@@ -1,5 +1,5 @@
 from dublib.Methods.Filesystem import ReadJSON, WriteJSON
-from dublib.TelebotUtils import UsersManager
+from dublib.TelebotUtils import UserData
 from dublib.TelebotUtils.Cache import TeleCache
 
 from datetime import datetime
@@ -75,23 +75,44 @@ class Cards():
             self.Instant[datekey] = {"photo": Photo_ID, "text": self.Text}
         WriteJSON("Instant.json", self.Instant)
 
-    def SendCardValues(self, Call: types.CallbackQuery, User: UsersManager):
-        Type = Call.data.split("_")[0]
-        CardID = Call.data.split("_")[-1]
+    def SendCardValues(self, Call: types.CallbackQuery, User: UserData, text: str = ""):
+        if text == "":
+            Type = Call.data.split("_")[0]
+            CardID = Call.data.split("_")[-1]
+        else:
+            Type = User.get_property("Current_place").split("_")[0]
+            CardID = User.get_property("Current_place").split("_")[-1]
         
         for filename in os.listdir(f"Materials/Values/{Type}"):
             Index = filename.split(".")[0]
             if Index == CardID:
-
-                CardName = filename.split(".")[1].upper()
-                User.set_property("Current_place", Call.data)
-                User.set_property("Card_name", CardName)
-
                 File = self.__Cacher.get_cached_file(f"Materials/Values/{Type}/{filename}/image.jpg", type = types.InputMediaPhoto)
                 FileID = self.__Cacher[f"Materials/Values/{Type}/{filename}/image.jpg"]
-                
-                self.__Bot.send_photo(
-                    Call.message.chat.id, 
-                    photo = FileID, 
-                    caption = CardName,
-                    reply_markup = self.__InlineKeyboard.SendValueCard())
+
+                if text == "":
+                    CardName = filename.split(".")[1].upper().strip()
+                    User.set_property("Current_place", Call.data)
+                    User.set_property("Card_name", CardName)
+                    if Type == "Arcanas":
+                        self.__Bot.send_photo(
+                            Call.message.chat.id, 
+                            photo = FileID, 
+                            caption = f"<b>СТАРШИЙ АРКАН «{CardName}»</b>",
+                            parse_mode = "HTML",
+                            reply_markup = self.__InlineKeyboard.SendValueCard())
+                    
+                    else:
+                        self.__Bot.send_photo(
+                            Call.message.chat.id, 
+                            photo = FileID, 
+                            caption = f"<b>«{CardName}»</b>",
+                            parse_mode = "HTML",
+                            reply_markup = self.__InlineKeyboard.SendValueCard())
+                else:
+                    self.__Bot.send_photo(
+                        Call.message.chat.id, 
+                        photo = FileID, 
+                        caption = text,
+                        parse_mode = "HTML",
+                        reply_markup = self.__InlineKeyboard.SendBack()
+                        )

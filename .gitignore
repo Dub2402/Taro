@@ -1,10 +1,12 @@
 .venv
 .git
 __pycache__
+LOGING.log
 
 Materials
 Data
 Tarobot.jpg
+Start.jpg
 
 Instant.json
 TeleCache.json
