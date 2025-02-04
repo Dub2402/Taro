@@ -81,8 +81,8 @@ def ProcessCommandStart(Message: types.Message):
 
 	User.set_property("Current_place", None, force = False)
 	User.set_property("Card_name", None, force = False)
-	User.set_property("Question", None, force = False)
-	User.set_property("Generation", False, force = False)
+	User.set_property("Question", None)
+	User.set_property("Generation", False)
 	User.set_property("Subscription", None, force = False)
 
 	if not IsSubscripted(MasterBot, User, Settings, InlineKeyboard): return    
