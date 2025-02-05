@@ -164,17 +164,23 @@ def ProcessText(Message: types.Message):
 
 	if User.expected_type == "Question":
 		User.set_property("Question", Message.text)
+		User.set_property("Generation", True)
 		User.set_expected_type(None)
-		Bot.send_chat_action(Message.chat.id, action = "typing")
-		Completed = neurowork.AnswerForUser(Message.chat.id, User.get_property("Question"), User)
-		if Completed:
-			User.set_property("Generation", False)
-			Message = Bot.send_message(
-				Message.chat.id,
-				text = "✮⋆ ГЛАВНОЕ МЕНЮ ⋆✮",
-				reply_markup = InlineKeyboard.SendMainMenu(),
-				parse_mode = "HTML"
-				)
+
+		try:
+			Bot.send_chat_action(Message.chat.id, action = "typing")
+			Completed = neurowork.AnswerForUser(Message.chat.id, User.get_property("Question"), User)
+			if Completed:
+				User.set_property("Generation", False)
+				Message = Bot.send_message(
+					Message.chat.id,
+					text = "✮⋆ ГЛАВНОЕ МЕНЮ ⋆✮",
+					reply_markup = InlineKeyboard.SendMainMenu(),
+					parse_mode = "HTML"
+					)
+		except: pass
+
+		User.set_property("Generation", False)
 
 	else: 
 		if User.get_property("Generation"): pass
@@ -591,7 +597,6 @@ def InlineButtonRemoveReminder(Call: types.CallbackQuery):
 			Call.message.chat.id,
 			"Дорогой мой друг, задай мне вопрос, который больше всего тебя сейчас волнует!")
 		User.set_expected_type("Question")
-		User.set_property("Generation", True)
 	
 	Bot.answer_callback_query(Call.id)
 
