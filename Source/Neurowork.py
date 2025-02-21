@@ -13,7 +13,7 @@ class Neurowork:
 
 	@property
 	def __GenerationPhotos(self) -> int:
-		return random.randint(1,20)
+		return random.randint(1,40)
 	
 	def __GetNumber(self, card: str):
 		return card.replace(".jpg", "").strip()
@@ -36,6 +36,7 @@ class Neurowork:
 
 		for collection in os.listdir("Materials/Layouts"):
 			dir_set = collection.split(" ")[0]
+	
 			if int(dir_set) == set_photos:
 				Files = sorted(os.listdir(f"Materials/Layouts/{collection}"))
 				Files = list(filter(lambda List: List.endswith(".jpg"), Files))
@@ -44,7 +45,6 @@ class Neurowork:
 					NumberCard = self.__GetNumber(card)
 					File = self.__cacher.get_cached_file(f"Materials/Layouts/{collection}/{card}", type = types.InputMediaPhoto)
 					PhotoID = self.__cacher[f"Materials/Layouts/{collection}/{card}"]
-					
 					if NumberCard == "1":
 						Text_response, Result = self.PreparationText(user_text)
 						if Result:
