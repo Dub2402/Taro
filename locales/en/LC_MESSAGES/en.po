@@ -1,0 +1,548 @@
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2025-02-22 15:24+0300\n"
+"PO-Revision-Date: 2025-02-22 15:31+0300\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.4.4\n"
+"X-Poedit-Basepath: ..\n"
+"X-Poedit-SearchPath-0: Source\n"
+"X-Poedit-SearchPath-1: main.py\n"
+
+#: Source/InlineKeyboards.py:31
+msgid "Поделиться"
+msgstr ""
+
+#: Source/InlineKeyboards.py:32
+msgid ""
+"\n"
+"@Taro100_bot\n"
+"@Taro100_bot\n"
+"\n"
+"**Таробот | Значение карт | Карта дня**\n"
+"Бот, который ответит на все ваши вопросы ❓❓❓\n"
+"\n"
+"__Пользуйтесь и делитесь с друзьями!__"
+msgstr ""
+
+#: Source/InlineKeyboards.py:44
+msgid "Карта дня"
+msgstr ""
+
+#: Source/InlineKeyboards.py:45 main.py:274 main.py:378
+msgid "Значение карт"
+msgstr ""
+
+#: Source/InlineKeyboards.py:46
+msgid "Расклад от Мастера ♨️"
+msgstr ""
+
+#: Source/InlineKeyboards.py:47
+msgid "Онлайн расклад"
+msgstr ""
+
+#: Source/InlineKeyboards.py:48 main.py:610
+msgid "Всё о Таро"
+msgstr ""
+
+#: Source/InlineKeyboards.py:60
+msgid "История Таро"
+msgstr ""
+
+#: Source/InlineKeyboards.py:61
+msgid "Что такое Таро?"
+msgstr ""
+
+#: Source/InlineKeyboards.py:62
+msgid "Работа с картами"
+msgstr ""
+
+#: Source/InlineKeyboards.py:63 Source/InlineKeyboards.py:101
+#: Source/InlineKeyboards.py:121 Source/InlineKeyboards.py:139
+#: Source/InlineKeyboards.py:160 Source/InlineKeyboards.py:178
+#: Source/InlineKeyboards.py:199 Source/InlineKeyboards.py:217
+#: Source/InlineKeyboards.py:238 Source/InlineKeyboards.py:257
+#: Source/InlineKeyboards.py:278 Source/InlineKeyboards.py:298
+#: Source/InlineKeyboards.py:318 Source/InlineKeyboards.py:358
+msgid "◀️ Назад"
+msgstr ""
+
+#: Source/InlineKeyboards.py:75
+msgid "Я подписался!"
+msgstr ""
+
+#: Source/InlineKeyboards.py:85
+msgid "Нет"
+msgstr ""
+
+#: Source/InlineKeyboards.py:86
+msgid "Да"
+msgstr ""
+
+#: Source/InlineKeyboards.py:96
+msgid "🏆 Кубки"
+msgstr ""
+
+#: Source/InlineKeyboards.py:97
+msgid "⚔️ Мечи"
+msgstr ""
+
+#: Source/InlineKeyboards.py:98
+msgid "🎋 Жезлы"
+msgstr ""
+
+#: Source/InlineKeyboards.py:99
+msgid "🪙 Пентакли"
+msgstr ""
+
+#: Source/InlineKeyboards.py:100
+msgid "🃏 Старшие арканы"
+msgstr ""
+
+#: Source/InlineKeyboards.py:113
+msgid "1. Туз кубков"
+msgstr ""
+
+#: Source/InlineKeyboards.py:114
+msgid "2. Двойка кубков"
+msgstr ""
+
+#: Source/InlineKeyboards.py:115
+msgid "3. Тройка кубков"
+msgstr ""
+
+#: Source/InlineKeyboards.py:116
+msgid "4. Четверка кубков"
+msgstr ""
+
+#: Source/InlineKeyboards.py:117
+msgid "5. Пятерка кубков"
+msgstr ""
+
+#: Source/InlineKeyboards.py:118
+msgid "6. Шестерка кубков"
+msgstr ""
+
+#: Source/InlineKeyboards.py:119
+msgid "7. Семерка кубков"
+msgstr ""
+
+#: Source/InlineKeyboards.py:120 Source/InlineKeyboards.py:159
+#: Source/InlineKeyboards.py:198 Source/InlineKeyboards.py:237
+#: Source/InlineKeyboards.py:277 Source/InlineKeyboards.py:297
+msgid "Далее ▶️"
+msgstr ""
+
+#: Source/InlineKeyboards.py:132
+msgid "8. Восьмерка кубков"
+msgstr ""
+
+#: Source/InlineKeyboards.py:133
+msgid "9. Девятка кубков"
+msgstr ""
+
+#: Source/InlineKeyboards.py:134
+msgid "10. Десятка кубков"
+msgstr ""
+
+#: Source/InlineKeyboards.py:135
+msgid "11. Паж кубков"
+msgstr ""
+
+#: Source/InlineKeyboards.py:136
+msgid "12. Рыцарь кубков"
+msgstr ""
+
+#: Source/InlineKeyboards.py:137
+msgid "13. Королева кубков"
+msgstr ""
+
+#: Source/InlineKeyboards.py:138
+msgid "14. Король кубков"
+msgstr ""
+
+#: Source/InlineKeyboards.py:140 Source/InlineKeyboards.py:179
+#: Source/InlineKeyboards.py:218 Source/InlineKeyboards.py:258
+#: Source/InlineKeyboards.py:319
+msgid "⏪️ К мастям"
+msgstr ""
+
+#: Source/InlineKeyboards.py:152
+msgid "1. Туз мечей"
+msgstr ""
+
+#: Source/InlineKeyboards.py:153
+msgid "2. Двойка мечей"
+msgstr ""
+
+#: Source/InlineKeyboards.py:154
+msgid "3. Тройка мечей"
+msgstr ""
+
+#: Source/InlineKeyboards.py:155
+msgid "4. Четверка мечей"
+msgstr ""
+
+#: Source/InlineKeyboards.py:156
+msgid "5. Пятерка мечей"
+msgstr ""
+
+#: Source/InlineKeyboards.py:157
+msgid "6. Шестерка мечей"
+msgstr ""
+
+#: Source/InlineKeyboards.py:158
+msgid "7. Семерка мечей"
+msgstr ""
+
+#: Source/InlineKeyboards.py:171
+msgid "8. Восьмерка мечей"
+msgstr ""
+
+#: Source/InlineKeyboards.py:172
+msgid "9. Девятка мечей"
+msgstr ""
+
+#: Source/InlineKeyboards.py:173
+msgid "10. Десятка мечей"
+msgstr ""
+
+#: Source/InlineKeyboards.py:174
+msgid "11. Паж мечей"
+msgstr ""
+
+#: Source/InlineKeyboards.py:175
+msgid "12. Рыцарь мечей"
+msgstr ""
+
+#: Source/InlineKeyboards.py:176
+msgid "13. Королева мечей"
+msgstr ""
+
+#: Source/InlineKeyboards.py:177
+msgid "14. Король мечей"
+msgstr ""
+
+#: Source/InlineKeyboards.py:191
+msgid "1. Туз жезлов"
+msgstr ""
+
+#: Source/InlineKeyboards.py:192
+msgid "2. Двойка жезлов"
+msgstr ""
+
+#: Source/InlineKeyboards.py:193
+msgid "3. Тройка жезлов"
+msgstr ""
+
+#: Source/InlineKeyboards.py:194
+msgid "4. Четверка жезлов"
+msgstr ""
+
+#: Source/InlineKeyboards.py:195
+msgid "5. Пятерка жезлов"
+msgstr ""
+
+#: Source/InlineKeyboards.py:196
+msgid "6. Шестерка жезлов"
+msgstr ""
+
+#: Source/InlineKeyboards.py:197
+msgid "7. Семерка жезлов"
+msgstr ""
+
+#: Source/InlineKeyboards.py:210 Source/InlineKeyboards.py:250
+msgid "8. Восьмерка жезлов"
+msgstr ""
+
+#: Source/InlineKeyboards.py:211 Source/InlineKeyboards.py:251
+msgid "9. Девятка жезлов"
+msgstr ""
+
+#: Source/InlineKeyboards.py:212 Source/InlineKeyboards.py:252
+msgid "10. Десятка жезлов"
+msgstr ""
+
+#: Source/InlineKeyboards.py:213 Source/InlineKeyboards.py:253
+msgid "11. Паж жезлов"
+msgstr ""
+
+#: Source/InlineKeyboards.py:214 Source/InlineKeyboards.py:254
+msgid "12. Рыцарь жезлов"
+msgstr ""
+
+#: Source/InlineKeyboards.py:215 Source/InlineKeyboards.py:255
+msgid "13. Королева жезлов"
+msgstr ""
+
+#: Source/InlineKeyboards.py:216 Source/InlineKeyboards.py:256
+msgid "14. Король жезлов"
+msgstr ""
+
+#: Source/InlineKeyboards.py:230
+msgid "1. Туз пентаклей"
+msgstr ""
+
+#: Source/InlineKeyboards.py:231
+msgid "2. Двойка пентаклей"
+msgstr ""
+
+#: Source/InlineKeyboards.py:232
+msgid "3. Тройка пентаклей"
+msgstr ""
+
+#: Source/InlineKeyboards.py:233
+msgid "4. Четверка пентаклей"
+msgstr ""
+
+#: Source/InlineKeyboards.py:234
+msgid "5. Пятерка пентаклей"
+msgstr ""
+
+#: Source/InlineKeyboards.py:235
+msgid "6. Шестерка пентаклей"
+msgstr ""
+
+#: Source/InlineKeyboards.py:236
+msgid "7. Семерка пентаклей"
+msgstr ""
+
+#: Source/InlineKeyboards.py:270
+msgid "0. Шут"
+msgstr ""
+
+#: Source/InlineKeyboards.py:271
+msgid "Ⅰ. Маг"
+msgstr ""
+
+#: Source/InlineKeyboards.py:272
+msgid "Ⅱ. Верховная жрица"
+msgstr ""
+
+#: Source/InlineKeyboards.py:273
+msgid "Ⅲ. Императрица"
+msgstr ""
+
+#: Source/InlineKeyboards.py:274
+msgid "Ⅳ. Император"
+msgstr ""
+
+#: Source/InlineKeyboards.py:275
+msgid "Ⅴ. Верховный жрец"
+msgstr ""
+
+#: Source/InlineKeyboards.py:276
+msgid "Ⅵ. Влюбленные"
+msgstr ""
+
+#: Source/InlineKeyboards.py:290
+msgid "Ⅶ. Колесница"
+msgstr ""
+
+#: Source/InlineKeyboards.py:291
+msgid "Ⅷ. Справедливость"
+msgstr ""
+
+#: Source/InlineKeyboards.py:292
+msgid "Ⅸ. Отшельник"
+msgstr ""
+
+#: Source/InlineKeyboards.py:293
+msgid "Ⅹ. Колесо Фортуны"
+msgstr ""
+
+#: Source/InlineKeyboards.py:294
+msgid "Ⅺ. Сила"
+msgstr ""
+
+#: Source/InlineKeyboards.py:295
+msgid "Ⅻ. Повешенный"
+msgstr ""
+
+#: Source/InlineKeyboards.py:296
+msgid "ⅩⅢ. Смерть"
+msgstr ""
+
+#: Source/InlineKeyboards.py:310
+msgid "ⅩⅣ. Умеренность"
+msgstr ""
+
+#: Source/InlineKeyboards.py:311
+msgid "ⅩⅤ. Дьявол"
+msgstr ""
+
+#: Source/InlineKeyboards.py:312
+msgid "ⅩⅥ. Башня"
+msgstr ""
+
+#: Source/InlineKeyboards.py:313
+msgid "ⅩⅦ. Звезда"
+msgstr ""
+
+#: Source/InlineKeyboards.py:314
+msgid "ⅩⅧ. Луна"
+msgstr ""
+
+#: Source/InlineKeyboards.py:315
+msgid "ⅩⅨ. Солнце"
+msgstr ""
+
+#: Source/InlineKeyboards.py:316
+msgid "ⅩⅩ. Суд"
+msgstr ""
+
+#: Source/InlineKeyboards.py:317
+msgid "ⅩⅪ. Мир"
+msgstr ""
+
+#: Source/InlineKeyboards.py:331
+msgid "1. Общее значение"
+msgstr ""
+
+#: Source/InlineKeyboards.py:332
+msgid "2. Личностное состояние"
+msgstr ""
+
+#: Source/InlineKeyboards.py:333
+msgid "3. На глубоком уровне"
+msgstr ""
+
+#: Source/InlineKeyboards.py:334
+msgid "4. В работе и карьере"
+msgstr ""
+
+#: Source/InlineKeyboards.py:335
+msgid "5. В финансах"
+msgstr ""
+
+#: Source/InlineKeyboards.py:336
+msgid "6. В любовной сфере"
+msgstr ""
+
+#: Source/InlineKeyboards.py:337
+msgid "7. Состояние здоровья"
+msgstr ""
+
+#: Source/InlineKeyboards.py:338
+msgid "8. Перевернутая карта"
+msgstr ""
+
+#: Source/InlineKeyboards.py:339 Source/InlineKeyboards.py:370
+msgid "Назад"
+msgstr ""
+
+#: Source/InlineKeyboards.py:351
+msgid "💔 Личная жизнь"
+msgstr ""
+
+#: Source/InlineKeyboards.py:352
+msgid "💫 Ближайшее будущее"
+msgstr ""
+
+#: Source/InlineKeyboards.py:353
+msgid "🧿 Дальнее будущее"
+msgstr ""
+
+#: Source/InlineKeyboards.py:354
+msgid "💼 Карьера и работа"
+msgstr ""
+
+#: Source/InlineKeyboards.py:355
+msgid "💵 Финансы"
+msgstr ""
+
+#: Source/InlineKeyboards.py:356
+msgid "😭 Чёрная полоса"
+msgstr ""
+
+#: Source/InlineKeyboards.py:357
+msgid "🤔 Свой вопрос"
+msgstr ""
+
+#: Source/Neurowork.py:95
+msgid ""
+"Ну что ж, давай погрузимся в тайны Таро и раскроем, что карты говорят о "
+"том...."
+msgstr ""
+
+#: Source/Neurowork.py:96
+msgid ""
+"Ухх.. Хороший какой вопрос! Сейчас посмотрим, какой ответ тебе даст расклад "
+"на..."
+msgstr ""
+
+#: Source/Neurowork.py:97
+msgid ""
+"Спасибо, очень интересно! Сейчас разложим карты и узнаем какой совет они "
+"дадут тебе .."
+msgstr ""
+
+#: Source/Neurowork.py:98
+msgid ""
+"Ничего себе! Вот это я понимаю запрос к картам. Давай-ка сейчас и узнаем, "
+"что расклад скажет о ..."
+msgstr ""
+
+#: Source/Neurowork.py:99
+msgid ""
+"Вот это ситуация! Довольно любопытный должен получится расклад на твой "
+"вопрос о..."
+msgstr ""
+
+#: main.py:66 main.py:72
+msgid ""
+"<b>Добро пожаловать в Таробот!</b>\n"
+"\n"
+"Самый большой бот для Таро-гаданий в Telegram!\n"
+"\n"
+"Задай боту любой❓️вопрос и наслаждайся ответом!"
+msgstr ""
+
+#: main.py:77 main.py:177 main.py:197 main.py:263 main.py:365
+msgid "✮⋆ ГЛАВНОЕ МЕНЮ ⋆✮"
+msgstr ""
+
+#: main.py:120
+msgid "Такой даты пока не существует."
+msgstr ""
+
+#: main.py:125 main.py:130
+msgid "Команда введена неправильно. Формат команды: /card 21.01.2025"
+msgstr ""
+
+#: main.py:136
+msgid "Желаете включить утреннюю рассылку <b>Карты дня</b>?"
+msgstr ""
+
+#: main.py:146 main.py:153
+msgid ""
+"@Taro100_bot\n"
+"@Taro100_bot\n"
+"@Taro100_bot\n"
+"\n"
+"<b>Таробот | Значение карт | Карта дня</b>\n"
+"Бот, который ответит на все ваши вопросы ❓❓❓\n"
+"\n"
+"<b><i>Пользуйтесь и делитесь с друзьями!</i></b>"
+msgstr ""
+
+#: main.py:224
+msgid "Благодарим! Теперь ваше утро будет начинаться с магии карт Таро! 🥰"
+msgstr ""
+
+#: main.py:232
+msgid ""
+"Хорошо! Вы в любой момент сможете посмотреть <b>Карту дня</b> из главного "
+"меню ☺️"
+msgstr ""
+
+#: main.py:598
+msgid ""
+"Дорогой мой друг, задай мне вопрос, который больше всего тебя сейчас волнует!"
+msgstr ""

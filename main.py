@@ -9,7 +9,7 @@ from Source.InlineKeyboards import InlineKeyboards
 from Source.Cards import Cards
 from Source.Neurowork import Neurowork
 from Source.Mailer import Mailer
-from Source.Functions import IsSubscripted
+from Source.Functions import IsSubscripted, _
 
 import os
 import logging
@@ -63,18 +63,18 @@ def ProcessCommandStart(Message: types.Message):
 		Message = Bot.send_photo(
 			Message.chat.id,
 			photo = StartImage,
-			caption = "<b>Добро пожаловать в Таробот!</b>\n\nСамый большой бот для Таро-гаданий в Telegram!\n\nЗадай боту любой❓️вопрос и наслаждайся ответом!",
+			caption = _("<b>Добро пожаловать в Таробот!</b>\n\nСамый большой бот для Таро-гаданий в Telegram!\n\nЗадай боту любой❓️вопрос и наслаждайся ответом!"),
 			parse_mode= "HTML"
 		)
 	except: 
 		Message = Bot.send_message(
 			Message.chat.id,
-			text = "<b>Добро пожаловать в Таробот!</b>\n\nСамый большой бот для Таро-гаданий в Telegram!\n\nЗадай боту любой❓️вопрос и наслаждайся ответом!",
+			text = _("<b>Добро пожаловать в Таробот!</b>\n\nСамый большой бот для Таро-гаданий в Telegram!\n\nЗадай боту любой❓️вопрос и наслаждайся ответом!"),
 			parse_mode= "HTML"
 		)
 	Message = Bot.send_message(
 		Message.chat.id,
-		text = "✮⋆ ГЛАВНОЕ МЕНЮ ⋆✮",
+		text = _("✮⋆ ГЛАВНОЕ МЕНЮ ⋆✮"),
 		reply_markup = InlineKeyboard.SendMainMenu(),
 		parse_mode = "HTML"
 	)
@@ -95,7 +95,7 @@ def ProcessCommandStart(Message: types.Message):
 	if len(Message.text.split(" ")) == 2:
 		user_date = Message.text.split(" ")[-1]
 		try:
-			datekey = dateparser.parse(user_date, settings={'DATE_ORDER': 'DMY','STRICT_PARSING': True}).strftime("%d.%m.%Y")
+			datekey = dateparser.parse(user_date, settings = {'DATE_ORDER': 'DMY','STRICT_PARSING': True}).strftime("%d.%m.%Y")
 			InstantCard = Card.GetInstantCard(datekey)
 			if InstantCard:
 				Bot.send_photo(
@@ -117,23 +117,23 @@ def ProcessCommandStart(Message: types.Message):
 				except: 
 					Bot.send_message(
 						Message.chat.id,
-						text = "Такой даты пока не существует."
+						text = _("Такой даты пока не существует.")
 						)
 		except:
 			Bot.send_message(
 				Message.chat.id,
-				text = "Команда введена неправильно. Формат команды: /card 21.01.2025"
+				text = _("Команда введена неправильно. Формат команды: /card 21.01.2025")
 				)
 	else: 
 		Bot.send_message(
 		Message.chat.id,
-		text = "Команда введена неправильно. Формат команды: /card 21.01.2025")
+		text = _("Команда введена неправильно. Формат команды: /card 21.01.2025"))
 
 @Bot.message_handler(commands = ["mailset"])
 def ProcessCommandMailset(Message: types.Message):
 	User = usermanager.auth(Message.from_user)
 	if not IsSubscripted(MasterBot, User, Settings, InlineKeyboard): return
-	Bot.send_message(Message.chat.id, ("Желаете включить утреннюю рассылку <b>Карты дня</b>?"), parse_mode = "HTML", reply_markup = InlineKeyboard.notifications())
+	Bot.send_message(Message.chat.id, _("Желаете включить утреннюю рассылку <b>Карты дня</b>?"), parse_mode = "HTML", reply_markup = InlineKeyboard.notifications())
 
 @Bot.message_handler(commands=["share"])
 def ProcessShareWithFriends(Message: types.Message):
@@ -143,14 +143,14 @@ def ProcessShareWithFriends(Message: types.Message):
 		Bot.send_photo(
 			Message.chat.id, 
 			photo = QrImage,
-			caption = '@Taro100_bot\n@Taro100_bot\n@Taro100_bot\n\n<b>Таробот | Значение карт | Карта дня</b>\nБот, который ответит на все ваши вопросы ❓❓❓\n\n<b><i>Пользуйтесь и делитесь с друзьями!</i></b>', 
+			caption = _('@Taro100_bot\n@Taro100_bot\n@Taro100_bot\n\n<b>Таробот | Значение карт | Карта дня</b>\nБот, который ответит на все ваши вопросы ❓❓❓\n\n<b><i>Пользуйтесь и делитесь с друзьями!</i></b>'), 
 			reply_markup = InlineKeyboard.AddShare(), 
 			parse_mode = "HTML"
 			)
 	except: 
 		Bot.send_message(
 			Message.chat.id, 
-			text = '@Taro100_bot\n@Taro100_bot\n@Taro100_bot\n\n<b>Таробот | Значение карт | Карта дня</b>\nБот, который ответит на все ваши вопросы ❓❓❓\n\n<b><i>Пользуйтесь и делитесь с друзьями!</i></b>', 
+			text = _('@Taro100_bot\n@Taro100_bot\n@Taro100_bot\n\n<b>Таробот | Значение карт | Карта дня</b>\nБот, который ответит на все ваши вопросы ❓❓❓\n\n<b><i>Пользуйтесь и делитесь с друзьями!</i></b>'), 
 			reply_markup = InlineKeyboard.AddShare(), 
 			parse_mode = "HTML"
 			)
@@ -174,7 +174,7 @@ def ProcessText(Message: types.Message):
 				User.set_property("Generation", False)
 				Message = Bot.send_message(
 					Message.chat.id,
-					text = "✮⋆ ГЛАВНОЕ МЕНЮ ⋆✮",
+					text = _("✮⋆ ГЛАВНОЕ МЕНЮ ⋆✮"),
 					reply_markup = InlineKeyboard.SendMainMenu(),
 					parse_mode = "HTML"
 					)
@@ -194,7 +194,7 @@ def ProcessText(Message: types.Message):
 				User.set_property("Generation", False)
 				Message = Bot.send_message(
 				Message.chat.id,
-				text = "✮⋆ ГЛАВНОЕ МЕНЮ ⋆✮",
+				text = _("✮⋆ ГЛАВНОЕ МЕНЮ ⋆✮"),
 				reply_markup = InlineKeyboard.SendMainMenu(),
 				parse_mode = "HTML"
 				)
@@ -221,7 +221,7 @@ def InlineButton(Call: types.CallbackQuery):
 		User.set_property("mailing", True)
 		Bot.edit_message_text(
 			chat_id = User.id, 
-			text = "Благодарим! Теперь ваше утро будет начинаться с магии карт Таро! 🥰",
+			text = _("Благодарим! Теперь ваше утро будет начинаться с магии карт Таро! 🥰"),
 			message_id = Call.message.id,
 			reply_markup = None
 			)
@@ -229,7 +229,7 @@ def InlineButton(Call: types.CallbackQuery):
 	else:
 		User.set_property("mailing", False)
 		Bot.edit_message_text(
-			text = "Хорошо! Вы в любой момент сможете посмотреть <b>Карту дня</b> из главного меню ☺️",
+			text = _("Хорошо! Вы в любой момент сможете посмотреть <b>Карту дня</b> из главного меню ☺️"),
 			chat_id = User.id,
 			message_id = Call.message.id,
 			parse_mode = "HTML",
@@ -256,11 +256,11 @@ def InlineButtonCardDay(Call: types.CallbackQuery):
 						Call.message.chat.id,
 						photo = open(f"{Photo}", "rb"),
 						caption = Text, 
-						parse_mode= 'HTML'
+						parse_mode = 'HTML'
 					)
 		Card.AddCard(Message.photo[0].file_id)
 		
-	Bot.send_message(Call.message.chat.id, text= "✮⋆ ГЛАВНОЕ МЕНЮ ⋆✮", reply_markup = InlineKeyboard.SendMainMenu(), parse_mode = "HTML")
+	Bot.send_message(Call.message.chat.id, text= _("✮⋆ ГЛАВНОЕ МЕНЮ ⋆✮"), reply_markup = InlineKeyboard.SendMainMenu(), parse_mode = "HTML")
 	Bot.answer_callback_query(Call.id)
 
 @Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("Value_Card"))
@@ -271,7 +271,7 @@ def InlineButtonValueCard(Call: types.CallbackQuery):
 		return
 	
 	Bot.edit_message_text(
-		"Значение карт",
+		_("Значение карт"),
 		Call.message.chat.id,
 		Call.message.id,
 		reply_markup = InlineKeyboard.SendTypeCard(),
@@ -362,7 +362,7 @@ def InlineButtonBack(Call: types.CallbackQuery):
 	Target = Call.data.split("_")[-1]
 	if Target == "SendMainMenu":
 		Bot.edit_message_text(
-			"✮⋆ ГЛАВНОЕ МЕНЮ ⋆✮",
+			_("✮⋆ ГЛАВНОЕ МЕНЮ ⋆✮"),
 			Call.message.chat.id,
 			Call.message.id,
 			reply_markup = InlineKeyboard.ChoiceFunction(Target), 
@@ -370,12 +370,13 @@ def InlineButtonBack(Call: types.CallbackQuery):
 		)
 	try: 
 		if User.get_property("Current_place").split("_")[0] == "Arcanas":
-			Bot.edit_message_caption(caption = f"<b>СТАРШИЙ АРКАН «{User.get_property("Card_name")}»</b>", chat_id = Call.message.chat.id, message_id = Call.message.id, reply_markup = InlineKeyboard.ChoiceFunction(Target), parse_mode="HTML")
+			senior_lasso = _("СТАРШИЙ АРКАН")
+			Bot.edit_message_caption(caption = f"<b> {senior_lasso} «{User.get_property("Card_name")}»</b>", chat_id = Call.message.chat.id, message_id = Call.message.id, reply_markup = InlineKeyboard.ChoiceFunction(Target), parse_mode="HTML")
 		else:
 			Bot.edit_message_caption(caption = f"<b>«{User.get_property("Card_name")}»</b>", chat_id = Call.message.chat.id, message_id = Call.message.id, reply_markup = InlineKeyboard.ChoiceFunction(Target), parse_mode="HTML")
 	except KeyError:
 		Bot.delete_message(Call.message.chat.id, Call.message.id)
-		Bot.send_message(Call.message.chat.id, text = "Значение карт", reply_markup = InlineKeyboard.ChoiceFunction(f"SendFirst{User.get_property("Current_place").split("_")[0]}"), parse_mode = "HTML")
+		Bot.send_message(Call.message.chat.id, text = _("Значение карт"), reply_markup = InlineKeyboard.ChoiceFunction(f"SendFirst{User.get_property("Current_place").split("_")[0]}"), parse_mode = "HTML")
 	except:
 		try: Bot.edit_message_reply_markup(Call.message.chat.id, Call.message.id, reply_markup = InlineKeyboard.ChoiceFunction(Target))
 		except: pass
@@ -477,7 +478,8 @@ def InlineButtonWorkCareer(Call: types.CallbackQuery):
 			with open(f"Materials/Values/{Type}/{folder2}/4.txt") as file:
 				FirstString = file.readline()
 				Text = file.read().strip()
-				FinalText = "<b>" + FirstString + "</b>\n" + Text +"\n\n<b><i>С любовью, @taro100_bot!</i></b>"
+				Ending = _("С любовью, @taro100_bot!")
+				FinalText = "<b>" + FirstString + "</b>\n" + Text +f"\n\n<b><i>{Ending}</i></b>"
 				Card.SendCardValues(Call, User, FinalText)
 			
 	Bot.answer_callback_query(Call.id)
@@ -499,7 +501,8 @@ def InlineButtonFinance(Call: types.CallbackQuery):
 			with open(f"Materials/Values/{Type}/{folder2}/5.txt") as file:
 				FirstString = file.readline()
 				Text = file.read().strip()
-				FinalText = "<b>" + FirstString + "</b>\n" + Text +"\n\n<b><i>С любовью, @taro100_bot!</i></b>"
+				Ending = _("С любовью, @taro100_bot!")
+				FinalText = "<b>" + FirstString + "</b>\n" + Text +f"\n\n<b><i>{Ending}</i></b>"
 				Card.SendCardValues(Call, User, FinalText)
 				
 	Bot.answer_callback_query(Call.id)
@@ -521,7 +524,8 @@ def InlineButtonLove(Call: types.CallbackQuery):
 			with open(f"Materials/Values/{Type}/{folder2}/6.txt") as file:
 				FirstString = file.readline()
 				Text = file.read().strip()
-				FinalText = "<b>" + FirstString + "</b>\n" + Text +"\n\n<b><i>С любовью, @taro100_bot!</i></b>"
+				Ending = _("С любовью, @taro100_bot!")
+				FinalText = "<b>" + FirstString + "</b>\n" + Text +f"\n\n<b><i>{Ending}</i></b>"
 				Card.SendCardValues(Call, User, FinalText)
 		
 	Bot.answer_callback_query(Call.id)
@@ -543,7 +547,8 @@ def InlineButtonHealthStatus(Call: types.CallbackQuery):
 			with open(f"Materials/Values/{Type}/{folder2}/7.txt") as file:
 				FirstString = file.readline()
 				Text = file.read().strip()
-				FinalText = "<b>" + FirstString + "</b>\n" + Text +"\n\n<b><i>С любовью, @taro100_bot!</i></b>"
+				Ending = _("С любовью, @taro100_bot!")
+				FinalText = "<b>" + FirstString + "</b>\n" + Text +f"\n\n<b><i>{Ending}</i></b>"
 				Card.SendCardValues(Call, User, FinalText)
 			
 	Bot.answer_callback_query(Call.id)
@@ -564,7 +569,8 @@ def InlineButtonInverted(Call: types.CallbackQuery):
 			with open(f"Materials/Values/{Type}/{folder2}/8.txt") as file:
 				FirstString = file.readline()
 				Text = file.read().strip()
-				FinalText = "<b>" + FirstString + "</b>\n" + Text +"\n\n<b><i>С любовью, @taro100_bot!</i></b>"
+				Ending = _("С любовью, @taro100_bot!")
+				FinalText = "<b>" + FirstString + "</b>\n" + Text +f"\n\n<b><i>{Ending}</i></b>"
 
 				Card.SendCardValues(Call, User, FinalText)
 			
@@ -577,7 +583,7 @@ def InlineButtonRemoveReminder(Call: types.CallbackQuery):
 		Bot.answer_callback_query(Call.id)
 		return
 	Bot.edit_message_text(
-		"Расклад от Мастера",
+		_("Расклад от Мастера"),
 		Call.message.chat.id,
 		Call.message.id,
 		reply_markup = InlineKeyboard.SendOrderLayout()
@@ -595,7 +601,7 @@ def InlineButtonRemoveReminder(Call: types.CallbackQuery):
 	if not User.get_property("Generation"):
 		Bot.send_message(
 			Call.message.chat.id,
-			"Дорогой мой друг, задай мне вопрос, который больше всего тебя сейчас волнует!")
+			_("Дорогой мой друг, задай мне вопрос, который больше всего тебя сейчас волнует!"))
 		User.set_expected_type("Question")
 	
 	Bot.answer_callback_query(Call.id)
@@ -607,7 +613,7 @@ def InlineButtonAllTaro(Call: types.CallbackQuery):
 		Bot.answer_callback_query(Call.id)
 		return
 	Bot.edit_message_text(
-		"Всё о Таро",
+		_("Всё о Таро"),
 		Call.message.chat.id,
 		Call.message.id,
 		reply_markup = InlineKeyboard.SendAllTaro()
