@@ -1,5 +1,7 @@
 -r Source/TeleBotAdminPanel/requirements.txt
-dublib == 0.16.2
+dublib == 0.16.0
 pytelegrambotapi
-g4f == 0.3.3.3
+g4f==0.4.7.6
 apscheduler
+pandas
+openpyxl == 3.1.5

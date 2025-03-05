@@ -7,5 +7,9 @@
     "subscription_chanel": null,
     "subscription_link": "",
     "password": "",
-    "language": "ru"
+    "language": "ru",
+    "letters": "",
+    "planning_day": "0",
+    "planning_time": "0:0",
+    "mailings": "05:50"
 }

@@ -1,18 +1,8 @@
-
 from dublib.TelebotUtils import UserData
 from dublib.TelebotUtils import TeleMaster
-from dublib.Methods.Filesystem import ReadJSON
+from dublib.Engine.GetText import _
 
 from Source.InlineKeyboards import InlineKeyboards
-
-import gettext
-
-Settings = ReadJSON("Settings.json")
-Language = Settings["language"]
-
-_ = gettext.gettext
-try: _ = gettext.translation("Taro", "locales", languages = [Language]).gettext
-except FileNotFoundError: pass
 
 def IsSubscripted(MasterBot: TeleMaster, User: UserData, Settings: dict, InlineKeyboard: InlineKeyboards):
 	if Settings["subscription_chanel"] == None:
@@ -45,3 +35,4 @@ def IsSubscripted(MasterBot: TeleMaster, User: UserData, Settings: dict, InlineK
 		
 		if IsSubscribed and not Subscribtion_Message: 
 			return IsSubscribed
+		

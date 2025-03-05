@@ -1,5 +1,6 @@
 from telebot import types
-from Source.Functions import _
+
+from dublib.Engine.GetText import _
 
 class InlineKeyboards:
 
@@ -29,7 +30,7 @@ class InlineKeyboards:
 
 		Share = types.InlineKeyboardButton(
 			_("Поделиться"), 
-			switch_inline_query = _('\n@Taro100_bot\n@Taro100_bot\n\n**Таробот | Значение карт | Карта дня**\nБот, который ответит на все ваши вопросы ❓❓❓\n\n__Пользуйтесь и делитесь с друзьями!__')
+			switch_inline_query = _('\n@Taro100_bot\n@Taro100_bot\n\n**Таробот | Расклад онлайн | Карта дня**\nБот, который ответит на все твои вопросы ❓❓❓\n\n__Пользуйся и делись с друзьями!__')
 			)
 		
 		Menu.add(Share)

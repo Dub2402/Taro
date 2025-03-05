@@ -3,13 +3,15 @@ from dublib.Methods.System import Clear
 from dublib.TelebotUtils.Cache import TeleCache
 from dublib.TelebotUtils import UsersManager
 from dublib.TelebotUtils import TeleMaster
+from dublib.Engine.GetText import GetText
 
 from Source.TeleBotAdminPanel import Panel
 from Source.InlineKeyboards import InlineKeyboards
 from Source.Cards import Cards
 from Source.Neurowork import Neurowork
 from Source.Mailer import Mailer
-from Source.Functions import IsSubscripted, _
+from Source.Functions import IsSubscripted
+from Source.Reader import Reader
 
 import os
 import logging
@@ -18,6 +20,9 @@ from telebot import types
 from apscheduler.schedulers.background import BackgroundScheduler
 
 Settings = ReadJSON("Settings.json")
+
+GetText.initialize("Taro", Settings["language"], "locales")
+_ = GetText.gettext
 
 MasterBot = TeleMaster(Settings["token"])
 Bot = MasterBot.bot
@@ -31,6 +36,7 @@ neurowork = Neurowork(Bot, Cacher)
 scheduler = BackgroundScheduler()
 mailer = Mailer(Bot, usermanager, Cacher, Card)
 AdminPanel = Panel()
+reader = Reader(Settings)
 
 logging.basicConfig(level=logging.INFO, encoding="utf-8", filename="LOGING.log", filemode="w", force=True,
 	format='%(asctime)s - %(levelname)s - %(message)s',
@@ -52,6 +58,8 @@ except Exception:
 	pass
 
 scheduler.add_job(mailer.StartMailing, 'cron', hour = Settings["mailing_time"].split(":")[0], minute = Settings["mailing_time"].split(":")[1])
+scheduler.add_job(mailer.Planning, "cron", day_of_week = Settings["planning_day"], hour = Settings["planning_time"].split(":")[0], minute = Settings["planning_time"].split(":")[1])
+for i in range(7): scheduler.add_job(mailer.Mailings, "cron", day_of_week = i, hour = Settings["mailings"].split(":")[0], minute = Settings["mailings"].split(":")[1], args = [i, reader, scheduler, Bot])
 scheduler.start()
 
 AdminPanel.decorators.commands(Bot, usermanager, Settings["password"])
@@ -64,7 +72,7 @@ def ProcessCommandStart(Message: types.Message):
 			Message.chat.id,
 			photo = StartImage,
 			caption = _("<b>Добро пожаловать в Таробот!</b>\n\nСамый большой бот для Таро-гаданий в Telegram!\n\nЗадай боту любой❓️вопрос и наслаждайся ответом!"),
-			parse_mode= "HTML"
+			parse_mode = "HTML"
 		)
 	except: 
 		Message = Bot.send_message(
@@ -84,6 +92,7 @@ def ProcessCommandStart(Message: types.Message):
 	User.set_property("Question", None)
 	User.set_property("Generation", False)
 	User.set_property("Subscription", None, force = False)
+	User.set_property("Planning_days", None, force = False)
 
 	if not IsSubscripted(MasterBot, User, Settings, InlineKeyboard): return    
 	
@@ -143,14 +152,14 @@ def ProcessShareWithFriends(Message: types.Message):
 		Bot.send_photo(
 			Message.chat.id, 
 			photo = QrImage,
-			caption = _('@Taro100_bot\n@Taro100_bot\n@Taro100_bot\n\n<b>Таробот | Значение карт | Карта дня</b>\nБот, который ответит на все ваши вопросы ❓❓❓\n\n<b><i>Пользуйтесь и делитесь с друзьями!</i></b>'), 
+			caption = _('@Taro100_bot\n@Taro100_bot\n@Taro100_bot\n\n<b>Таробот | Расклад онлайн | Карта дня</b>\nБот, который ответит на все твои вопросы ❓❓❓\n\n<b><i>Пользуйся и делись с друзьями!</i></b>'), 
 			reply_markup = InlineKeyboard.AddShare(), 
 			parse_mode = "HTML"
 			)
 	except: 
 		Bot.send_message(
 			Message.chat.id, 
-			text = _('@Taro100_bot\n@Taro100_bot\n@Taro100_bot\n\n<b>Таробот | Значение карт | Карта дня</b>\nБот, который ответит на все ваши вопросы ❓❓❓\n\n<b><i>Пользуйтесь и делитесь с друзьями!</i></b>'), 
+			text = _('@Taro100_bot\n@Taro100_bot\n@Taro100_bot\n\n<b>Таробот | Расклад онлайн | Карта дня</b>\nБот, который ответит на все твои вопросы ❓❓❓\n\n<b><i>Пользуйся и делись с друзьями!</i></b>'), 
 			reply_markup = InlineKeyboard.AddShare(), 
 			parse_mode = "HTML"
 			)
@@ -369,7 +378,7 @@ def InlineButtonBack(Call: types.CallbackQuery):
 			parse_mode= "HTML"
 		)
 	try: 
-		if User.get_property("Current_place").split("_")[0] == "Arcanas":
+		if User.get_property("Current_place").split("_")[0] == "Arcanas" and User.get_property("Card_name"):
 			senior_lasso = _("СТАРШИЙ АРКАН")
 			Bot.edit_message_caption(caption = f"<b> {senior_lasso} «{User.get_property("Card_name")}»</b>", chat_id = Call.message.chat.id, message_id = Call.message.id, reply_markup = InlineKeyboard.ChoiceFunction(Target), parse_mode="HTML")
 		else:

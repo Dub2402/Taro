@@ -6,7 +6,7 @@ from Source.Functions import _
 import telebot
 import random
 import os
-import g4f
+import g4f.Provider
 from telebot import types
 from time import sleep
 from g4f.client import Client
@@ -105,7 +105,7 @@ class Neurowork:
 			Request = f"У тебя есть шаблон: {random_text} [question]."
 			Request += f"Тебе задали вопрос: {user_text}. Выведи шаблон учитывая, что спрашивающий имеет ввиду не тебя в вопросе, не добавляй восклицательный знак и двоеточие, а также не используй форматирование. Согласуй, учитывая правила русского языка."
 			Request += "Если вопрос похож на случайно введённый или не имеющий значения, или это один символ - выведи: Ваше сообщение не совсем понятно. Если у вас есть вопрос или тема, которую вы хотите обсудить, пожалуйста, напишите об этом. Я с радостью помогу вам!"
-			Response = self.__Client.chat.completions. create(model = "gpt-4", provider = g4f.Provider.Ai4Chat, messages = [{"role": "user", "content": Request}])
+			Response = self.__Client.chat.completions. create(model = "gpt-4", provider = g4f.Provider.DDG, messages = [{"role": "user", "content": Request}])
 			Text_response = Response.choices[0].message.content.strip().replace("\n", "\n\n")
 
 			if Text_response == "Ваше сообщение не совсем понятно. Если у вас есть вопрос или тема, которую вы хотите обсудить, пожалуйста, напишите об этом. Я с радостью помогу вам!":
@@ -120,7 +120,7 @@ class Neurowork:
 		Request = f"Проанализируй эти данные: {number}, {card} и {user_text} и предоставь ответ в следующем формате:"
 		Request += f"{number}, «{card}», может указывать на [помести сюда своё мнение о том, на что может указывать значение карты о заданном вопросе]."
 		Request += "Не более 250 символов в тексте. Не меняй первые два словосочетания!!!"
-		Response = self.__Client.chat.completions.create(model = "gpt-4", provider = g4f.Provider.Ai4Chat, messages = [{"role": "user", "content": Request}])
+		Response = self.__Client.chat.completions.create(model = "gpt-4", provider = g4f.Provider.DDG, messages = [{"role": "user", "content": Request}])
 		Text_response = Response.choices[0].message.content.strip().replace("\n", "\n\n").replace("«", "«<b>").replace("»", "</b>»")
 
 		return Text_response
@@ -129,7 +129,7 @@ class Neurowork:
 		Request = f"Проанализируй эти карты Таро: {First}, {Second} и {Three} и предоставь ответ в следующем формате на вопрос {user_text}:"
 		Request += f"В целом, карты показывают [помести сюда своё мнение о том, на что могут показывать указанные значения карт о заданном вопросе]."
 		Request += "Не более 250 символов в тексте. Не меняй первые два слова!!! Не упоминай названия карт!!!"
-		Response = self.__Client.chat.completions.create(model = "gpt-4", provider = g4f.Provider.Ai4Chat, messages = [{"role": "user", "content": Request}])
+		Response = self.__Client.chat.completions.create(model = "gpt-4", provider = g4f.Provider.DDG, messages = [{"role": "user", "content": Request}])
 		Text_response = Response.choices[0].message.content.strip().replace("\n", "\n\n")
 
 		return Text_response
