@@ -9,7 +9,8 @@
     "password": "",
     "language": "ru",
     "letters": "",
-    "planning_day": "0",
+    "yes_no": "",
+    "planning_day": "3",
     "planning_time": "0:0",
     "mailings": "05:50"
 }

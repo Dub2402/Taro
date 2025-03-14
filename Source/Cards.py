@@ -9,6 +9,7 @@ from telebot import TeleBot
 from .InlineKeyboards import InlineKeyboards
 
 import os
+import random
 
 class Cards():
 
@@ -116,3 +117,17 @@ class Cards():
                         parse_mode = "HTML",
                         reply_markup = self.__InlineKeyboard.SendBack()
                         )
+                    
+    def ChoiceRandomCard(self) -> str:
+
+        image = None
+        choice_type = random.choice(["Straight", "Reversed"])
+        choice_card = random.randint(1,78) 
+        image = f"Materials/{choice_type}/{choice_card}.jpg"
+        return image, choice_type
+    
+    def Get_Text(self, photo: str, cards: list, values: list) -> str:
+        index = int(photo.split("/")[-1].replace(".jpg", "")) -1
+        card = cards[index]
+        value = values[index]
+        return card, value

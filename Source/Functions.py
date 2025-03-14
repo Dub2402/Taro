@@ -4,6 +4,8 @@ from dublib.Engine.GetText import _
 
 from Source.InlineKeyboards import InlineKeyboards
 
+import random
+
 def IsSubscripted(MasterBot: TeleMaster, User: UserData, Settings: dict, InlineKeyboard: InlineKeyboards):
 	if Settings["subscription_chanel"] == None:
 		IsSubscribed = True

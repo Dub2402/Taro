@@ -43,13 +43,15 @@ class InlineKeyboards:
 
 		# Генерация кнопок.
 		CardDay = types.InlineKeyboardButton(_("Карта дня"), callback_data = "Card_Day")
+		YesNo = types.InlineKeyboardButton(_("Да/Нет"), callback_data = "Yes_No")
 		ValueCard = types.InlineKeyboardButton(_("Значение карт"), callback_data = "Value_Card")
 		OrderLayout = types.InlineKeyboardButton(_("Расклад от Мастера ♨️"), callback_data = "Order_Layout")
 		Online_layout = types.InlineKeyboardButton(_("Онлайн расклад"), callback_data = "Online_Layout")
 		All_Taro = types.InlineKeyboardButton(_("Всё о Таро"), callback_data = "All_Taro")
 	
 		# Добавление кнопок в меню.
-		Menu.add(CardDay, All_Taro, ValueCard, Online_layout, OrderLayout, row_width= 1) 
+		Menu.add(CardDay, YesNo, All_Taro, ValueCard, row_width = 2) 
+		Menu.add(Online_layout, OrderLayout, row_width = 1) 
 
 		return Menu
 	
@@ -80,6 +82,33 @@ class InlineKeyboards:
 
 		return Menu
 	
+	def for_delete(self, text: str) -> types.InlineKeyboardMarkup:
+		Menu = types.InlineKeyboardMarkup()
+
+		For_delete = types.InlineKeyboardButton(text = text, callback_data = "for_delete")
+	
+		Menu.add(For_delete, row_width= 1) 
+
+		return Menu
+	
+	def for_restart(self, text: str) -> types.InlineKeyboardMarkup:
+		Menu = types.InlineKeyboardMarkup()
+
+		For_restart = types.InlineKeyboardButton(text = text, callback_data = "for_restart")
+	
+		Menu.add(For_restart, row_width= 1) 
+
+		return Menu
+		
+	def OpenCard(self) -> types.InlineKeyboardMarkup:
+		Menu = types.InlineKeyboardMarkup()
+
+		OpenCard = types.InlineKeyboardButton(_("Открыть карту"), callback_data = "OpenCard")
+	
+		Menu.add(OpenCard, row_width= 1) 
+
+		return Menu
+
 	def notifications(self) -> types.InlineKeyboardMarkup:
 
 		Menu = types.InlineKeyboardMarkup()
@@ -289,17 +318,17 @@ class InlineKeyboards:
 		Menu = types.InlineKeyboardMarkup()
 
 		Chariot = types.InlineKeyboardButton(_("Ⅶ. Колесница"), callback_data = "Arcanas_VII")
-		Justice = types.InlineKeyboardButton(_("Ⅷ. Справедливость"), callback_data = "Arcanas_VIII")
+		Strength = types.InlineKeyboardButton(_("Ⅷ. Сила"), callback_data = "Arcanas_VIII")
 		Hermit = types.InlineKeyboardButton(_("Ⅸ. Отшельник"), callback_data = "Arcanas_IX")
 		WheelFortune = types.InlineKeyboardButton(_("Ⅹ. Колесо Фортуны"), callback_data = "Arcanas_X")
-		Strength = types.InlineKeyboardButton(_("Ⅺ. Сила"), callback_data = "Arcanas_XI")
+		Justice = types.InlineKeyboardButton(_("Ⅺ. Справедливость"), callback_data = "Arcanas_XI")
 		Hanged = types.InlineKeyboardButton(_("Ⅻ. Повешенный"), callback_data = "Arcanas_XII")
 		Death = types.InlineKeyboardButton(_("ⅩⅢ. Смерть"), callback_data = "Arcanas_XIII")
 		Further = types.InlineKeyboardButton(_("Далее ▶️"), callback_data = "Further_SendThirdArcanas")
 		Back = types.InlineKeyboardButton(_("◀️ Назад"), callback_data = "Back_SendFirstArcanas")
 
 		# Добавление кнопок в меню.
-		Menu.add(Chariot, Justice, Hermit, WheelFortune, Strength, Hanged, Death, Further, Back, row_width= 1) 
+		Menu.add(Chariot, Strength, Hermit, WheelFortune, Justice, Hanged, Death, Further, Back, row_width= 1) 
 
 		return Menu
 	
