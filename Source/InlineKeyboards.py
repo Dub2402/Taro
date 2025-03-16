@@ -1,7 +1,7 @@
 from telebot import types
 
 from dublib.Engine.GetText import _
-
+from dublib.Polyglot import HTML
 class InlineKeyboards:
 
 	def ChoiceFunction(self, Target: str):
@@ -31,6 +31,23 @@ class InlineKeyboards:
 		Share = types.InlineKeyboardButton(
 			_("Поделиться"), 
 			switch_inline_query = _('\n@Taro100_bot\n@Taro100_bot\n\n**Таробот | Расклад онлайн | Карта дня**\nБот, который ответит на все твои вопросы ❓❓❓\n\n__Пользуйся и делись с друзьями!__')
+			)
+		
+		Menu.add(Share)
+
+		return Menu
+	
+	def Sharing(self, text: str) -> types.InlineKeyboardMarkup:
+		Menu = types.InlineKeyboardMarkup()
+		Paragraphs = text.split("\n")
+		PlainLastParagraph = HTML(Paragraphs[-1]).plain_text
+		Paragraphs[-1] = "**" + PlainLastParagraph + "**"
+		text = "\n".join(Paragraphs)
+
+		good_text = "\n" + text.replace("<i>", "__").replace("</i>", "__")
+		Share = types.InlineKeyboardButton(
+			_("Поделиться"), 
+			switch_inline_query = good_text
 			)
 		
 		Menu.add(Share)

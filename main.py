@@ -16,10 +16,12 @@ from Source.Reader import Reader
 import os
 import logging
 import dateparser
+import os
 from telebot import types
 from apscheduler.schedulers.background import BackgroundScheduler
-import os
+
 from datetime import datetime
+from time import sleep
 
 Settings = ReadJSON("Settings.json")
 
@@ -51,7 +53,7 @@ Clear()
 # Получение структуры данных кэшированного файла.
 try:
     File = Cacher.get_cached_file(Settings["qr_id"], type = types.InputMediaPhoto)
-    File = Cacher.get_cached_file(Settings["start_id"], type = types.InputMediaPhoto)
+    File = Cacher.get_cached_file(Settings["start_id"], type = types.InputMediaAnimation)
     # Получение ID кэшированного файла.
     QrImage = Cacher[Settings["qr_id"]]
     StartImage = Cacher[Settings["start_id"]]
@@ -70,11 +72,9 @@ current_hour = now.hour
 current_minute = now.minute
 day_of_week = now.weekday()
 
-try: mailer.Mailings(day_of_week, reader, scheduler, Bot, True)
-except: pass
 
-try: mailer.once_mailing(Bot)
-except: pass
+if Settings["restart_mailings"]: mailer.Mailings(day_of_week, reader, scheduler, Bot, True)
+if Settings["once_mailing"]: mailer.once_mailing(Bot)
 
 AdminPanel.decorators.commands(Bot, usermanager, Settings["password"])
 
@@ -87,10 +87,10 @@ def ProcessCommandStart(Message: types.Message):
         parse_mode = "HTML"
     )
 
-    Message = Bot.send_photo(
+    Message = Bot.send_animation(
         Message.chat.id,
-        photo = StartImage,
-        caption = _("✮⋆ ГЛАВНОЕ МЕНЮ ⋆✮"),
+        animation = StartImage,
+        caption = None,
         reply_markup = InlineKeyboard.SendMainMenu(),
         parse_mode = "HTML"
     )
@@ -192,7 +192,7 @@ def ProcessText(Message: types.Message):
                 Message = Bot.send_photo(
                     Message.chat.id,
                     photo = StartImage,
-                    caption = _("✮⋆ ГЛАВНОЕ МЕНЮ ⋆✮"),
+                    caption = None,
                     reply_markup = InlineKeyboard.SendMainMenu(),
                     parse_mode = "HTML"
                     )
@@ -210,10 +210,10 @@ def ProcessText(Message: types.Message):
             Completed = neurowork.AnswerForUser(Message.chat.id, User.get_property("Question"), User)
             if Completed:
                 User.set_property("Generation", False)
-                Message = Bot.send_photo(
+                Message = Bot.send_animation(
                     Message.chat.id,
                     photo = StartImage,
-                    caption = _("✮⋆ ГЛАВНОЕ МЕНЮ ⋆✮"),
+                    caption = None,
                     reply_markup = InlineKeyboard.SendMainMenu(),
                     parse_mode = "HTML"
                     )
@@ -344,6 +344,7 @@ def InlineButtonCardDay(Call: types.CallbackQuery):
     except Exception:
         pass
 
+    sleep(1)
     Bot.send_photo(
         Call.message.chat.id, 
         photo = PhotoID,
@@ -446,46 +447,51 @@ def InlineButtonBack(Call: types.CallbackQuery):
     if not IsSubscripted(MasterBot, User, Settings, InlineKeyboard):
         Bot.answer_callback_query(Call.id)
         return
-   
-    Target = Call.data.split("_")[-1]
-    if Target == "SendMainMenu":
-        Bot.edit_message_caption(
-            _("✮⋆ ГЛАВНОЕ МЕНЮ ⋆✮"),
-            Call.message.chat.id,
-            Call.message.id,
-            reply_markup = InlineKeyboard.ChoiceFunction(Target), 
-            parse_mode= "HTML"
-        )
-        return
     
-    if Target == "SendTypeCard":
-        Bot.edit_message_caption(
-            caption = _("ЗНАЧЕНИЕ КАРТ"),
+    if "_" not in Call.data:
+        Bot.delete_message(
             chat_id = Call.message.chat.id,
             message_id = Call.message.id,
-            reply_markup = InlineKeyboard.SendTypeCard(),
+        )
+        Current_place = User.get_property("Current_place").split("_")[0]
+        Bot.send_animation(
+            animation = StartImage,
+            caption = _("ЗНАЧЕНИЕ КАРТ"),
+            chat_id = Call.message.chat.id,
+            reply_markup = InlineKeyboard.ChoiceFunction(f"SendFirst{Current_place}"),
             parse_mode= "HTML"
         )
-        return
-    
-    if Target == "SendValueCard":
-        if User.get_property("Current_place").split("_")[0] == "Arcanas" and User.get_property("Card_name"):
-            Current_place = User.get_property("Current_place").split("_")[0]
-            senior_lasso = _("СТАРШИЙ АРКАН")
-            Bot.edit_message_caption(caption = f"<b> {senior_lasso} «{User.get_property("Card_name")}»</b>", chat_id = Call.message.chat.id, message_id = Call.message.id, reply_markup = InlineKeyboard.ChoiceFunction(Target), parse_mode="HTML")
-        else:
-            Current_place = User.get_property("Current_place").split("_")[0]
-            Bot.edit_message_caption(caption = f"<b>«{User.get_property("Card_name")}»</b>", chat_id = Call.message.chat.id, message_id = Call.message.id, reply_markup = InlineKeyboard.ChoiceFunction(Target), parse_mode="HTML")
-        return
-
     else:
-        if User.get_property("Current_place").split("_")[0] == "Arcanas" and User.get_property("Card_name"):
-            Current_place = User.get_property("Current_place").split("_")[0]
-            senior_lasso = _("СТАРШИЙ АРКАН")
-            Bot.edit_message_caption(caption = f"<b> {senior_lasso} «{User.get_property("Card_name")}»</b>", chat_id = Call.message.chat.id, message_id = Call.message.id, reply_markup = InlineKeyboard.ChoiceFunction(f"SendFirst{Current_place}"), parse_mode="HTML")
+        Target = Call.data.split("_")[-1]
+        if Target == "SendMainMenu":
+            Bot.edit_message_caption(
+                caption = None,
+                chat_id = Call.message.chat.id,
+                message_id = Call.message.id,
+                reply_markup = InlineKeyboard.ChoiceFunction(Target), 
+                parse_mode= "HTML"
+            )
+            return
+        
+        if Target == "SendTypeCard":
+            Bot.edit_message_caption(
+                caption = _("ЗНАЧЕНИЕ КАРТ"),
+                chat_id = Call.message.chat.id,
+                message_id = Call.message.id,
+                reply_markup = InlineKeyboard.SendTypeCard(),
+                parse_mode= "HTML"
+            )
+            return
+        
+        if Target == "SendValueCard":
+            if User.get_property("Current_place").split("_")[0] == "Arcanas" and User.get_property("Card_name"):
+                senior_lasso = _("СТАРШИЙ АРКАН")
+                Bot.edit_message_caption(caption = f"<b> {senior_lasso} «{User.get_property("Card_name")}»</b>", chat_id = Call.message.chat.id, message_id = Call.message.id, reply_markup = InlineKeyboard.ChoiceFunction(Target), parse_mode="HTML")
+            else:
+                Bot.edit_message_caption(caption = f"<b>«{User.get_property("Card_name")}»</b>", chat_id = Call.message.chat.id, message_id = Call.message.id, reply_markup = InlineKeyboard.ChoiceFunction(Target), parse_mode="HTML")
+            return
         else:
-            Current_place = User.get_property("Current_place").split("_")[0]
-            Bot.edit_message_caption(caption = f"<b>«{User.get_property("Card_name")}»</b>", chat_id = Call.message.chat.id, message_id = Call.message.id, reply_markup = InlineKeyboard.ChoiceFunction(f"SendFirst{Current_place}"), parse_mode="HTML")
+            Bot.edit_message_caption(caption = _("ЗНАЧЕНИЕ КАРТ"), chat_id = Call.message.chat.id, message_id = Call.message.id, reply_markup = InlineKeyboard.ChoiceFunction(Target), parse_mode="HTML")
  
     Bot.answer_callback_query(Call.id)
     
@@ -665,7 +671,8 @@ def InlineButtonInverted(Call: types.CallbackQuery):
     if not IsSubscripted(MasterBot, User, Settings, InlineKeyboard):
         Bot.answer_callback_query(Call.id)
         return
-
+    
+    Bot.delete_message(Call.message.chat.id, Call.message.id)
     CardPosition = User.get_property("Current_place")
     ID = CardPosition.split("_")[-1]
     Type = CardPosition.split("_")[0]

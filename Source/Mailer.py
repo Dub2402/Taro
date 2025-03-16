@@ -39,6 +39,7 @@ class Mailer:
 						self.__Bot.send_photo(
 							User.id,
 							photo = InstantCard["photo"],
+							reply_markup = self.__InlineKeyboard.for_delete("Да будет так!"),
 							caption = InstantCard["text"], 
 							parse_mode= 'HTML'
 							)
@@ -47,6 +48,7 @@ class Mailer:
 						Message = self.__Bot.send_photo(
 							User.id,
 							photo = open(f"{Photo}", "rb"),
+							reply_markup = self.__InlineKeyboard.for_delete("Да будет так!"),
 							caption = Text, 
 							parse_mode= 'HTML'
 							)
@@ -147,7 +149,7 @@ class Mailer:
 				User.id,
 				text = text,
 				parse_mode = "HTML",
-				reply_markup = self.__InlineKeyboard.AddShare()
+				reply_markup = self.__InlineKeyboard.Sharing(text)
 			)
 			return
 		
