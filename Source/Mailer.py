@@ -50,7 +50,7 @@ class Mailer:
 							photo = open(f"{Photo}", "rb"),
 							reply_markup = self.__InlineKeyboard.for_delete("Да будет так!"),
 							caption = Text, 
-							parse_mode= 'HTML'
+							parse_mode = 'HTML'
 							)
 						self.__Card.AddCard(Message.photo[0].file_id)
 						
@@ -103,10 +103,9 @@ class Mailer:
 					current_minute = today.minute
 					random_hour = random.randint(current_hour, 23)
 
-					if random_hour == current_hour: random_minute = random.randint(current_minute, 59)
+					if random_hour == current_hour: random_minute = random.randint(current_minute + 1, 59)
 					else: random_minute = random.randint(0, 59)
 
-				
 				time_variable = f"{random_hour}:{random_minute}:00"
 				hours, minutes, seconds = map(int, time_variable.split(':'))
 				specific_time = today.replace(hour=hours, minute=minutes, second=seconds, microsecond=0)
@@ -133,24 +132,45 @@ class Mailer:
 			Common_days.remove(day_of_week)
 			Planning_days["common_days"] = Common_days
 			User.set_property("Planning_days", Planning_days)
-			Bot.send_message(
-				User.id,
-				text = text,
-				parse_mode = "HTML",
-				reply_markup = self.__InlineKeyboard.for_delete("Принимаю")
-			)
-			return
+			if day_of_week in (1, 3, 5):
+				try:
+					Bot.send_message(
+						User.id,
+						text = text,
+						parse_mode = "HTML",
+						reply_markup = self.__InlineKeyboard.for_restart("Принимаю")
+					)
+					User.set_chat_forbidden(False)
+				except: 
+					User.set_chat_forbidden(True)
+				return
+			else:
+				try:
+					Bot.send_message(
+						User.id,
+						text = text,
+						parse_mode = "HTML",
+						reply_markup = self.__InlineKeyboard.for_delete("Принимаю")
+					)
+					User.set_chat_forbidden(False)
+				except: 
+					User.set_chat_forbidden(True)
+				return
 		
 		if type_text == "exclusive":
 			Planning_days: dict = User.get_property("Planning_days")
 			Planning_days["exclusive_day"] = ""
 			User.set_property("Planning_days", Planning_days)
-			Bot.send_message(
-				User.id,
-				text = text,
-				parse_mode = "HTML",
-				reply_markup = self.__InlineKeyboard.Sharing(text)
-			)
+			try:
+				Bot.send_message(
+					User.id,
+					text = text,
+					parse_mode = "HTML",
+					reply_markup = self.__InlineKeyboard.Sharing(text)
+				)
+				User.set_chat_forbidden(False)
+			except: 
+				User.set_chat_forbidden(True)
 			return
 		
 	def once_mailing(self, Bot: TeleBot):
@@ -167,6 +187,7 @@ class Mailer:
 					)
 					logging.info(f"Послания Вселенной отправлены  пользователю {User.id} с сообщением {text}")
 					User.set_temp_property("Once", True)
+					User.set_chat_forbidden(False)
 				except:
 					logging.info(f"{User.id}")
 					User.set_chat_forbidden(True)

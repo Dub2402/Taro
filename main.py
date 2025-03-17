@@ -189,9 +189,9 @@ def ProcessText(Message: types.Message):
             Completed = neurowork.AnswerForUser(Message.chat.id, User.get_property("Question"), User)
             if Completed:
                 User.set_property("Generation", False)
-                Message = Bot.send_photo(
+                Message = Bot.send_animation(
                     Message.chat.id,
-                    photo = StartImage,
+                    animation = StartImage,
                     caption = None,
                     reply_markup = InlineKeyboard.SendMainMenu(),
                     parse_mode = "HTML"
@@ -212,7 +212,7 @@ def ProcessText(Message: types.Message):
                 User.set_property("Generation", False)
                 Message = Bot.send_animation(
                     Message.chat.id,
-                    photo = StartImage,
+                    animation= StartImage,
                     caption = None,
                     reply_markup = InlineKeyboard.SendMainMenu(),
                     parse_mode = "HTML"
@@ -223,10 +223,12 @@ AdminPanel.decorators.inline_keyboards(Bot, usermanager)
 @Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("for_restart"))
 def InlineButtonAccept(Call: types.CallbackQuery):
     User = usermanager.auth(Call.from_user)
-    Bot.delete_message(
-        Call.message.chat.id,
-        Call.message.id
-    )
+    try:
+        Bot.delete_message(
+            Call.message.chat.id,
+            Call.message.id
+        )
+    except: pass
     ProcessCommandStart(Call.message)
     Bot.answer_callback_query(Call.id)
 
@@ -240,10 +242,12 @@ def InlineButtonAllTaro(Call: types.CallbackQuery):
 @Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("for_delete"))
 def InlineButtonAccept(Call: types.CallbackQuery):
     User = usermanager.auth(Call.from_user)
-    Bot.delete_message(
-        Call.message.chat.id,
-        Call.message.id
-    )
+    try: 
+        Bot.delete_message(
+            Call.message.chat.id,
+            Call.message.id
+        )
+    except: pass
     Bot.answer_callback_query(Call.id)
 
 @Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("notifications"))
