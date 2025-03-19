@@ -72,7 +72,6 @@ current_hour = now.hour
 current_minute = now.minute
 day_of_week = now.weekday()
 
-
 if Settings["restart_mailings"]: mailer.Mailings(day_of_week, reader, scheduler, Bot, True)
 if Settings["once_mailing"]: mailer.once_mailing(Bot)
 
@@ -325,11 +324,12 @@ def InlineButtonCardDay(Call: types.CallbackQuery):
 @Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("OpenCard"))
 def InlineButtonCardDay(Call: types.CallbackQuery):
     User = usermanager.auth(Call.from_user)
-
-    Bot.delete_message(
-        Call.message.chat.id,
-        Call.message.id
-        )
+    try:
+        Bot.delete_message(
+            Call.message.chat.id,
+            Call.message.id
+            )
+    except: pass
     
     image, choice_type = Card.ChoiceRandomCard()
     if choice_type == "Straight":

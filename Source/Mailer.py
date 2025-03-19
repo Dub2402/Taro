@@ -9,6 +9,7 @@ import random
 from datetime import datetime
 import logging
 from apscheduler.schedulers.background import BackgroundScheduler
+from time import sleep
 
 class Mailer:
 
@@ -27,6 +28,26 @@ class Mailer:
 		self.__Card = Card
 		self.__InlineKeyboard = InlineKeyboard
 		
+	def __Generationrandomtime(self, restart: bool):
+		random_hour = 0
+		random_minute = 0 
+		today = datetime.now()
+		if not restart:
+			random_hour = random.randint(6, 23)
+			random_minute = random.randint(0, 59)
+		else:
+			current_hour = today.hour
+			current_minute = today.minute
+			random_hour = random.randint(current_hour, 23)
+
+			if random_hour == current_hour: random_minute = random.randint(current_minute + 1, 59)
+			else: random_minute = random.randint(0, 59)
+		time_variable = f"{random_hour}:{random_minute}:00"
+		hours, minutes, seconds = map(int, time_variable.split(':'))
+		specific_time = today.replace(hour=hours, minute=minutes, second=seconds, microsecond=0)
+
+		return specific_time
+	
 	def StartMailing(self):
 		
 		for User in self.__usermanager.users:
@@ -69,14 +90,11 @@ class Mailer:
 
 	def Planning(self):
 		for User in self.__usermanager.users:
-			exclusive_days = list()
 			User.set_property("Planning_days", None, force = False)
-			common_days = random.sample(list(range(7)), 5)
+			common_days = random.sample(list(range(7)), 7)
 			common_days.sort()
-			for i in range(6):
-				if i not in common_days: exclusive_days.append(i)
 			
-			exclusive_day = random.choice(exclusive_days)
+			exclusive_day = random.randint(0,6)
 			User.set_property("Planning_days", {"common_days": common_days, "exclusive_day": exclusive_day})
 
 	def Mailings(self, day_of_week, reader: Reader, scheduler: BackgroundScheduler, Bot: TeleBot, restart: bool = False):
@@ -84,49 +102,34 @@ class Mailer:
 		for User in self.__usermanager.users:
 
 			try: 
-				type_text = None
-				random_hour = 0
-				random_minute = 0 
-				text = None
-				main_text = "Послание Вселенной для тебя на сегодня:"
+				type_exclusive = False
+				common_text = None
+				exclusive_text = None
+				main_text = "Послание Вселенной для тебя:"
 				
 				days = User.get_property("Planning_days")
-				for i in days["common_days"]:
-					if day_of_week == i: type_text = "common"
-				if day_of_week == days["exclusive_day"]: type_text = "exclusive"
-				today = datetime.now()
-				if not restart:
-					random_hour = random.randint(6, 23)
-					random_minute = random.randint(0, 59)
-				else:
-					current_hour = today.hour
-					current_minute = today.minute
-					random_hour = random.randint(current_hour, 23)
+				
+				if day_of_week == days["exclusive_day"]: type_exclusive = True
+			
+				common_text = self.__ChoiceSentence(reader.Get_letters)
+				common_ready = f"<i>{main_text}</i>\n\n<b>- {common_text}</b>"
+				specific_time_common = self.__Generationrandomtime(restart = restart)
+				scheduler.add_job(self.send_message, 'date', run_date=specific_time_common, args=[User, Bot, common_ready, type_exclusive, day_of_week])
+				logging.info(f"Послания Вселенной будут отправлены {specific_time_common} пользователю {User.id} с сообщением {common_text}, {type_exclusive}")
 
-					if random_hour == current_hour: random_minute = random.randint(current_minute + 1, 59)
-					else: random_minute = random.randint(0, 59)
-
-				time_variable = f"{random_hour}:{random_minute}:00"
-				hours, minutes, seconds = map(int, time_variable.split(':'))
-				specific_time = today.replace(hour=hours, minute=minutes, second=seconds, microsecond=0)
-
-				if type_text == "common": 
-					text = self.__ChoiceSentence(reader.Get_letters)
-					common_text = f"<i>{main_text}</i>\n\n<b>- {text}</b>"
-					scheduler.add_job(self.send_message, 'date', run_date=specific_time, args=[User, Bot, common_text, type_text, day_of_week])
-					logging.info(f"Послания Вселенной будут отправлены {specific_time} пользователю {User.id} с сообщением {text}, {type_text}")
-
-				if type_text == "exclusive": 
-					text = self.__ChoiceSentence(reader.Get_appeals)
-					exclusive_text = f"<i>{main_text}</i>\n\n<b><i>- {text}</i></b>"
-					scheduler.add_job(self.send_message, 'date', run_date=specific_time, args=[User, Bot, exclusive_text, type_text, day_of_week])
-					logging.info(f"Послания Вселенной будут отправлены {specific_time} пользователю {User.id} с сообщением {text}, {type_text}")
+				if type_exclusive: 
+					sleep(1)
+					exclusive_text = self.__ChoiceSentence(reader.Get_appeals)
+					exclusive_ready = f"<i>{main_text}</i>\n\n<b><i>- {exclusive_text}</i></b>"
+					specific_time_exclusive = self.__Generationrandomtime(restart = restart)
+					scheduler.add_job(self.send_message, 'date', run_date=specific_time_exclusive, args=[User, Bot, exclusive_ready, type_exclusive, day_of_week])
+					logging.info(f"Послания Вселенной будут отправлены {specific_time_exclusive} пользователю {User.id} с сообщением {exclusive_text}, {type_exclusive}")
 
 			except Exception as ExceptionData: print(User.id, ExceptionData)
 
-	def send_message(self, User: UserData, Bot: TeleBot, text: str, type_text: str, day_of_week: int):
+	def send_message(self, User: UserData, Bot: TeleBot, text: str, type_exclusive: bool, day_of_week: int):
 
-		if type_text == "common":
+		if not type_exclusive:
 			Planning_days: dict = User.get_property("Planning_days")
 			Common_days: list = Planning_days["common_days"].copy()
 			Common_days.remove(day_of_week)
@@ -157,7 +160,7 @@ class Mailer:
 					User.set_chat_forbidden(True)
 				return
 		
-		if type_text == "exclusive":
+		if type_exclusive:
 			Planning_days: dict = User.get_property("Planning_days")
 			Planning_days["exclusive_day"] = ""
 			User.set_property("Planning_days", Planning_days)

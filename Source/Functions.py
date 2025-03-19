@@ -17,8 +17,9 @@ def IsSubscripted(MasterBot: TeleMaster, User: UserData, Settings: dict, InlineK
 		except:
 			Subscribtion_Message = None
 
+		Subscribtion_Link = Settings["subscription_link"]
+
 		if not IsSubscribed and not Subscribtion_Message: 
-			Subscribtion_Link = Settings["subscription_link"]
 			Message = MasterBot.bot.send_message(
 				chat_id = User.id, 
 				text = _("Чтобы использовать бот, станьте участником канала! %s") % Subscribtion_Link, 
@@ -26,7 +27,19 @@ def IsSubscripted(MasterBot: TeleMaster, User: UserData, Settings: dict, InlineK
 			User.set_property("Subscription", Message.id)
 			return IsSubscribed
 		
-		if not IsSubscribed and Subscribtion_Message: return
+		if not IsSubscribed and Subscribtion_Message: 
+			print(Subscribtion_Message)
+			try:
+				MasterBot.bot.delete_message(
+				chat_id = User.id, 
+				message_id = Subscribtion_Message
+			)
+			except: pass
+			Message = MasterBot.bot.send_message(
+				chat_id = User.id, 
+				text = _("Чтобы использовать бот, станьте участником канала! %s") % Subscribtion_Link, 
+				reply_markup = InlineKeyboard.Subscribtion())
+			User.set_property("Subscription", Message.id)
 
 		if IsSubscribed and Subscribtion_Message: 
 			try: 
