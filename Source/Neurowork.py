@@ -6,6 +6,7 @@ from Source.Functions import _
 import telebot
 import random
 import os
+import re
 import g4f.Provider
 from telebot import types
 from time import sleep
@@ -26,6 +27,16 @@ class Neurowork:
 	def __NameCard(self, collection: str, number: int):
 		return ReadJSON(f"Materials/Layouts/{collection}/cards.json")[number-2]
 	
+	def __IsTextValid(self, text: str) -> bool:
+		"""
+		Проверяет валидность текста на основе регулярного выражения, исключающего латиницу и иные не кирилические символы.
+			text – проверяемый текст.
+		"""
+
+		text = str(text)
+
+		return bool(re.match(r"^[А-Яа-яЁё\s.,:;!?()\-\–«»\"\'\[\]{}]+$", text, re.IGNORECASE))
+
 	def __init__(self, Bot: telebot.TeleBot, Cacher: TeleCache):
 		self.__bot = Bot   
 		self.__cacher = Cacher
@@ -92,10 +103,10 @@ class Neurowork:
 		Text_response = None
 		
 		texts = [
-			_("Ну что ж, давай погрузимся в тайны Таро и раскроем, что карты говорят о том...."),
+			_("Ну что ж, давай погрузимся в тайны Таро и раскроем, что карты говорят о том..."),
 			_("Ухх.. Хороший какой вопрос! Сейчас посмотрим, какой ответ тебе даст расклад на..."),
-			_("Спасибо, очень интересно! Сейчас разложим карты и узнаем какой совет они дадут тебе .."),
-			_("Ничего себе! Вот это я понимаю запрос к картам. Давай-ка сейчас и узнаем, что расклад скажет о ..."),
+			_("Спасибо, очень интересно! Сейчас разложим карты и узнаем какой совет они дадут тебе..."),
+			_("Ничего себе! Вот это я понимаю запрос к картам. Давай-ка сейчас и узнаем, что расклад скажет о..."),
 			_("Вот это ситуация! Довольно любопытный должен получится расклад на твой вопрос о...")
 		]
 		random_text = random.choice(texts)
@@ -105,7 +116,7 @@ class Neurowork:
 			Request = f"У тебя есть шаблон: {random_text} [question]."
 			Request += f"Тебе задали вопрос: {user_text}. Выведи шаблон учитывая, что спрашивающий имеет ввиду не тебя в вопросе, не добавляй восклицательный знак и двоеточие, а также не используй форматирование. Согласуй, учитывая правила русского языка."
 			Request += "Если вопрос похож на случайно введённый или не имеющий значения, или это один символ - выведи: Ваше сообщение не совсем понятно. Если у вас есть вопрос или тема, которую вы хотите обсудить, пожалуйста, напишите об этом. Я с радостью помогу вам!"
-			Response = self.__Client.chat.completions. create(model = "gpt-4", provider = g4f.Provider.DDG, messages = [{"role": "user", "content": Request}])
+			Response = self.__Client.chat.completions.create(model = "gpt-4o", messages = [{"role": "user", "content": Request}])
 			Text_response = Response.choices[0].message.content.strip().replace("\n", "\n\n")
 
 			if Text_response == "Ваше сообщение не совсем понятно. Если у вас есть вопрос или тема, которую вы хотите обсудить, пожалуйста, напишите об этом. Я с радостью помогу вам!":
@@ -113,6 +124,8 @@ class Neurowork:
 			else:
 				Result = True
 
+			# if not self.__IsTextValid(Text_response): Text_response = None
+				
 		return Text_response, Result
 	
 	def GenerationCardLayout(self, number: str, card: str, user_text: str) -> str:
@@ -120,7 +133,7 @@ class Neurowork:
 		Request = f"Проанализируй эти данные: {number}, {card} и {user_text} и предоставь ответ в следующем формате:"
 		Request += f"{number}, «{card}», может указывать на [помести сюда своё мнение о том, на что может указывать значение карты о заданном вопросе]."
 		Request += "Не более 250 символов в тексте. Не меняй первые два словосочетания!!!"
-		Response = self.__Client.chat.completions.create(model = "gpt-4", provider = g4f.Provider.DDG, messages = [{"role": "user", "content": Request}])
+		Response = self.__Client.chat.completions.create(model = "gpt-4o", messages = [{"role": "user", "content": Request}])
 		Text_response = Response.choices[0].message.content.strip().replace("\n", "\n\n").replace("«", "«<b>").replace("»", "</b>»")
 
 		return Text_response
@@ -129,9 +142,7 @@ class Neurowork:
 		Request = f"Проанализируй эти карты Таро: {First}, {Second} и {Three} и предоставь ответ в следующем формате на вопрос {user_text}:"
 		Request += f"В целом, карты показывают [помести сюда своё мнение о том, на что могут показывать указанные значения карт о заданном вопросе]."
 		Request += "Не более 250 символов в тексте. Не меняй первые два слова!!! Не упоминай названия карт!!!"
-		Response = self.__Client.chat.completions.create(model = "gpt-4", provider = g4f.Provider.DDG, messages = [{"role": "user", "content": Request}])
+		Response = self.__Client.chat.completions.create(model = "gpt-4o", messages = [{"role": "user", "content": Request}])
 		Text_response = Response.choices[0].message.content.strip().replace("\n", "\n\n")
 
 		return Text_response
-
-   

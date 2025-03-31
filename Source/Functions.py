@@ -28,7 +28,6 @@ def IsSubscripted(MasterBot: TeleMaster, User: UserData, Settings: dict, InlineK
 			return IsSubscribed
 		
 		if not IsSubscribed and Subscribtion_Message: 
-			print(Subscribtion_Message)
 			try:
 				MasterBot.bot.delete_message(
 				chat_id = User.id, 

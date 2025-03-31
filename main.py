@@ -19,7 +19,7 @@ import dateparser
 import os
 from telebot import types
 from apscheduler.schedulers.background import BackgroundScheduler
-
+from apscheduler.executors.pool import ThreadPoolExecutor
 from datetime import datetime
 from time import sleep
 
@@ -61,6 +61,12 @@ except Exception:
     pass
 
 scheduler = BackgroundScheduler()
+
+executors = {
+    'default': ThreadPoolExecutor(1)
+}
+scheduler.configure(executors = executors)
+
 scheduler.add_job(mailer.StartMailing, 'cron', hour = Settings["mailing_time"].split(":")[0], minute = Settings["mailing_time"].split(":")[1])
 scheduler.add_job(mailer.Planning, "cron", day_of_week = Settings["planning_day"], hour = Settings["planning_time"].split(":")[0], minute = Settings["planning_time"].split(":")[1])
 for i in range(7): scheduler.add_job(mailer.Mailings, "cron", day_of_week = i, hour = Settings["mailings"].split(":")[0], minute = Settings["mailings"].split(":")[1], args = [i, reader, scheduler, Bot])
@@ -85,7 +91,6 @@ def ProcessCommandStart(Message: types.Message):
         text = _("<b>Добро пожаловать в Таробот!</b>\n\nСамый большой бот для Таро-гаданий в Telegram!\n\nЗадай боту любой❓️вопрос и наслаждайся ответом!"),
         parse_mode = "HTML"
     )
-
     Message = Bot.send_animation(
         Message.chat.id,
         animation = StartImage,
@@ -93,13 +98,15 @@ def ProcessCommandStart(Message: types.Message):
         reply_markup = InlineKeyboard.SendMainMenu(),
         parse_mode = "HTML"
     )
-
     User.set_property("Current_place", None, force = False)
     User.set_property("Card_name", None, force = False)
     User.set_property("Question", None)
     User.set_property("Generation", False)
     User.set_property("Subscription", None, force = False)
     User.set_property("Planning_days", None, force = False)
+    User.clear_temp_properties()
+    if User.get_property("Planning_days") == None:
+        mailer.SavePlanning_days(User)
 
     if not IsSubscripted(MasterBot, User, Settings, InlineKeyboard): return    
     
@@ -124,11 +131,11 @@ def ProcessCommandCard(Message: types.Message):
                 try:
                     Photo, Text = Card.GetCard(datekey)
                     Message = Bot.send_photo(
-                                Message.chat.id,
-                                photo = open(f"{Photo}", "rb"),
-                                caption = Text, 
-                                parse_mode= 'HTML'
-                            )
+                        Message.chat.id,
+                        photo = open(f"{Photo}", "rb"),
+                        caption = Text, 
+                        parse_mode= 'HTML'
+                        )
                     Card.AddCard(Message.photo[0].file_id, datekey)
                 except: 
                     Bot.send_message(
@@ -195,7 +202,7 @@ def ProcessText(Message: types.Message):
                     reply_markup = InlineKeyboard.SendMainMenu(),
                     parse_mode = "HTML"
                     )
-        except: pass
+        except Exception as ExceptionData: print(ExceptionData)
 
         User.set_property("Generation", False)
 
