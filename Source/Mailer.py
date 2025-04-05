@@ -33,12 +33,12 @@ class Mailer:
 		random_minute = 0 
 		today = datetime.now()
 		if not restart:
-			random_hour = random.randint(6, 23)
+			random_hour = random.randint(8, 21)
 			random_minute = random.randint(0, 59)
 		else:
 			current_hour = today.hour
 			current_minute = today.minute
-			random_hour = random.randint(current_hour, 23)
+			random_hour = random.randint(current_hour, 21)
 
 			if random_hour == current_hour: random_minute = random.randint(current_minute + 1, 59)
 			else: random_minute = random.randint(0, 59)

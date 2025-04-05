@@ -18,6 +18,14 @@ class Neurowork:
 	def __GenerationPhotos(self) -> int:
 		return random.randint(1,40)
 	
+	def __match_rus(self, character, alphabet=set('абвгдеёжзийклмнопрстуфхцчшщъыьэюя')):
+		
+		return character.lower() in alphabet
+	
+	# Удаляем всё, что находится в тегах html
+	def __remove_html_tags(self, text):
+		return re.sub(r'<[^>]+>', '', text)
+	
 	def __GetNumber(self, card: str):
 		return card.replace(".jpg", "").strip()
 
@@ -27,15 +35,19 @@ class Neurowork:
 	def __NameCard(self, collection: str, number: int):
 		return ReadJSON(f"Materials/Layouts/{collection}/cards.json")[number-2]
 	
-	def __IsTextValid(self, text: str) -> bool:
-		"""
-		Проверяет валидность текста на основе регулярного выражения, исключающего латиницу и иные не кирилические символы.
-			text – проверяемый текст.
-		"""
+	def __IsTextRussian(self, text):
+		fix_text = self.__remove_html_tags(text) 
+		IsRussian = True 
+		if not fix_text:
+			IsRussian = False
+		else:
+			for Character in fix_text:
+				if Character.isalpha() and not self.__match_rus(Character):
+					print(Character)
+					IsRussian = False
+					break
 
-		text = str(text)
-
-		return bool(re.match(r"^[А-Яа-яЁё\s.,:;!?()\-\–«»\"\'\[\]{}]+$", text, re.IGNORECASE))
+		return IsRussian
 
 	def __init__(self, Bot: telebot.TeleBot, Cacher: TeleCache):
 		self.__bot = Bot   
@@ -101,6 +113,7 @@ class Neurowork:
 	def PreparationText(self, user_text) -> tuple[str, bool]:
 
 		Text_response = None
+		Count_tries = 0
 		
 		texts = [
 			_("Ну что ж, давай погрузимся в тайны Таро и раскроем, что карты говорят о том..."),
@@ -113,36 +126,55 @@ class Neurowork:
 
 		while Text_response is None:
 			Result = False
+			Count_tries += 1
+
+			if Count_tries > 10: 
+				Text_response = "Ваше сообщение не совсем понятно. Если у вас есть вопрос или тема, которую вы хотите обсудить, пожалуйста, напишите об этом. Я с радостью помогу вам!"
+				Result = False
+				break
+			
 			Request = f"У тебя есть шаблон: {random_text} [question]."
 			Request += f"Тебе задали вопрос: {user_text}. Выведи шаблон учитывая, что спрашивающий имеет ввиду не тебя в вопросе, не добавляй восклицательный знак и двоеточие, а также не используй форматирование. Согласуй, учитывая правила русского языка."
-			Request += "Если вопрос похож на случайно введённый или не имеющий значения, или это один символ - выведи: Ваше сообщение не совсем понятно. Если у вас есть вопрос или тема, которую вы хотите обсудить, пожалуйста, напишите об этом. Я с радостью помогу вам!"
+			Request += "Если вопрос похож на случайно введённый или не имеющий значения, или это один символ - выведи следующую строку: \"Ваше сообщение не понятно.\" не добавляя ничего другого."
 			Response = self.__Client.chat.completions.create(model = "gpt-4o", messages = [{"role": "user", "content": Request}])
 			Text_response = Response.choices[0].message.content.strip().replace("\n", "\n\n")
 
-			if Text_response == "Ваше сообщение не совсем понятно. Если у вас есть вопрос или тема, которую вы хотите обсудить, пожалуйста, напишите об этом. Я с радостью помогу вам!":
+			if Text_response == "Ваше сообщение не понятно.":
+				Text_response = "Ваше сообщение не совсем понятно. Если у вас есть вопрос или тема, которую вы хотите обсудить, пожалуйста, напишите об этом. Я с радостью помогу вам!"
 				Result = False
 			else:
 				Result = True
 
-			# if not self.__IsTextValid(Text_response): Text_response = None
+			if not self.__IsTextRussian(Text_response): Text_response = None
 				
 		return Text_response, Result
 	
 	def GenerationCardLayout(self, number: str, card: str, user_text: str) -> str:
 
-		Request = f"Проанализируй эти данные: {number}, {card} и {user_text} и предоставь ответ в следующем формате:"
-		Request += f"{number}, «{card}», может указывать на [помести сюда своё мнение о том, на что может указывать значение карты о заданном вопросе]."
-		Request += "Не более 250 символов в тексте. Не меняй первые два словосочетания!!!"
-		Response = self.__Client.chat.completions.create(model = "gpt-4o", messages = [{"role": "user", "content": Request}])
-		Text_response = Response.choices[0].message.content.strip().replace("\n", "\n\n").replace("«", "«<b>").replace("»", "</b>»")
+		Text_response = None
+
+		while Text_response is None:
+			Request = f"Проанализируй эти данные: {number}, {card} и {user_text} и предоставь ответ в следующем формате:"
+			Request += f"{number}, «{card}», может указывать на [помести сюда своё мнение о том, на что может указывать значение карты о заданном вопросе]."
+			Request += "Не более 250 символов в тексте. Не меняй первые два словосочетания!!!"
+			Response = self.__Client.chat.completions.create(model = "gpt-4o", messages = [{"role": "user", "content": Request}])
+			Text_response = Response.choices[0].message.content.strip().replace("\n", "\n\n").replace("«", "«<b>").replace("»", "</b>»")
+
+			if not self.__IsTextRussian(Text_response): Text_response = None
 
 		return Text_response
 	
 	def GenerationOutcome(self, First: str, Second: str, Three: str, user_text: str):
-		Request = f"Проанализируй эти карты Таро: {First}, {Second} и {Three} и предоставь ответ в следующем формате на вопрос {user_text}:"
-		Request += f"В целом, карты показывают [помести сюда своё мнение о том, на что могут показывать указанные значения карт о заданном вопросе]."
-		Request += "Не более 250 символов в тексте. Не меняй первые два слова!!! Не упоминай названия карт!!!"
-		Response = self.__Client.chat.completions.create(model = "gpt-4o", messages = [{"role": "user", "content": Request}])
-		Text_response = Response.choices[0].message.content.strip().replace("\n", "\n\n")
+
+		Text_response = None
+
+		while Text_response is None:
+			Request = f"Проанализируй эти карты Таро: {First}, {Second} и {Three} и предоставь ответ в следующем формате на вопрос {user_text}:"
+			Request += f"В целом, карты показывают [помести сюда своё мнение о том, на что могут показывать указанные значения карт о заданном вопросе]."
+			Request += "Не более 250 символов в тексте. Не меняй первые два слова!!! Не упоминай названия карт!!!"
+			Response = self.__Client.chat.completions.create(model = "gpt-4o", messages = [{"role": "user", "content": Request}])
+			Text_response = Response.choices[0].message.content.strip().replace("\n", "\n\n")
+
+			if not self.__IsTextRussian(Text_response): Text_response = None
 
 		return Text_response

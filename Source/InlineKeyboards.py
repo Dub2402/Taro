@@ -63,7 +63,7 @@ class InlineKeyboards:
 		YesNo = types.InlineKeyboardButton(_("Да/Нет"), callback_data = "Yes_No")
 		ValueCard = types.InlineKeyboardButton(_("Значение карт"), callback_data = "Value_Card")
 		OrderLayout = types.InlineKeyboardButton(_("Расклад от Мастера ♨️"), callback_data = "Order_Layout")
-		Online_layout = types.InlineKeyboardButton(_("Онлайн расклад"), callback_data = "Online_Layout")
+		Online_layout = types.InlineKeyboardButton(_("Онлайн расклад 💫"), callback_data = "Online_Layout")
 		All_Taro = types.InlineKeyboardButton(_("Всё о Таро"), callback_data = "All_Taro")
 	
 		# Добавление кнопок в меню.
@@ -294,13 +294,13 @@ class InlineKeyboards:
 		# Кнопочное меню.
 		Menu = types.InlineKeyboardMarkup()
 
-		EightPentacles = types.InlineKeyboardButton(_("8. Восьмерка жезлов"), callback_data = "Pentacles_8")
-		NinePentacles = types.InlineKeyboardButton(_("9. Девятка жезлов"), callback_data = "Pentacles_9")
-		TenPentacles = types.InlineKeyboardButton(_("10. Десятка жезлов"), callback_data = "Pentacles_10")
-		PagePentacles = types.InlineKeyboardButton(_("11. Паж жезлов"), callback_data = "Pentacles_11")
-		KnightPentacles = types.InlineKeyboardButton(_("12. Рыцарь жезлов"), callback_data = "Pentacles_12")
-		QueenPentacles = types.InlineKeyboardButton(_("13. Королева жезлов"), callback_data = "Pentacles_13")
-		KingPentacles = types.InlineKeyboardButton(_("14. Король жезлов"), callback_data = "Pentacles_14")
+		EightPentacles = types.InlineKeyboardButton(_("8. Восьмерка пентаклей"), callback_data = "Pentacles_8")
+		NinePentacles = types.InlineKeyboardButton(_("9. Девятка пентаклей"), callback_data = "Pentacles_9")
+		TenPentacles = types.InlineKeyboardButton(_("10. Десятка пентаклей"), callback_data = "Pentacles_10")
+		PagePentacles = types.InlineKeyboardButton(_("11. Паж пентаклей"), callback_data = "Pentacles_11")
+		KnightPentacles = types.InlineKeyboardButton(_("12. Рыцарь пентаклей"), callback_data = "Pentacles_12")
+		QueenPentacles = types.InlineKeyboardButton(_("13. Королева пентаклей"), callback_data = "Pentacles_13")
+		KingPentacles = types.InlineKeyboardButton(_("14. Король пентаклей"), callback_data = "Pentacles_14")
 		Back = types.InlineKeyboardButton(_("◀️ Назад"), callback_data = "Back_SendFirstPentacles")
 		BackTypeCard = types.InlineKeyboardButton(_("⏪️ К мастям"), callback_data = "Back_SendTypeCard")
 

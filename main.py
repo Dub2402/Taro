@@ -68,8 +68,8 @@ executors = {
 scheduler.configure(executors = executors)
 
 scheduler.add_job(mailer.StartMailing, 'cron', hour = Settings["mailing_time"].split(":")[0], minute = Settings["mailing_time"].split(":")[1])
-scheduler.add_job(mailer.Planning, "cron", day_of_week = Settings["planning_day"], hour = Settings["planning_time"].split(":")[0], minute = Settings["planning_time"].split(":")[1])
-for i in range(7): scheduler.add_job(mailer.Mailings, "cron", day_of_week = i, hour = Settings["mailings"].split(":")[0], minute = Settings["mailings"].split(":")[1], args = [i, reader, scheduler, Bot])
+# scheduler.add_job(mailer.Planning, "cron", day_of_week = Settings["planning_day"], hour = Settings["planning_time"].split(":")[0], minute = Settings["planning_time"].split(":")[1])
+# for i in range(7): scheduler.add_job(mailer.Mailings, "cron", day_of_week = i, hour = Settings["mailings"].split(":")[0], minute = Settings["mailings"].split(":")[1], args = [i, reader, scheduler, Bot])
 scheduler.start()
 
 now = datetime.now()
@@ -78,8 +78,8 @@ current_hour = now.hour
 current_minute = now.minute
 day_of_week = now.weekday()
 
-if Settings["restart_mailings"]: mailer.Mailings(day_of_week, reader, scheduler, Bot, True)
-if Settings["once_mailing"]: mailer.once_mailing(Bot)
+# if Settings["restart_mailings"]: mailer.Mailings(day_of_week, reader, scheduler, Bot, True)
+# if Settings["once_mailing"]: mailer.once_mailing(Bot)
 
 AdminPanel.decorators.commands(Bot, usermanager, Settings["password"])
 
