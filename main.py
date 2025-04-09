@@ -10,7 +10,7 @@ from Source.InlineKeyboards import InlineKeyboards
 from Source.Cards import Cards
 from Source.Neurowork import Neurowork
 from Source.Mailer import Mailer
-from Source.Functions import IsSubscripted
+from Source.Functions import IsSubscripted, CashingFiles
 from Source.Reader import Reader
 
 import os
@@ -48,18 +48,6 @@ logging.basicConfig(level=logging.INFO, encoding="utf-8", filename="LOGING.log",
 logging.getLogger("pyTelegramBotAPI").setLevel(logging.WARNING)
 logging.getLogger("requests").setLevel(logging.WARNING)
 
-Clear()
-
-# Получение структуры данных кэшированного файла.
-try:
-    File = Cacher.get_cached_file(Settings["qr_id"], type = types.InputMediaPhoto)
-    File = Cacher.get_cached_file(Settings["start_id"], type = types.InputMediaAnimation)
-    # Получение ID кэшированного файла.
-    QrImage = Cacher[Settings["qr_id"]]
-    StartImage = Cacher[Settings["start_id"]]
-except Exception:
-    pass
-
 scheduler = BackgroundScheduler()
 
 executors = {
@@ -81,6 +69,10 @@ day_of_week = now.weekday()
 # if Settings["restart_mailings"]: mailer.Mailings(day_of_week, reader, scheduler, Bot, True)
 # if Settings["once_mailing"]: mailer.once_mailing(Bot)
 
+Clear()
+
+StartAnimation = CashingFiles(Cacher, Settings["start_id"], types.InputMediaAnimation)
+
 AdminPanel.decorators.commands(Bot, usermanager, Settings["password"])
 
 @Bot.message_handler(commands=["start"])
@@ -93,7 +85,7 @@ def ProcessCommandStart(Message: types.Message):
     )
     Message = Bot.send_animation(
         Message.chat.id,
-        animation = StartImage,
+        animation = StartAnimation.file_id,
         caption = None,
         reply_markup = InlineKeyboard.SendMainMenu(),
         parse_mode = "HTML"
@@ -163,6 +155,7 @@ def ProcessShareWithFriends(Message: types.Message):
     User = usermanager.auth(Message.from_user)
     if not IsSubscripted(MasterBot, User, Settings, InlineKeyboard): return
     try:
+        QrImage = CashingFiles(Cacher, Settings["qr_id"], types.InputMediaPhoto)
         Bot.send_photo(
             Message.chat.id, 
             photo = QrImage,
@@ -193,11 +186,12 @@ def ProcessText(Message: types.Message):
         try:
             Bot.send_chat_action(Message.chat.id, action = "typing")
             Completed = neurowork.AnswerForUser(Message.chat.id, User.get_property("Question"), User)
+
             if Completed:
                 User.set_property("Generation", False)
                 Message = Bot.send_animation(
                     Message.chat.id,
-                    animation = StartImage,
+                    animation = StartAnimation.file_id,
                     caption = None,
                     reply_markup = InlineKeyboard.SendMainMenu(),
                     parse_mode = "HTML"
@@ -218,7 +212,7 @@ def ProcessText(Message: types.Message):
                 User.set_property("Generation", False)
                 Message = Bot.send_animation(
                     Message.chat.id,
-                    animation= StartImage,
+                    animation= StartAnimation.file_id,
                     caption = None,
                     reply_markup = InlineKeyboard.SendMainMenu(),
                     parse_mode = "HTML"
@@ -348,17 +342,11 @@ def InlineButtonCardDay(Call: types.CallbackQuery):
         values = reader.Get_ReversedValues
     
     card, value = Card.Get_Text(image, cards, values)
-    try:
-        File = Cacher.get_cached_file(image, type = types.InputMediaPhoto)
-        # Получение ID кэшированного файла.
-        PhotoID = Cacher[image]
-    except Exception:
-        pass
-
+    PhotoID = CashingFiles(Cacher, image, types.InputMediaPhoto)
     sleep(1)
     Bot.send_photo(
         Call.message.chat.id, 
-        photo = PhotoID,
+        photo = PhotoID.file_id,
         caption = f"<b>{card}</b>\n\nВаш ответ: <b>{value}</b>",
         reply_markup = InlineKeyboard.for_delete("Благодарю!"),
         parse_mode = "HTML")
@@ -466,7 +454,7 @@ def InlineButtonBack(Call: types.CallbackQuery):
         )
         Current_place = User.get_property("Current_place").split("_")[0]
         Bot.send_animation(
-            animation = StartImage,
+            animation = StartAnimation.file_id,
             caption = _("ЗНАЧЕНИЕ КАРТ"),
             chat_id = Call.message.chat.id,
             reply_markup = InlineKeyboard.ChoiceFunction(f"SendFirst{Current_place}"),

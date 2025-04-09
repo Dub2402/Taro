@@ -1,10 +1,11 @@
 from dublib.TelebotUtils import UserData
 from dublib.TelebotUtils import TeleMaster
+from dublib.TelebotUtils.Cache import TeleCache
 from dublib.Engine.GetText import _
 
 from Source.InlineKeyboards import InlineKeyboards
 
-import random
+from telebot import types
 
 def IsSubscripted(MasterBot: TeleMaster, User: UserData, Settings: dict, InlineKeyboard: InlineKeyboards):
 	if Settings["subscription_chanel"] == None:
@@ -50,3 +51,8 @@ def IsSubscripted(MasterBot: TeleMaster, User: UserData, Settings: dict, InlineK
 		if IsSubscribed and not Subscribtion_Message: 
 			return IsSubscribed
 		
+def CashingFiles(Cacher: TeleCache, path: str, type: types):
+	try:
+		File = Cacher.get_real_cached_file(path, type)
+		return File
+	except Exception as E: print(E)

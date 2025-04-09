@@ -1,7 +1,7 @@
 from dublib.TelebotUtils.Cache import TeleCache
 from dublib.Methods.Filesystem import ReadJSON
 
-from Source.Functions import _
+from Source.Functions import _, CashingFiles
 
 import telebot
 import random
@@ -51,7 +51,7 @@ class Neurowork:
 
 	def __init__(self, Bot: telebot.TeleBot, Cacher: TeleCache):
 		self.__bot = Bot   
-		self.__cacher = Cacher
+		self.__Cacher = Cacher
 		self.__Client = Client()
 
 	def AnswerForUser(self, chat_id: int, user_text: str, User):
@@ -68,14 +68,13 @@ class Neurowork:
 				for card in Files:
 					self.__bot.send_chat_action(chat_id, action = "typing")
 					NumberCard = self.__GetNumber(card)
-					File = self.__cacher.get_cached_file(f"Materials/Layouts/{collection}/{card}", type = types.InputMediaPhoto)
-					PhotoID = self.__cacher[f"Materials/Layouts/{collection}/{card}"]
+					PhotoID = CashingFiles(self.__Cacher, f"Materials/Layouts/{collection}/{card}", types.InputMediaPhoto)
 					if NumberCard == "1":
 						Text_response, Result = self.PreparationText(user_text)
 						if Result:
 							self.__bot.send_photo(
 								chat_id = chat_id,
-								photo = PhotoID,
+								photo = PhotoID.file_id,
 								caption = Text_response,
 									parse_mode = "HTML" 
 							)
@@ -93,7 +92,7 @@ class Neurowork:
 							Text = self.GenerationCardLayout(CardNumber, CardName, user_text)
 							self.__bot.send_photo(
 								chat_id = chat_id,
-								photo = PhotoID,
+								photo = PhotoID.file_id,
 								caption = Text,
 								parse_mode = "HTML" 
 							)
@@ -128,25 +127,24 @@ class Neurowork:
 			Result = False
 			Count_tries += 1
 
-			if Count_tries > 10: 
+			if Count_tries > 5: 
 				Text_response = "Ваше сообщение не совсем понятно. Если у вас есть вопрос или тема, которую вы хотите обсудить, пожалуйста, напишите об этом. Я с радостью помогу вам!"
 				Result = False
 				break
 			
 			Request = f"У тебя есть шаблон: {random_text} [question]."
 			Request += f"Тебе задали вопрос: {user_text}. Выведи шаблон учитывая, что спрашивающий имеет ввиду не тебя в вопросе, не добавляй восклицательный знак и двоеточие, а также не используй форматирование. Согласуй, учитывая правила русского языка."
-			Request += "Если вопрос похож на случайно введённый или не имеющий значения, или это один символ - выведи следующую строку: \"Ваше сообщение не понятно.\" не добавляя ничего другого."
+			Request += "Если вопрос является бессмысленным набором символов - выведи следующую строку: \"Ваше сообщение не понятно.\" не добавляя ничего другого."
 			Response = self.__Client.chat.completions.create(model = "gpt-4o", messages = [{"role": "user", "content": Request}])
 			Text_response = Response.choices[0].message.content.strip().replace("\n", "\n\n")
-
+			
 			if Text_response == "Ваше сообщение не понятно.":
-				Text_response = "Ваше сообщение не совсем понятно. Если у вас есть вопрос или тема, которую вы хотите обсудить, пожалуйста, напишите об этом. Я с радостью помогу вам!"
-				Result = False
+				Text_response = None
 			else:
 				Result = True
+			
+		if not self.__IsTextRussian(Text_response): Text_response = None
 
-			if not self.__IsTextRussian(Text_response): Text_response = None
-				
 		return Text_response, Result
 	
 	def GenerationCardLayout(self, number: str, card: str, user_text: str) -> str:
