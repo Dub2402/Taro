@@ -96,7 +96,6 @@ class Neurowork:
 								caption = Text,
 								parse_mode = "HTML" 
 							)
-					sleep(1)
 				if Result:
 					self.__bot.send_chat_action(chat_id, action = "typing")
 					Text = self.GenerationOutcome(self.__NameCard(collection, 2), self.__NameCard(collection, 3), self.__NameCard(collection, 4), user_text)
@@ -110,43 +109,50 @@ class Neurowork:
 		return Completed
 		
 	def PreparationText(self, user_text) -> tuple[str, bool]:
-
 		Text_response = None
 		Count_tries = 0
-		
+
 		texts = [
-			_("Ну что ж, давай погрузимся в тайны Таро и раскроем, что карты говорят о том..."),
-			_("Ухх.. Хороший какой вопрос! Сейчас посмотрим, какой ответ тебе даст расклад на..."),
-			_("Спасибо, очень интересно! Сейчас разложим карты и узнаем какой совет они дадут тебе..."),
-			_("Ничего себе! Вот это я понимаю запрос к картам. Давай-ка сейчас и узнаем, что расклад скажет о..."),
-			_("Вот это ситуация! Довольно любопытный должен получится расклад на твой вопрос о...")
+			_("Ну что ж, давай погрузимся в тайны Таро..."),
+			_("Ухх.. Хороший какой вопрос! Сейчас посмотрим..."),
+			_("Спасибо, очень интересно! Сейчас разложим карты..."),
+			_("Ничего себе! Вот это я понимаю запрос к картам..."),
+			_("Вот это ситуация! Довольно любопытный расклад...")
 		]
 		random_text = random.choice(texts)
 
-		while Text_response is None:
+		while Text_response is None and Count_tries < 3:
 			Result = False
 			Count_tries += 1
+			print(Count_tries)
 
-			if Count_tries > 5: 
-				Text_response = "Ваше сообщение не совсем понятно. Если у вас есть вопрос или тема, которую вы хотите обсудить, пожалуйста, напишите об этом. Я с радостью помогу вам!"
-				Result = False
-				break
-			
-			Request = f"У тебя есть шаблон: {random_text} [question]."
-			Request += f"Тебе задали вопрос: {user_text}. Выведи шаблон учитывая, что спрашивающий имеет ввиду не тебя в вопросе, не добавляй восклицательный знак и двоеточие, а также не используй форматирование. Согласуй, учитывая правила русского языка."
-			Request += "Если вопрос является бессмысленным набором символов - выведи следующую строку: \"Ваше сообщение не понятно.\" не добавляя ничего другого."
-			Response = self.__Client.chat.completions.create(model = "gpt-4o", messages = [{"role": "user", "content": Request}])
+			Request = "\n".join([
+				f"У тебя есть шаблон: {random_text} [question].", 
+				f"Тебе задали вопрос: {user_text}. Выведи шаблон учитывая, что спрашивающий имеет ввиду не тебя в вопросе, не добавляй восклицательный знак и двоеточие, а также не используй форматирование. Согласуй, учитывая правила русского языка.",
+				"Если вопрос является бессмысленным набором символов - выведи следующую строку: \"Ваше сообщение не понятно.\" не добавляя ничего другого."])
+
+			Response = self.__Client.chat.completions.create(
+				model="gpt-4o", 
+				messages=[{"role": "user", "content": Request}]
+			)
+
 			Text_response = Response.choices[0].message.content.strip().replace("\n", "\n\n")
-			
+
 			if Text_response == "Ваше сообщение не понятно.":
-				Text_response = None
+				if Count_tries < 3:  
+					continue
+				else:  
+					Text_response = "Ваше сообщение не совсем понятно. Если у вас есть вопрос или тема, которую вы хотите обсудить, пожалуйста, напишите об этом. Я с радостью помогу вам!"
+					Result = False
+					break  
 			else:
 				Result = True
-			
-		if not self.__IsTextRussian(Text_response): Text_response = None
+
+				if Text_response and not self.__IsTextRussian(Text_response): Text_response = None
+				else: break
 
 		return Text_response, Result
-	
+
 	def GenerationCardLayout(self, number: str, card: str, user_text: str) -> str:
 
 		Text_response = None

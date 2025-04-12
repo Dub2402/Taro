@@ -144,6 +144,41 @@ def ProcessCommandCard(Message: types.Message):
         Message.chat.id,
         text = _("Команда введена неправильно. Формат команды: /card 21.01.2025"))
 
+
+@Bot.message_handler(commands=["Neuro"])
+def ProcessCommandCache(Message: types.Message):
+    User = usermanager.auth(Message.from_user)
+    # Добавление в кэш комплектов таро.
+    listdir = list()
+    for filedir in os.listdir("Materials/Layouts"):
+        listdir.append(filedir)
+
+    for filedir in listdir:
+        for i in range(1,5):
+            filename = (f"Materials/Layouts/{filedir}/{i}.jpg")
+            if filename.endswith(".jpg"):
+                Cacher.cache_real_file(filename, types.InputMediaPhoto)
+    Bot.send_message("Кэширование файлов для нейросети закончено.")
+
+@Bot.message_handler(commands=["Neuro"])
+def ProcessCommandCache(Message: types.Message):
+    User = usermanager.auth(Message.from_user)
+    listdir = list()
+    for filedirs1 in os.listdir("Materials/Values"):
+        listdir.append(filedirs1)
+
+    listdir1 = list()
+    for filedir in listdir:
+        for filedir2 in os.listdir(f"Materials/Values/{filedir}"):
+            listdir1.append(f"Materials/Values/{filedir}/{filedir2}")
+
+    for dir in listdir1:
+        filename = dir + "/image.jpg"
+        if filename.endswith(".jpg"):
+            Cacher.cache_real_file(filename, types.InputMediaPhoto)
+    Bot.send_message("Кэширование файлов значений карт закончено.")
+
+
 @Bot.message_handler(commands = ["mailset"])
 def ProcessCommandMailset(Message: types.Message):
     User = usermanager.auth(Message.from_user)
@@ -158,7 +193,7 @@ def ProcessShareWithFriends(Message: types.Message):
         QrImage = CashingFiles(Cacher, Settings["qr_id"], types.InputMediaPhoto)
         Bot.send_photo(
             Message.chat.id, 
-            photo = QrImage,
+            photo = QrImage.file_id,
             caption = _('@Taro100_bot\n@Taro100_bot\n@Taro100_bot\n\n<b>Таробот | Расклад онлайн | Карта дня</b>\nБот, который ответит на все твои вопросы ❓❓❓\n\n<b><i>Пользуйся и делись с друзьями!</i></b>'), 
             reply_markup = InlineKeyboard.AddShare(), 
             parse_mode = "HTML"
