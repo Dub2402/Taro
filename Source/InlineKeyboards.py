@@ -2,6 +2,7 @@ from telebot import types
 
 from dublib.Engine.GetText import _
 from dublib.Polyglot import HTML
+
 class InlineKeyboards:
 
 	def ChoiceFunction(self, Target: str):
@@ -63,11 +64,15 @@ class InlineKeyboards:
 		YesNo = types.InlineKeyboardButton(_("Да/Нет"), callback_data = "Yes_No")
 		ValueCard = types.InlineKeyboardButton(_("Значение карт"), callback_data = "Value_Card")
 		OrderLayout = types.InlineKeyboardButton(_("Расклад от Мастера ♨️"), callback_data = "Order_Layout")
+		ThinkCard = types.InlineKeyboardButton(_("Загадай карту"), callback_data = "ThinkCard")
 		Online_layout = types.InlineKeyboardButton(_("Онлайн расклад 💫"), callback_data = "Online_Layout")
 		All_Taro = types.InlineKeyboardButton(_("Всё о Таро"), callback_data = "All_Taro")
 	
 		# Добавление кнопок в меню.
-		Menu.add(CardDay, YesNo, All_Taro, ValueCard, row_width = 2) 
+		Menu.add(CardDay, YesNo,  row_width = 2) 
+		Menu.add(ThinkCard, row_width = 1) 
+		Menu.add(All_Taro, ValueCard,  row_width = 2) 
+
 		Menu.add(Online_layout, OrderLayout, row_width = 1) 
 
 		return Menu
@@ -87,6 +92,30 @@ class InlineKeyboards:
 
 		return Menu
 
+	def SendThinkCard(self) -> types.InlineKeyboardMarkup:
+		# Кнопочное меню.
+		Menu = types.InlineKeyboardMarkup()
+
+		# Создаём кнопки через генератор списка
+		buttons = [
+			types.InlineKeyboardButton(text=_(f"{i} карта"), callback_data=f"ThinkCard_{i}")
+			for i in range(1, 5)
+		]
+
+		# Добавляем кнопки с учётом row_width
+		Menu.add(*buttons, row_width=2)
+
+		return Menu
+	
+	def delete_before_mm(self) -> types.InlineKeyboardMarkup:
+		Menu = types.InlineKeyboardMarkup()
+
+		For_delete = types.InlineKeyboardButton(text = _("Благодарю!"), callback_data = "delete_before_mm")
+	
+		Menu.add(For_delete, row_width= 1) 
+
+		return Menu
+	
 	def Subscribtion(self) -> types.InlineKeyboardMarkup:
 		# Кнопочное меню.
 		Menu = types.InlineKeyboardMarkup()

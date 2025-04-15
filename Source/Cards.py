@@ -22,7 +22,6 @@ class Cards():
         self.__InlineKeyboard = InlineKeyboard
         self.__Cacher = Cacher
 
-
     def FindPhoto(self, datekey: str= "today") -> str:
         for photo in os.listdir("Materials/Photo"):
             namephoto = photo.replace(".jpg", "")

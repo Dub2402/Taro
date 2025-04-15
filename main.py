@@ -10,7 +10,7 @@ from Source.InlineKeyboards import InlineKeyboards
 from Source.Cards import Cards
 from Source.Neurowork import Neurowork
 from Source.Mailer import Mailer
-from Source.Functions import IsSubscripted, CashingFiles
+from Source.Functions import IsSubscripted, CashingFiles, FindNearest, ChoiceMessage, CacherSending, UpdateThinkCardData, UpdateThinkCardData2, GetNumberCard
 from Source.Reader import Reader
 
 import os
@@ -144,7 +144,6 @@ def ProcessCommandCard(Message: types.Message):
         Message.chat.id,
         text = _("Команда введена неправильно. Формат команды: /card 21.01.2025"))
 
-
 @Bot.message_handler(commands=["Neuro"])
 def ProcessCommandCache(Message: types.Message):
     User = usermanager.auth(Message.from_user)
@@ -177,7 +176,6 @@ def ProcessCommandCache(Message: types.Message):
         if filename.endswith(".jpg"):
             Cacher.cache_real_file(filename, types.InputMediaPhoto)
     Bot.send_message("Кэширование файлов значений карт закончено.")
-
 
 @Bot.message_handler(commands = ["mailset"])
 def ProcessCommandMailset(Message: types.Message):
@@ -284,6 +282,22 @@ def InlineButtonAccept(Call: types.CallbackQuery):
         )
     except: pass
     Bot.answer_callback_query(Call.id)
+
+@Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("delete_before_mm"))
+def InlineButtonAccept(Call: types.CallbackQuery):
+	User = usermanager.auth(Call.from_user)
+	ThinkCardData = User.get_property("ThinkCard")
+	for ID in ThinkCardData["messages"]:
+		try:
+			Bot.delete_message(
+				Call.message.chat.id,
+				ID
+				)
+		except: pass
+	ThinkCardData["messages"] = []
+	User.set_property("ThinkCard", ThinkCardData)
+
+	Bot.answer_callback_query(Call.id)
 
 @Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("notifications"))
 def InlineButton(Call: types.CallbackQuery):
@@ -752,6 +766,40 @@ def InlineButtonRemoveReminder(Call: types.CallbackQuery):
         User.set_expected_type("Question")
     
     Bot.answer_callback_query(Call.id)
+
+@Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("ThinkCard"))
+def InlineButtonRemoveReminder(Call: types.CallbackQuery):
+	User = usermanager.auth(Call.from_user)
+	if not IsSubscripted(MasterBot, User, Settings, InlineKeyboard):
+		Bot.answer_callback_query(Call.id)
+		return
+	
+	User.set_property("ThinkCard", {"day": None, "messages": [], "number": None}, force = False)
+	today_date = datetime.now().strftime("%d.%m.%Y")
+	path = f"Materials/ChoiceCard/{today_date}"
+	day_of_week = datetime.now().weekday()
+	
+	if not os.path.exists(path):
+		today_date = FindNearest(today_date)
+		path = f"Materials/ChoiceCard/{today_date}"
+
+	if "_" not in Call.data:
+		number_card = GetNumberCard(User, Call, write = False)
+		
+		if number_card == None: 
+			Think_message = CacherSending(Cacher, Bot, path, User, 0, inline=InlineKeyboard.SendThinkCard())
+			UpdateThinkCardData(User, Think_message)
+		else: 
+			Think_message2 = CacherSending(Cacher, Bot, path, User, number_card, "\n<b><i>С любовью, @taro100_bot!</i></b>")
+			Think_message3 = ChoiceMessage(day_of_week, Bot, Call, InlineKeyboard)
+			UpdateThinkCardData2(User, Think_message2, Think_message3, number_card, today_date)
+	else:
+		number_card = GetNumberCard(User, Call)
+		Think_message2 = CacherSending(Cacher, Bot, path, User, number_card, "\n<b><i>С любовью, @taro100_bot!</i></b>")
+		Think_message3 = ChoiceMessage(day_of_week, Bot, Call, InlineKeyboard)
+		UpdateThinkCardData2(User, Think_message2, Think_message3, number_card, today_date)
+
+	Bot.answer_callback_query(Call.id)
 
 @Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("All_Taro"))
 def InlineButtonAllTaro(Call: types.CallbackQuery):

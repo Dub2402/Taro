@@ -1,7 +1,6 @@
 .venv
 .git
 __pycache__
-LOGING.log
 
 Materials
 Data
@@ -10,3 +9,4 @@ Start.mp4
 
 Instant.json
 .telecache.json
+LOGING.log

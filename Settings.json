@@ -14,5 +14,9 @@
     "planning_time": "0:0",
     "mailings": "05:50",
     "restart_mailings": true, 
-    "once_mailing": false
+    "once_mailing": false,
+    "update_thinkcards": {
+        "days": "mon, wed, fri",
+        "time": "00:00"
+    }
 }
