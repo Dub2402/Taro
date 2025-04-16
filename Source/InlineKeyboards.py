@@ -58,7 +58,7 @@ class InlineKeyboards:
 	def SendMainMenu(self) -> types.InlineKeyboardMarkup:
 		# Кнопочное меню.
 		Menu = types.InlineKeyboardMarkup()
-
+		
 		# Генерация кнопок.
 		CardDay = types.InlineKeyboardButton(_("Карта дня"), callback_data = "Card_Day")
 		YesNo = types.InlineKeyboardButton(_("Да/Нет"), callback_data = "Yes_No")
@@ -69,7 +69,7 @@ class InlineKeyboards:
 		All_Taro = types.InlineKeyboardButton(_("Всё о Таро"), callback_data = "All_Taro")
 	
 		# Добавление кнопок в меню.
-		Menu.add(CardDay, YesNo,  row_width = 2) 
+		Menu.add(CardDay, YesNo, row_width = 2) 
 		Menu.add(ThinkCard, row_width = 1) 
 		Menu.add(All_Taro, ValueCard,  row_width = 2) 
 

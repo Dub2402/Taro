@@ -10,7 +10,7 @@ from Source.InlineKeyboards import InlineKeyboards
 from Source.Cards import Cards
 from Source.Neurowork import Neurowork
 from Source.Mailer import Mailer
-from Source.Functions import IsSubscripted, CashingFiles, FindNearest, ChoiceMessage, CacherSending, UpdateThinkCardData, UpdateThinkCardData2, GetNumberCard
+from Source.Functions import IsSubscripted, CashingFiles, FindNearest, ChoiceMessage, CacherSending, UpdateThinkCardData, UpdateThinkCardData2, GetNumberCard, DeleteNumberCard
 from Source.Reader import Reader
 
 import os
@@ -65,6 +65,8 @@ now = datetime.now()
 current_hour = now.hour
 current_minute = now.minute
 day_of_week = now.weekday()
+
+scheduler.add_job(DeleteNumberCard, 'cron', day_of_week= Settings["update_thinkcards"]["days"], hour = Settings["update_thinkcards"]["time"].split(":")[0], minute = Settings["update_thinkcards"]["time"].split(":")[1], args = [usermanager])
 
 # if Settings["restart_mailings"]: mailer.Mailings(day_of_week, reader, scheduler, Bot, True)
 # if Settings["once_mailing"]: mailer.once_mailing(Bot)

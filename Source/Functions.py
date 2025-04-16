@@ -168,9 +168,10 @@ def GetNumberCard(User:UserData, Call: types.CallbackQuery, write: bool = True):
 def DeleteNumberCard(usermanager: UsersManager):
 	for User in usermanager.users:
 		try:
-			ThinkCard = User.get_property("ThinkCard")
-			ThinkCard["number"] = None
-			User.set_property("ThinkCard", ThinkCard)
+			if User.has_property("ThinkCard"):
+				ThinkCard = User.get_property("ThinkCard")
+				ThinkCard["number"] = None
+				User.set_property("ThinkCard", ThinkCard)
 		except:
 			logging.info(User.id, "Загадай картой не пользовался")
 		
