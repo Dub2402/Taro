@@ -217,6 +217,7 @@ def ProcessText(Message: types.Message):
         User.set_property("Question", Message.text)
         User.set_property("Generation", True)
         User.set_expected_type(None)
+        logging.info(f"ID пользователя: {User.id}, текст вопроса: {Message.text}")
 
         try:
             Bot.send_chat_action(Message.chat.id, action = "typing")
@@ -240,6 +241,7 @@ def ProcessText(Message: types.Message):
         else:
             User.set_property("Generation", True)
             User.set_property("Question", Message.text)
+            logging.info(f"ID пользователя: {User.id}, текст вопроса: {Message.text}")
             User.set_expected_type(None)
             Bot.send_chat_action(Message.chat.id, action = "typing")
             Completed = neurowork.AnswerForUser(Message.chat.id, User.get_property("Question"), User)

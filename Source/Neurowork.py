@@ -7,10 +7,9 @@ import telebot
 import random
 import os
 import re
-import g4f.Provider
 from telebot import types
-from time import sleep
 from g4f.client import Client
+import logging
 
 class Neurowork:
 
@@ -43,7 +42,6 @@ class Neurowork:
 		else:
 			for Character in fix_text:
 				if Character.isalpha() and not self.__match_rus(Character):
-					print(Character)
 					IsRussian = False
 					break
 
@@ -124,7 +122,6 @@ class Neurowork:
 		while Text_response is None and Count_tries < 3:
 			Result = False
 			Count_tries += 1
-			print(Count_tries)
 
 			Request = "\n".join([
 				f"У тебя есть шаблон: {random_text} [question].", 
@@ -150,7 +147,7 @@ class Neurowork:
 
 				if Text_response and not self.__IsTextRussian(Text_response): Text_response = None
 				else: break
-
+		logging.info(f"Текст вопроса: {user_text},\nтекст для пользователя: {Text_response}")
 		return Text_response, Result
 
 	def GenerationCardLayout(self, number: str, card: str, user_text: str) -> str:
@@ -163,9 +160,13 @@ class Neurowork:
 			Request += "Не более 250 символов в тексте. Не меняй первые два словосочетания!!!"
 			Response = self.__Client.chat.completions.create(model = "gpt-4o", messages = [{"role": "user", "content": Request}])
 			Text_response = Response.choices[0].message.content.strip().replace("\n", "\n\n").replace("«", "«<b>").replace("»", "</b>»")
+			
+			if Text_response == "You have reached your request limit for the hour. [Upgrade for higher rate limits](https://www.blackbox.ai/pricing?ref=rate-limit)":
+				Text_response = None
+			else:
+				if not self.__IsTextRussian(Text_response): Text_response = None
 
-			if not self.__IsTextRussian(Text_response): Text_response = None
-
+		logging.info(f"Текст вопроса: {user_text},\nтекст для пользователя: {Text_response}")
 		return Text_response
 	
 	def GenerationOutcome(self, First: str, Second: str, Three: str, user_text: str):
@@ -179,6 +180,10 @@ class Neurowork:
 			Response = self.__Client.chat.completions.create(model = "gpt-4o", messages = [{"role": "user", "content": Request}])
 			Text_response = Response.choices[0].message.content.strip().replace("\n", "\n\n")
 
-			if not self.__IsTextRussian(Text_response): Text_response = None
+			if Text_response == "You have reached your request limit for the hour. [Upgrade for higher rate limits](https://www.blackbox.ai/pricing?ref=rate-limit)":
+				Text_response = None
+			else:
+				if not self.__IsTextRussian(Text_response): Text_response = None
 
+		logging.info(f"Текст вопроса: {user_text},\nтекст для пользователя: {Text_response}")
 		return Text_response
