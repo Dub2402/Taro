@@ -5,6 +5,7 @@ from dublib.TelebotUtils import UsersManager
 from dublib.TelebotUtils import TeleMaster
 from dublib.Engine.GetText import GetText
 
+from Source.BlackDictionary import BlackDictionary
 from Source.TeleBotAdminPanel import Panel
 from Source.InlineKeyboards import InlineKeyboards
 from Source.Cards import Cards
@@ -146,7 +147,7 @@ def ProcessCommandCard(Message: types.Message):
         Message.chat.id,
         text = _("Команда введена неправильно. Формат команды: /card 21.01.2025"))
 
-@Bot.message_handler(commands=["Neuro"])
+@Bot.message_handler(commands=["NeuroLayouts"])
 def ProcessCommandCache(Message: types.Message):
     User = usermanager.auth(Message.from_user)
     # Добавление в кэш комплектов таро.
@@ -161,7 +162,7 @@ def ProcessCommandCache(Message: types.Message):
                 Cacher.cache_real_file(filename, types.InputMediaPhoto)
     Bot.send_message("Кэширование файлов для нейросети закончено.")
 
-@Bot.message_handler(commands=["Neuro"])
+@Bot.message_handler(commands=["NeuroValues"])
 def ProcessCommandCache(Message: types.Message):
     User = usermanager.auth(Message.from_user)
     listdir = list()
