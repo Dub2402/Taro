@@ -34,7 +34,7 @@ class Neurowork:
 	def __NameCard(self, collection: str, number: int):
 		return ReadJSON(f"Materials/Layouts/{collection}/cards.json")[number-2]
 	
-	def __IsTextRussian(self, text):
+	def IsTextRussian(self, text):
 		fix_text = self.__remove_html_tags(text) 
 		IsRussian = True 
 		if not fix_text:
@@ -105,11 +105,43 @@ class Neurowork:
 					
 		Completed = True
 		return Completed
+	
+	def generate_text(self, request: str, tries: int = 3) -> str | None:
+		"""
+		Генерирует текст по запросу.
+			request – текст запроса;\n
+			tries – количество попыток.
+		"""
+
+		CurrentTry = 0
+
+		while CurrentTry < tries:
+			Response = self.__Client.chat.completions.create(model = "gpt-4o", messages = [{"role": "user", "content": request}])
+			Response: str = Response.choices[0].message.content.strip()
+
+			if Response.startswith("You have reached your request limit for the hour."): continue
+			if type(Response) != str or not Response: continue
+
+			if Response == "Ваше сообщение не понятно.": 
+				CurrentTry += 1
+				continue
+
+			if not self.IsTextRussian(Response):
+				CurrentTry += 1
+				logging.warning(f"Иноязычная речь: {Response}")
+				continue
+
+			Replaces = {
+				"\n": "\n\n",
+				"«": "«<b>",
+				"»": "</b>»"
+			}
+
+			for Substring in Replaces.keys(): Response = Response.replace(Substring, Replaces[Substring])
+			return Response
 		
 	def PreparationText(self, user_text) -> tuple[str, bool]:
-		Text_response = None
-		Count_tries = 0
-
+		
 		texts = [
 			_("Ну что ж, давай погрузимся в тайны Таро..."),
 			_("Ухх.. Хороший какой вопрос! Сейчас посмотрим..."),
@@ -118,72 +150,37 @@ class Neurowork:
 			_("Вот это ситуация! Довольно любопытный расклад...")
 		]
 		random_text = random.choice(texts)
+		Request = f"У тебя есть шаблон: {random_text} [question]."
+		Request += f"Тебе задали вопрос: {user_text}. Выведи шаблон учитывая, что спрашивающий имеет ввиду не тебя в вопросе, не добавляй восклицательный знак и двоеточие, а также не используй форматирование. Согласуй, учитывая правила русского языка."
+		Request += "Если вопрос является бессмысленным набором символов - выведи следующую строку: \"Ваше сообщение не понятно.\" не добавляя ничего другого."
+		Text_response = self.generate_text(Request, 10)
 
-		while Text_response is None and Count_tries < 3:
+		if not Text_response: 
+			Text_response = "Ваше сообщение не совсем понятно. Если у вас есть вопрос или тема, которую вы хотите обсудить, пожалуйста, напишите об этом. Я с радостью помогу вам!"
 			Result = False
-			Count_tries += 1
-
-			Request = "\n".join([
-				f"У тебя есть шаблон: {random_text} [question].", 
-				f"Тебе задали вопрос: {user_text}. Выведи шаблон учитывая, что спрашивающий имеет ввиду не тебя в вопросе, не добавляй восклицательный знак и двоеточие, а также не используй форматирование. Согласуй, учитывая правила русского языка.",
-				"Если вопрос является бессмысленным набором символов - выведи следующую строку: \"Ваше сообщение не понятно.\" не добавляя ничего другого."])
-
-			Response = self.__Client.chat.completions.create(
-				model="gpt-4o", 
-				messages=[{"role": "user", "content": Request}]
-			)
-
-			Text_response = Response.choices[0].message.content.strip().replace("\n", "\n\n")
-
-			if Text_response == "Ваше сообщение не понятно.":
-				if Count_tries < 3:  
-					continue
-				else:  
-					Text_response = "Ваше сообщение не совсем понятно. Если у вас есть вопрос или тема, которую вы хотите обсудить, пожалуйста, напишите об этом. Я с радостью помогу вам!"
-					Result = False
-					break  
-			else:
-				Result = True
-
-				if Text_response and not self.__IsTextRussian(Text_response): Text_response = None
-				else: break
+		else: Result = True
+			
 		logging.info(f"Текст вопроса: {user_text},\nтекст для пользователя: {Text_response}")
 		return Text_response, Result
 
 	def GenerationCardLayout(self, number: str, card: str, user_text: str) -> str:
 
-		Text_response = None
+		Request = f"Проанализируй эти данные: {number}, {card} и {user_text} и предоставь ответ в следующем формате:"
+		Request += f"{number}, «{card}», может указывать на [помести сюда своё мнение о том, на что может указывать значение карты о заданном вопросе]."
+		Request += "Не более 250 символов в тексте. Не меняй первые два словосочетания!!!"
 
-		while Text_response is None:
-			Request = f"Проанализируй эти данные: {number}, {card} и {user_text} и предоставь ответ в следующем формате:"
-			Request += f"{number}, «{card}», может указывать на [помести сюда своё мнение о том, на что может указывать значение карты о заданном вопросе]."
-			Request += "Не более 250 символов в тексте. Не меняй первые два словосочетания!!!"
-			Response = self.__Client.chat.completions.create(model = "gpt-4o", messages = [{"role": "user", "content": Request}])
-			Text_response = Response.choices[0].message.content.strip().replace("\n", "\n\n").replace("«", "«<b>").replace("»", "</b>»")
-			
-			if Text_response == "You have reached your request limit for the hour. [Upgrade for higher rate limits](https://www.blackbox.ai/pricing?ref=rate-limit)":
-				Text_response = None
-			else:
-				if not self.__IsTextRussian(Text_response): Text_response = None
-
+		Text_response = self.generate_text(Request, 10)
 		logging.info(f"Текст вопроса: {user_text},\nтекст для пользователя: {Text_response}")
+
 		return Text_response
 	
 	def GenerationOutcome(self, First: str, Second: str, Three: str, user_text: str):
-
-		Text_response = None
-
-		while Text_response is None:
-			Request = f"Проанализируй эти карты Таро: {First}, {Second} и {Three} и предоставь ответ в следующем формате на вопрос {user_text}:"
-			Request += f"В целом, карты показывают [помести сюда своё мнение о том, на что могут показывать указанные значения карт о заданном вопросе]."
-			Request += "Не более 250 символов в тексте. Не меняй первые два слова!!! Не упоминай названия карт!!!"
-			Response = self.__Client.chat.completions.create(model = "gpt-4o", messages = [{"role": "user", "content": Request}])
-			Text_response = Response.choices[0].message.content.strip().replace("\n", "\n\n")
-
-			if Text_response == "You have reached your request limit for the hour. [Upgrade for higher rate limits](https://www.blackbox.ai/pricing?ref=rate-limit)":
-				Text_response = None
-			else:
-				if not self.__IsTextRussian(Text_response): Text_response = None
-
+	
+		Request = f"Проанализируй эти карты Таро: {First}, {Second} и {Three} и предоставь ответ в следующем формате на вопрос {user_text}:"
+		Request += f"В целом, карты показывают [помести сюда своё мнение о том, на что могут показывать указанные значения карт о заданном вопросе]."
+		Request += "Не более 250 символов в тексте. Не меняй первые два слова!!! Не упоминай названия карт!!!"
+			
+		Text_response = self.generate_text(Request, 10)	
 		logging.info(f"Текст вопроса: {user_text},\nтекст для пользователя: {Text_response}")
+
 		return Text_response

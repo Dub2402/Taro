@@ -6,10 +6,9 @@ from dublib.Engine.GetText import _
 from Source.InlineKeyboards import InlineKeyboards
 
 import os
-import telebot
 import logging
 from datetime import datetime
-from telebot import types
+from telebot import TeleBot, types
 
 def IsSubscripted(MasterBot: TeleMaster, User: UserData, Settings: dict, InlineKeyboard: InlineKeyboards):
 	if Settings["subscription_chanel"] == None:
@@ -79,6 +78,7 @@ def IsNewRound(today: str, saved_date: str):
 	return isNewRound
 
 def FindNearest(today: str):
+
 	directory_path = "Materials/ChoiceCard/"
 	dates = os.listdir(directory_path)
 	today_datetime = datetime.strptime(today, "%d.%m.%Y")
@@ -96,11 +96,11 @@ def FindNearest(today: str):
 	
 	return closest_past_date.strftime("%d.%m.%Y") if closest_past_date else None
 
-def ChoiceMessage(day_of_week: int, Bot: telebot.TeleBot, Call: types.CallbackQuery, InlineKeyboard: InlineKeyboards):
+def ChoiceMessage(day_of_week: int, Bot: TeleBot, Call: types.CallbackQuery, InlineKeyboard: InlineKeyboards):
 	if day_of_week in (0, 1):
 		Think_message3 = Bot.send_message(
 			Call.message.chat.id, 
-			"Каждый <b>понедельник, среду и пятницу</b> мы обновляем для вас интерактив \"Загадай карту\". Мы хотим сделать ваш быт и пользование Тароботом еще интереснее)\n\nЖдём вас с нетерпением в <b>среду!</b>",
+			"Каждый <b>понедельник, среду и пятницу</b> наши эксперты обновляют для вас \"Загадай карту\". Мы хотим сделать ваш досуг с Тароботом еще интереснее)\n\nЖдём вас с нетерпением в <b>среду!</b> 💖",
 			reply_markup = InlineKeyboard.delete_before_mm(),
 			parse_mode = "HTML"
 		)
@@ -108,7 +108,7 @@ def ChoiceMessage(day_of_week: int, Bot: telebot.TeleBot, Call: types.CallbackQu
 	if day_of_week in (2, 3):
 		Think_message3 = Bot.send_message(
 			Call.message.chat.id, 
-			"Каждый <b>понедельник, среду и пятницу</b> мы обновляем для вас интерактив \"Загадай карту\". Мы хотим сделать ваш быт и пользование Тароботом еще интереснее)\n\nЖдём вас с нетерпением в <b>пятницу!</b>",
+			"Каждый <b>понедельник, среду и пятницу</b> наши эксперты обновляют для вас \"Загадай карту\". Мы хотим сделать ваш досуг с Тароботом еще интереснее)\n\nЖдём вас с нетерпением в <b>пятницу!</b>💗",
 			reply_markup = InlineKeyboard.delete_before_mm(),
 			parse_mode = "HTML"
 		)
@@ -116,13 +116,13 @@ def ChoiceMessage(day_of_week: int, Bot: telebot.TeleBot, Call: types.CallbackQu
 	if day_of_week in (4, 5, 6):
 		Think_message3 = Bot.send_message(
 			Call.message.chat.id, 
-			"Каждый <b>понедельник, среду и пятницу</b> мы обновляем для вас интерактив \"Загадай карту\". Мы хотим сделать ваш быт и пользование Тароботом еще интереснее)\n\nЖдём вас с нетерпением в <b>понедельник!</b>",
+			"Каждый <b>понедельник, среду и пятницу</b> наши эксперты обновляют для вас \"Загадай карту\". Мы хотим сделать ваш досуг с Тароботом еще интереснее)\n\nЖдём вас с нетерпением в <b>понедельник!</b> 💞",
 			reply_markup = InlineKeyboard.delete_before_mm(),
 			parse_mode = "HTML"
 		)
 		return Think_message3
 	
-def CacherSending(Cacher: TeleCache, Bot: telebot.TeleBot, path: str, User: UserData, number_card: int, adding: str = "", inline: InlineKeyboards = None):
+def CacherSending(Cacher: TeleCache, Bot: TeleBot, path: str, User: UserData, number_card: int, adding: str = "", inline: InlineKeyboards = None):
 	
 	ThinkCard = CashingFiles(Cacher, path + f"/{number_card}.jpg", types.InputMediaPhoto)
 
@@ -165,7 +165,13 @@ def GetNumberCard(User:UserData, Call: types.CallbackQuery, write: bool = True):
 		else: number_card = None
 	return number_card
 
-def DeleteNumberCard(usermanager: UsersManager):
+def update_think_card(usermanager: UsersManager):
+	"""
+	Сброс значения номера загаданной карты
+
+	:param usermanager: объект класса
+	:type usermanager: UsersManager
+	"""
 	for User in usermanager.users:
 		try:
 			if User.has_property("ThinkCard"):
@@ -174,4 +180,21 @@ def DeleteNumberCard(usermanager: UsersManager):
 				User.set_property("ThinkCard", ThinkCard)
 		except:
 			logging.info(User.id, "Загадай картой не пользовался")
+
+def delete_thinking_messages(user: UserData, master_bot: TeleMaster, call: types.CallbackQuery):
+	"""
+	Удаление сообщений из раздела "загадай карту"
+
+	:param user: объект класса
+	:type user: UserData
+	:param master_bot: объект класса
+	:type master_bot: TeleMaster
+	:param call: объект класса; ThinkCard/ delete_before_mm
+	:type call: types.CallbackQuery
+	"""
+
+	ThinkCardData = user.get_property("ThinkCard")
+	master_bot.safely_delete_messages(call.message.chat.id, user.get_property("ThinkCard")["messages"])
+	ThinkCardData["messages"] = []
+	user.set_property("ThinkCard", ThinkCardData)
 		

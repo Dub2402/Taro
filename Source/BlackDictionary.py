@@ -42,11 +42,12 @@ class BlackDictionary:
 		:return: В случае наличия нежелательных элементов возвращает `True`.
 		:rtype: bool
 		"""
-
+		
 		TextWords = text.split()
-
+		for Index in range(len(TextWords)): TextWords[Index] = TextWords[Index].strip("?!.)(").lower()
+		
 		for Word in self.__ForbiddenWords:
-			if Word in TextWords: return True
+			if Word.lower() in TextWords: return True
 
 		return False
 	

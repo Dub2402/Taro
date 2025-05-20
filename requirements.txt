@@ -1,6 +1,6 @@
 -r Source/TeleBotAdminPanel/requirements.txt
-dublib == 0.18.1
-g4f==0.4.7.6
+pip install git+https://github.com/DUB1401/dublib
+g4f== 0.5.2.2
 apscheduler
 pandas
 openpyxl == 3.1.5

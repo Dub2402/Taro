@@ -9,6 +9,7 @@ class InlineKeyboards:
 
 		Functions = {
 			self.SendMainMenu.__name__: self.SendMainMenu,
+			self.SendAllTaro.__name__: self.SendAllTaro,
 			self.SendTypeCard.__name__: self.SendTypeCard,
 			self.SendFirstCups.__name__: self.SendFirstCups,
 			self.SendSecondCups.__name__: self.SendSecondCups,
@@ -26,16 +27,32 @@ class InlineKeyboards:
 
 		return Functions[Target]()
 	
-	def AddShare(self) -> types.InlineKeyboardMarkup:
-		Menu = types.InlineKeyboardMarkup()
+	def AddShare(self, buttons: list) -> types.InlineKeyboardMarkup:
+		"""
+		Клавиатура с кнопками: 
+			Поделиться
+			◀️ Назад
 
-		Share = types.InlineKeyboardButton(
-			_("Поделиться"), 
-			switch_inline_query = _('\n@Taro100_bot\n@Taro100_bot\n\n**Таробот | Расклад онлайн | Карта дня**\nБот, который ответит на все твои вопросы ❓❓❓\n\n__Пользуйся и делись с друзьями!__')
+		:param buttons: название переключателя и/или кнопки.
+		:type buttons: list
+		:return: клавиатура.
+		:rtype: types.InlineKeyboardMarkup
+		"""
+		
+		Menu = types.InlineKeyboardMarkup(row_width = 1)
+
+		for button in buttons:
+			if button == "Share":
+				Menu.add(types.InlineKeyboardButton(
+					_("Поделиться"), 
+					switch_inline_query = _('\n@Taro100_bot\n@Taro100_bot\n\n**Таробот | Расклад онлайн | Карта дня**\nБот, который ответит на все твои вопросы ❓❓❓\n\n__Пользуйся и делись с друзьями!__'))
+					)
+			if button == "Back":
+				Menu.add(types.InlineKeyboardButton(
+					_("◀️ Назад"), 
+					callback_data = "back_delete")
 			)
 		
-		Menu.add(Share)
-
 		return Menu
 	
 	def Sharing(self, text: str) -> types.InlineKeyboardMarkup:
@@ -62,18 +79,17 @@ class InlineKeyboards:
 		# Генерация кнопок.
 		CardDay = types.InlineKeyboardButton(_("Карта дня"), callback_data = "Card_Day")
 		YesNo = types.InlineKeyboardButton(_("Да/Нет"), callback_data = "Yes_No")
-		ValueCard = types.InlineKeyboardButton(_("Значение карт"), callback_data = "Value_Card")
-		OrderLayout = types.InlineKeyboardButton(_("Расклад от Мастера ♨️"), callback_data = "Order_Layout")
+		Additional_options = types.InlineKeyboardButton(_("Доп. опции"), callback_data = "additional_options")
+		OrderLayout = types.InlineKeyboardButton(_("Расклад от Мастера 🔥"), callback_data = "Order_Layout")
 		ThinkCard = types.InlineKeyboardButton(_("Загадай карту"), callback_data = "ThinkCard")
 		Online_layout = types.InlineKeyboardButton(_("Онлайн расклад 💫"), callback_data = "Online_Layout")
 		All_Taro = types.InlineKeyboardButton(_("Всё о Таро"), callback_data = "All_Taro")
 	
 		# Добавление кнопок в меню.
 		Menu.add(CardDay, YesNo, row_width = 2) 
-		Menu.add(ThinkCard, row_width = 1) 
-		Menu.add(All_Taro, ValueCard,  row_width = 2) 
-
-		Menu.add(Online_layout, OrderLayout, row_width = 1) 
+		Menu.add(All_Taro, Additional_options, row_width = 2) 
+		Menu.add(Online_layout, ThinkCard, row_width = 2)
+		Menu.add(OrderLayout, row_width = 1) 
 
 		return Menu
 	
@@ -82,13 +98,14 @@ class InlineKeyboards:
 		Menu = types.InlineKeyboardMarkup()
 
 		# Генерация кнопок.
+		ValueCard = types.InlineKeyboardButton(_("Значение карт"), callback_data = "Value_Card")
 		History = types.InlineKeyboardButton(_("История Таро"), url = "https://tarolog.me/taro/history.html")
 		What_is = types.InlineKeyboardButton(_("Что такое Таро?"),url = "https://tarolog.me/taro/determination.html")
 		Work_with = types.InlineKeyboardButton(_("Работа с картами"), url = "https://tarolog.me/taro/work.html")
 		Back = types.InlineKeyboardButton(_("◀️ Назад"), callback_data = "Back_SendMainMenu")
 	
 		# Добавление кнопок в меню.
-		Menu.add(History, What_is, Work_with, Back, row_width= 1) 
+		Menu.add(ValueCard, History, What_is, Work_with, Back, row_width= 1) 
 
 		return Menu
 
@@ -98,12 +115,12 @@ class InlineKeyboards:
 
 		# Создаём кнопки через генератор списка
 		buttons = [
-			types.InlineKeyboardButton(text=_(f"{i} карта"), callback_data=f"ThinkCard_{i}")
+			types.InlineKeyboardButton(text=_(f"{i}"), callback_data=f"ThinkCard_{i}")
 			for i in range(1, 5)
 		]
 
 		# Добавляем кнопки с учётом row_width
-		Menu.add(*buttons, row_width=2)
+		Menu.add(*buttons, row_width = 4)
 
 		return Menu
 	
@@ -156,11 +173,20 @@ class InlineKeyboards:
 		return Menu
 
 	def notifications(self) -> types.InlineKeyboardMarkup:
+		"""
+		Клавиатура с кнопками: 
+			Отключить ❌
+			Включить ✅
 
+		:return: Клавиатура настройки рассылки
+		:rtype: types.InlineKeyboardMarkup
+		"""
 		Menu = types.InlineKeyboardMarkup()
-		No = types.InlineKeyboardButton(_("Нет"), callback_data = "notifications_no")
-		Yes = types.InlineKeyboardButton(_("Да"), callback_data = "notifications_yes")
-		Menu.add(No, Yes, row_width = 2)
+
+		Yes = types.InlineKeyboardButton(_("Включить ✅"), callback_data = "notifications_yes")
+		No = types.InlineKeyboardButton(_("Отключить ❌"), callback_data = "notifications_no")
+		
+		Menu.add(Yes, No, row_width = 2)
 		
 		return Menu
 
@@ -174,7 +200,7 @@ class InlineKeyboards:
 		Wands = types.InlineKeyboardButton(_("🎋 Жезлы"), callback_data = "Wands")
 		Pentacles = types.InlineKeyboardButton(_("🪙 Пентакли"), callback_data = "Pentacles")
 		Arcanas = types.InlineKeyboardButton(_("🃏 Старшие арканы"), callback_data = "Arcanas")
-		Back = types.InlineKeyboardButton(_("◀️ Назад"), callback_data = "Back_SendMainMenu")
+		Back = types.InlineKeyboardButton(_("◀️ Назад"), callback_data = "Back_SendAllTaro")
 	
 		# Добавление кнопок в меню.
 		Menu.add(Cups, Swords, Wands, Pentacles, Arcanas, Back, row_width= 1) 
