@@ -73,10 +73,18 @@ class InlineKeyboards:
 		return Menu
 		
 	def SendMainMenu(self) -> types.InlineKeyboardMarkup:
-		# Кнопочное меню.
+		"""
+		Клавиатура с кнопками: 
+			Карта дня | Да/Нет
+			Всё о Таро | Доп. опции 
+			Загадай карту | Онлайн расклад 💫
+			Расклад от Мастера 🔥
+
+		:return: Клавиатура главного меню
+		:rtype: types.InlineKeyboardMarkup
+		"""
 		Menu = types.InlineKeyboardMarkup()
 		
-		# Генерация кнопок.
 		CardDay = types.InlineKeyboardButton(_("Карта дня"), callback_data = "Card_Day")
 		YesNo = types.InlineKeyboardButton(_("Да/Нет"), callback_data = "Yes_No")
 		Additional_options = types.InlineKeyboardButton(_("Доп. опции"), callback_data = "additional_options")
@@ -85,10 +93,9 @@ class InlineKeyboards:
 		Online_layout = types.InlineKeyboardButton(_("Онлайн расклад 💫"), callback_data = "Online_Layout")
 		All_Taro = types.InlineKeyboardButton(_("Всё о Таро"), callback_data = "All_Taro")
 	
-		# Добавление кнопок в меню.
 		Menu.add(CardDay, YesNo, row_width = 2) 
 		Menu.add(All_Taro, Additional_options, row_width = 2) 
-		Menu.add(Online_layout, ThinkCard, row_width = 2)
+		Menu.add(ThinkCard, Online_layout, row_width = 2)
 		Menu.add(OrderLayout, row_width = 1) 
 
 		return Menu

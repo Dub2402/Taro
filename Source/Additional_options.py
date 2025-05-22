@@ -32,13 +32,17 @@ def keyboard_additional_options() -> types.InlineKeyboardMarkup:
 
 	return Menu
 
+#==========================================================================================#
+# >>>>> ДЕКОРАТОРЫ <<<<< #
+#==========================================================================================#
+
 def decorators_additional_options(master_bot: TeleMaster, users: UsersManager, inline_keyboard: InlineKeyboards, Settings: dict, QrImage: RealCachedFile):
 	"""
 	Обработка доп. опций
 
-	:param MasterBot: объект класса 
+	:param MasterBot: бот Telegram
 	:type MasterBot: TeleMaster
-	:param users: объект класса 
+	:param users: данные пользователей
 	:type users: UsersManager
 	:param inline_keyboard: объект класса 
 	:type inline_keyboard: InlineKeyboards
@@ -70,17 +74,20 @@ def decorators_additional_options(master_bot: TeleMaster, users: UsersManager, i
 		master_bot.bot.answer_callback_query(Call.id)
 
 	@master_bot.bot.callback_query_handler(func = lambda Callback: Callback.data == "energy_exchange")
-	def open_energy_exchange(Call: types.CallbackQuery):
+	def click_energy_exchange(Call: types.CallbackQuery):
 		"""
-		Открывает меню обмена энергией.
+		Открывает меню обмена энергией
 
-		:param Call: Данные Callback вызова.
+		:param Call: energy_exchange
 		:type Call: types.CallbackQuery
 		"""
+		if not IsSubscripted(master_bot, users.auth(Call.from_user), Settings, inline_keyboard): 
+			master_bot.bot.answer_callback_query(Call.id)
+			return
+		
 		OpenExchanger(master_bot.bot, users.auth(Call.from_user))
 		master_bot.bot.answer_callback_query(Call.id)
 		
-
 	@master_bot.bot.callback_query_handler(func = lambda Callback: Callback.data == "share")
 	def click_share(Call: types.CallbackQuery):
 		"""

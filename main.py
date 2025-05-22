@@ -220,7 +220,7 @@ def ProcessShareWithFriends(Message: types.Message):
 	
 AdminPanel.decorators.reply_keyboards(Bot, usermanager)	
 
-@Bot.message_handler(content_types=["text"])
+@Bot.message_handler(content_types = ["text"])
 def ProcessText(Message: types.Message):
 	User = usermanager.auth(Message.from_user)
 	if AdminPanel.procedures.text(Bot, usermanager, Message): return
