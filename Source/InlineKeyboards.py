@@ -45,7 +45,7 @@ class InlineKeyboards:
 			if button == "Share":
 				Menu.add(types.InlineKeyboardButton(
 					_("Поделиться"), 
-					switch_inline_query = _('\n@Taro100_bot\n@Taro100_bot\n\n**Таробот | Расклад онлайн | Карта дня**\nБот, который ответит на все твои вопросы ❓❓❓\n\n__Пользуйся и делись с друзьями!__'))
+					switch_inline_query = _('\n@Taro100_bot\n@Taro100_bot\n\n**Таробот | Расклад онлайн | Карта дня**\nСамый большой бот для Таро гаданий в Telegram! Ответит на любые твои вопросы ❓❓❓\n\n__Пользуйся и делись с друзьями!__'))
 					)
 			if button == "Back":
 				Menu.add(types.InlineKeyboardButton(
@@ -88,7 +88,7 @@ class InlineKeyboards:
 		CardDay = types.InlineKeyboardButton(_("Карта дня"), callback_data = "Card_Day")
 		YesNo = types.InlineKeyboardButton(_("Да/Нет"), callback_data = "Yes_No")
 		Additional_options = types.InlineKeyboardButton(_("Доп. опции"), callback_data = "additional_options")
-		OrderLayout = types.InlineKeyboardButton(_("Расклад от Мастера 🔥"), callback_data = "Order_Layout")
+		OrderLayout = types.InlineKeyboardButton(_("Расклад от Мастера 🔥"), callback_data = "order_layout")
 		ThinkCard = types.InlineKeyboardButton(_("Загадай карту"), callback_data = "ThinkCard")
 		Online_layout = types.InlineKeyboardButton(_("Онлайн расклад 💫"), callback_data = "Online_Layout")
 		All_Taro = types.InlineKeyboardButton(_("Всё о Таро"), callback_data = "All_Taro")
@@ -179,7 +179,7 @@ class InlineKeyboards:
 
 		return Menu
 
-	def notifications(self) -> types.InlineKeyboardMarkup:
+	def notifications(self, action: str) -> types.InlineKeyboardMarkup:
 		"""
 		Клавиатура с кнопками: 
 			Отключить ❌
@@ -190,7 +190,7 @@ class InlineKeyboards:
 		"""
 		Menu = types.InlineKeyboardMarkup()
 
-		Yes = types.InlineKeyboardButton(_("Включить ✅"), callback_data = "notifications_yes")
+		Yes = types.InlineKeyboardButton(_("Включить ✅"), callback_data = f"notifications_yes_{action}")
 		No = types.InlineKeyboardButton(_("Отключить ❌"), callback_data = "notifications_no")
 		
 		Menu.add(Yes, No, row_width = 2)

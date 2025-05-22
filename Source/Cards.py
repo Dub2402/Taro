@@ -22,9 +22,9 @@ class Cards():
         self.__InlineKeyboard = InlineKeyboard
         self.__Cacher = Cacher
 
-    def FindPhoto(self, datekey: str= "today") -> str:
-        for photo in os.listdir("Materials/Photo"):
-            namephoto = photo.replace(".jpg", "")
+    def FindVideo(self, datekey: str= "today") -> str:
+        for photo in os.listdir("Materials/Video"):
+            namephoto = photo.replace(".mp4", "")
             if datekey == "today":
                 if namephoto == self.__GetToday():
                     return photo
@@ -57,22 +57,22 @@ class Cards():
         except: pass
 
     def GetCard(self, datekey: str = "today"):
-        Photo = "Materials/Photo/" + self.FindPhoto(datekey)
+        Video = "Materials/Video/" + self.FindVideo(datekey)
         TextFile = self.FindText(datekey)
         with open(f"Materials/Texts/{TextFile}") as file:
             self.Text = file.read()
 
-        return Photo, self.Text
+        return Video, self.Text
         
-    def AddCard(self, Photo_ID, datekey: str = "today"):
+    def AddCard(self, Video_ID, datekey: str = "today"):
         try:
             if self.Instant:
                 pass
         except: self.Instant = dict()
         if datekey == "today":       
-            self.Instant[self.__GetToday()] = {"photo": Photo_ID, "text": self.Text}
+            self.Instant[self.__GetToday()] = {"video": Video_ID, "text": self.Text}
         else:
-            self.Instant[datekey] = {"photo": Photo_ID, "text": self.Text}
+            self.Instant[datekey] = {"video": Video_ID, "text": self.Text}
         WriteJSON("Instant.json", self.Instant)
 
     def SendCardValues(self, Call: types.CallbackQuery, User: UserData, text: str = ""):

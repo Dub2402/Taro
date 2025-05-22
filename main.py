@@ -7,10 +7,8 @@ from dublib.Engine.GetText import GetText
 
 from Source.TeleBotAdminPanel.Core.Moderation import Moderator
 from Source.TeleBotAdminPanel import Panel
-
 from Source.BlackDictionary import BlackDictionary
 from Source.EnergyExchange import Exchanger
-
 from Source.InlineKeyboards import InlineKeyboards
 from Source.Cards import Cards
 from Source.Neurowork import Neurowork
@@ -18,8 +16,9 @@ from Source.Mailer import Mailer
 from Source.Functions import IsSubscripted, CashingFiles, FindNearest, ChoiceMessage, CacherSending, UpdateThinkCardData, UpdateThinkCardData2, GetNumberCard, update_think_card, delete_thinking_messages
 from Source.Reader import Reader
 from Source.ValuesCard import heading_suits
-from Source.Additional_options import decorators_additional_options
-from Source.Bot_addition import send_settings_mailing
+from Source.AdditionalOptions import decorators_additional_options
+from Source.BotAddition import send_settings_mailing
+from Source.UI.OnlineLayout import Layout
 
 import os
 import logging
@@ -47,6 +46,7 @@ Card = Cards(Bot, InlineKeyboard, Cacher)
 neurowork = Neurowork(Bot, Cacher)
 mailer = Mailer(Bot, usermanager, Card, InlineKeyboard)
 AdminPanel = Panel()
+OnlineLayout = Layout()
 reader = Reader(Settings)
 
 EnergyExchanger = Exchanger(Bot, usermanager)
@@ -82,7 +82,6 @@ scheduler.add_job(update_think_card, 'cron', day_of_week= Settings["update_think
 
 # if Settings["restart_mailings"]: mailer.Mailings(day_of_week, reader, scheduler, Bot, True)
 # if Settings["once_mailing"]: mailer.once_mailing(Bot)
-
 Clear()
 
 StartAnimation = CashingFiles(Cacher, Settings["start_id"], types.InputMediaAnimation)
@@ -93,6 +92,7 @@ AdminPanel.decorators.commands(Bot, usermanager, Settings["password"])
 @Bot.message_handler(commands = ["start"])
 def ProcessCommandStart(Message: types.Message):
 	User = usermanager.auth(Message.from_user)
+
 	Message = Bot.send_message(
 		Message.chat.id,
 		text = _("<b>Добро пожаловать в Таробот!</b>\n\nСамый большой бот для Таро-гаданий в Telegram!\n\nЗадай боту любой❓️вопрос и наслаждайся ответом!"),
@@ -128,22 +128,23 @@ def ProcessCommandCard(Message: types.Message):
 			datekey = dateparser.parse(user_date, settings = {'DATE_ORDER': 'DMY','STRICT_PARSING': True}).strftime("%d.%m.%Y")
 			InstantCard = Card.GetInstantCard(datekey)
 			if InstantCard:
-				Bot.send_photo(
-								Message.chat.id,
-								photo = InstantCard["photo"],
-								caption = InstantCard["text"], 
-								parse_mode= 'HTML'
-							)
+				Bot.send_video(
+					chat_id = Message.chat.id,
+					video = InstantCard["video"],
+					caption = InstantCard["text"], 
+					parse_mode= 'HTML'
+					)
 			else:
 				try:
-					Photo, Text = Card.GetCard(datekey)
-					Message = Bot.send_photo(
+					Video, Text = Card.GetCard(datekey)
+					Message = Bot.send_video(
 						Message.chat.id,
-						photo = open(f"{Photo}", "rb"),
+						video = open(f"{Video}", "rb"),
 						caption = Text, 
-						parse_mode= 'HTML'
+						parse_mode = 'HTML'
 						)
-					Card.AddCard(Message.photo[0].file_id, datekey)
+					
+					Card.AddCard(Message.video.file_id, datekey)
 				except: 
 					Bot.send_message(
 						Message.chat.id,
@@ -203,9 +204,9 @@ def process_command_mailset(Message: types.Message):
 
 	User = usermanager.auth(Message.from_user)
 	if not IsSubscripted(MasterBot, User, Settings, InlineKeyboard): return
-	send_settings_mailing(Bot, Message, InlineKeyboard)
+	send_settings_mailing(Bot, Message, InlineKeyboard, action = "restart")
 
-@Bot.message_handler(commands=["share"])
+@Bot.message_handler(commands = ["share"])
 def ProcessShareWithFriends(Message: types.Message):
 	User = usermanager.auth(Message.from_user)
 	if not IsSubscripted(MasterBot, User, Settings, InlineKeyboard): return
@@ -213,7 +214,7 @@ def ProcessShareWithFriends(Message: types.Message):
 	Bot.send_photo(
 		Message.chat.id, 
 		photo = QrImage.file_id,
-		caption = _('@Taro100_bot\n@Taro100_bot\n@Taro100_bot\n\n<b>Таробот | Расклад онлайн | Карта дня</b>\nБот, который ответит на все твои вопросы ❓❓❓\n\n<b><i>Пользуйся и делись с друзьями!</i></b>'), 
+		caption = _('@Taro100_bot\n@Taro100_bot\n@Taro100_bot\n\n<b>Таробот | Расклад онлайн | Карта дня</b>\nСамый большой бот для Таро гаданий в Telegram! Ответит на любые твои вопросы ❓❓❓\n\n<b><i>Пользуйся и делись с друзьями!</i></b>'), 
 		reply_markup = InlineKeyboard.AddShare(["Share"]), 
 		parse_mode = "HTML"
 		)
@@ -238,13 +239,6 @@ def ProcessText(Message: types.Message):
 
 			if Completed:
 				User.set_property("Generation", False)
-				Message = Bot.send_animation(
-					Message.chat.id,
-					animation = StartAnimation.file_id,
-					caption = None,
-					reply_markup = InlineKeyboard.SendMainMenu(),
-					parse_mode = "HTML"
-					)
 		except Exception as ExceptionData: print(ExceptionData)
 
 		User.set_property("Generation", False)
@@ -260,18 +254,12 @@ def ProcessText(Message: types.Message):
 			Completed = neurowork.AnswerForUser(Message.chat.id, User.get_property("Question"), User)
 			if Completed:
 				User.set_property("Generation", False)
-				Message = Bot.send_animation(
-					Message.chat.id,
-					animation= StartAnimation.file_id,
-					caption = None,
-					reply_markup = InlineKeyboard.SendMainMenu(),
-					parse_mode = "HTML"
-					)
 
 AdminPanel.decorators.inline_keyboards(Bot, usermanager)
 EnergyExchanger.decorators.inline_keyboards()
 
 decorators_additional_options(MasterBot, usermanager, InlineKeyboard, Settings, QrImage)
+OnlineLayout.decorators.inline_keyboards(Bot, usermanager, InlineKeyboard, StartAnimation)
 
 @Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("for_restart"))
 def InlineButtonAccept(Call: types.CallbackQuery):
@@ -316,16 +304,23 @@ def InlineButton(Call: types.CallbackQuery):
 		Bot.answer_callback_query(Call.id)
 		return
 	
-	Command = Call.data.split("_")[-1]
+	Command = Call.data.split("_")[1]
+	action = Call.data.split("_")[2]
 
 	if Command == "yes":
 		User.set_property("mailing", True)
-		Bot.edit_message_text(
-			chat_id = User.id, 
-			text = _("Благодарим! Теперь ваше утро будет начинаться с магии карт Таро! 💌"),
-			message_id = Call.message.id,
-			reply_markup = InlineKeyboard.for_restart("Спасибо!")
-			)
+		if action == "delete":
+			Bot.delete_message(
+				chat_id = Call.message.chat.id,
+				message_id = Call.message.id
+				)
+		if action == "restart":
+			Bot.edit_message_text(
+				chat_id = User.id, 
+				text = _("Благодарим! Теперь ваше утро будет начинаться с магии карт Таро! 💌"),
+				message_id = Call.message.id,
+				reply_markup = InlineKeyboard.for_restart("Спасибо!")
+				)
 
 	else:
 		User.set_property("mailing", False)
@@ -345,24 +340,24 @@ def InlineButtonCardDay(Call: types.CallbackQuery):
 		return
 	InstantCard = Card.GetInstantCard()
 	if InstantCard:
-		Bot.send_photo(
-							Call.message.chat.id,
-							photo = InstantCard["photo"],
-							caption = InstantCard["text"], 
-							reply_markup = InlineKeyboard.for_delete("Да будет так!"),
-							parse_mode = 'HTML'
-						)
+		Bot.send_video(
+			chat_id = Call.message.chat.id,
+			video = InstantCard["video"],
+			caption = InstantCard["text"], 
+			reply_markup = InlineKeyboard.for_delete("Да будет так!"),
+			parse_mode = 'HTML'
+		)
 	else:
-		Photo, Text = Card.GetCard()
-		Message = Bot.send_photo(
-						Call.message.chat.id,
-						photo = open(f"{Photo}", "rb"),
-						caption = Text, 
-						reply_markup = InlineKeyboard.for_delete("Да будет так!"),
-						parse_mode = 'HTML'
-					)
+		Video, Text = Card.GetCard()
+		Message = Bot.send_video(
+			Call.message.chat.id,
+			video = open(f"{Video}", "rb"),
+			caption = Text, 
+			reply_markup = InlineKeyboard.for_delete("Да будет так!"),
+			parse_mode = 'HTML'
+		)
 		
-		Card.AddCard(Message.photo[0].file_id)
+		Card.AddCard(Message.video.file_id)
 		
 	Bot.answer_callback_query(Call.id)
 
@@ -724,16 +719,16 @@ def InlineButtonInverted(Call: types.CallbackQuery):
 			
 	Bot.answer_callback_query(Call.id)
 
-@Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("Order_Layout"))
+@Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("order_layout"))
 def InlineButtonRemoveReminder(Call: types.CallbackQuery):
 	User = usermanager.auth(Call.from_user)
 	if not IsSubscripted(MasterBot, User, Settings, InlineKeyboard):
 		Bot.answer_callback_query(Call.id)
 		return
 	Bot.edit_message_caption(
-		_("<b>РАСКЛАД ОТ МАСТЕРА</b>"),
-		Call.message.chat.id,
-		Call.message.id,
+		caption = "<b>" + _("РАСКЛАД ОТ МАСТЕРА") + "</b>",
+		chat_id = Call.message.chat.id,
+		message_id = Call.message.id,
 		reply_markup = InlineKeyboard.SendOrderLayout(),
 		parse_mode = "HTML"
 		)
@@ -775,24 +770,24 @@ def InlineButtonRemoveReminder(Call: types.CallbackQuery):
 		number_card = GetNumberCard(User, Call, write = False)
 		
 		if number_card == None: 
-			Think_message = CacherSending(Cacher, Bot, path, User, 0, inline=InlineKeyboard.SendThinkCard())
+			Think_message = CacherSending(Cacher, Bot, path, User, 0, inline = InlineKeyboard.SendThinkCard())
 			UpdateThinkCardData(User, Think_message)
 		else: 
 			delete_thinking_messages(User, MasterBot, Call)
-
+			Think_message1 = CacherSending(Cacher, Bot, path, User, 0)
 			ThinkCardData = User.get_property("ThinkCard")
 			MasterBot.safely_delete_messages(Call.message.chat.id, User.get_property("ThinkCard")["messages"])
 			ThinkCardData["messages"] = []
 			User.set_property("ThinkCard", ThinkCardData)
 
-			Think_message2 = CacherSending(Cacher, Bot, path, User, number_card, "\n<b><i>С любовью, @taro100_bot!</i></b>")
+			Think_message2 = CacherSending(Cacher, Bot, path, User, number_card, "\n<b><i>С любовью, Галина Мастер Таро!</i></b>")
 			Think_message3 = ChoiceMessage(day_of_week, Bot, Call, InlineKeyboard)
-			UpdateThinkCardData2(User, Think_message2, Think_message3, number_card, today_date)
+			UpdateThinkCardData2(User, [Think_message1.id, Think_message2.id, Think_message3.id], number_card, today_date)
 	else:
 		number_card = GetNumberCard(User, Call)
-		Think_message2 = CacherSending(Cacher, Bot, path, User, number_card, "\n<b><i>С любовью, @taro100_bot!</i></b>")
+		Think_message2 = CacherSending(Cacher, Bot, path, User, number_card, "\n<b><i>С любовью, Галина Мастер Таро!</i></b>")
 		Think_message3 = ChoiceMessage(day_of_week, Bot, Call, InlineKeyboard)
-		UpdateThinkCardData2(User, Think_message2, Think_message3, number_card, today_date)
+		UpdateThinkCardData2(User, [Think_message2.id, Think_message3.id], number_card, today_date)
 
 	Bot.answer_callback_query(Call.id)
 

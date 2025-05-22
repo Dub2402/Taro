@@ -73,23 +73,24 @@ class Mailer:
 			
 					InstantCard = self.__Card.GetInstantCard()
 					if InstantCard:
-						self.__Bot.send_photo(
-							User.id,
-							photo = InstantCard["photo"],
+						self.__Bot.send_video(
+							chat_id = User.id,
+							video = InstantCard["video"],
 							reply_markup = self.__InlineKeyboard.for_delete("Да будет так!"),
 							caption = InstantCard["text"], 
 							parse_mode= 'HTML'
 							)
 					else:
-						Photo, Text = self.__Card.GetCard()
-						Message = self.__Bot.send_photo(
-							User.id,
-							photo = open(f"{Photo}", "rb"),
+						Video, Text = self.__Card.GetCard()
+						Message = self.__Bot.send_video(
+							chat_id = User.id,
+							video = open(f"{Video}", "rb"),
 							reply_markup = self.__InlineKeyboard.for_delete("Да будет так!"),
 							caption = Text, 
 							parse_mode = 'HTML'
 							)
-						self.__Card.AddCard(Message.photo[0].file_id)
+						print(Message.video)
+						self.__Card.AddCard(Message.video[0].file_id)
 						
 					logging.info(f"Карта дня отправлена {User.id} ")
 					User.set_chat_forbidden(False)

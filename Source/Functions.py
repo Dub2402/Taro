@@ -78,6 +78,14 @@ def IsNewRound(today: str, saved_date: str):
 	return isNewRound
 
 def FindNearest(today: str):
+	"""
+	Получение самой близкой даты к сегодняшнему дню
+
+	:param today: сегодняшняя дата в формате 22.05.2025
+	:type today: str
+	:return: самая близкая дата к сегодняшнему дню в прошлом (21.05 или 22.05, при правильной работе)
+	:rtype: _type_
+	"""
 
 	directory_path = "Materials/ChoiceCard/"
 	dates = os.listdir(directory_path)
@@ -97,6 +105,20 @@ def FindNearest(today: str):
 	return closest_past_date.strftime("%d.%m.%Y") if closest_past_date else None
 
 def ChoiceMessage(day_of_week: int, Bot: TeleBot, Call: types.CallbackQuery, InlineKeyboard: InlineKeyboards):
+	"""
+	Выбор сообщения в зависимости от дня недели
+
+	:param day_of_week: порядковый номер дня недели, где 0 - понедельник
+	:type day_of_week: int
+	:param Bot: Бот Telegram
+	:type Bot: TeleBot
+	:param Call: ThinkCard
+	:type Call: types.CallbackQuery
+	:param InlineKeyboard: экземпляр клавиатуры
+	:type InlineKeyboard: InlineKeyboards
+	:return: Сообщение отправленное пользователю
+	:rtype: _type_
+	"""
 	if day_of_week in (0, 1):
 		Think_message3 = Bot.send_message(
 			Call.message.chat.id, 
@@ -105,6 +127,7 @@ def ChoiceMessage(day_of_week: int, Bot: TeleBot, Call: types.CallbackQuery, Inl
 			parse_mode = "HTML"
 		)
 		return Think_message3
+	
 	if day_of_week in (2, 3):
 		Think_message3 = Bot.send_message(
 			Call.message.chat.id, 
@@ -146,18 +169,30 @@ def UpdateThinkCardData(User: UserData, Think_message: types.Message):
 		ThinkCardData["messages"].append(Think_message.id)
 		User.set_property("ThinkCard", ThinkCardData)
 
-def UpdateThinkCardData2(User: UserData, Think_message2: types.Message, Think_message3: types.Message, number_card: int, date: str):
+def UpdateThinkCardData2(User: UserData, Think_messages: list[types.Message], number_card: int, date: str):
 	ThinkCardData = User.get_property("ThinkCard")
 	if ThinkCardData is None:
-		ThinkCardData = {"day": date, "messages": [Think_message2.id, Think_message3.id], "number": number_card}
+		ThinkCardData = {"day": date, "messages": Think_messages, "number": number_card}
 		User.set_property("ThinkCard", ThinkCardData)
 	else:
-		ThinkCardData["messages"].extend([Think_message2.id, Think_message3.id])
+		ThinkCardData["messages"].extend(Think_messages)
 		ThinkCardData["number"] = number_card
 		ThinkCardData["day"] = date
 		User.set_property("ThinkCard", ThinkCardData)
 
 def GetNumberCard(User:UserData, Call: types.CallbackQuery, write: bool = True):
+	"""
+	Получить номер карты, загаданной пользователем в первый раз 
+
+	:param User: данные пользователя
+	:type User: UserData
+	:param Call: ThinkCard
+	:type Call: types.CallbackQuery
+	:param write: записывать ли номер карты,если значение пустое, defaults to True
+	:type write: bool, optional
+	:return: номер выбранной карты
+	:rtype: _type_
+	"""
 	ThinkCardData = User.get_property("ThinkCard")
 	if ThinkCardData["number"] != None: number_card = ThinkCardData["number"] 
 	else: 

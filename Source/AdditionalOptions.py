@@ -6,9 +6,13 @@ from dublib.TelebotUtils.Cache import RealCachedFile
 from Source.EnergyExchange import OpenExchanger
 from Source.InlineKeyboards import InlineKeyboards
 from Source.Functions import IsSubscripted
-from Source.Bot_addition import send_settings_mailing
+from Source.BotAddition import send_settings_mailing
 
 from telebot import types
+
+#==========================================================================================#
+# >>>>> INLINE_KEYBOARDS <<<<< #
+#==========================================================================================#
 
 def keyboard_additional_options() -> types.InlineKeyboardMarkup:
 	"""
@@ -102,7 +106,7 @@ def decorators_additional_options(master_bot: TeleMaster, users: UsersManager, i
 		master_bot.bot.send_photo(
 			chat_id = Call.message.chat.id, 
 			photo = QrImage.file_id,
-			caption = _('@Taro100_bot\n@Taro100_bot\n@Taro100_bot\n\n<b>Таробот | Расклад онлайн | Карта дня</b>\nБот, который ответит на все твои вопросы ❓❓❓\n\n<b><i>Пользуйся и делись с друзьями!</i></b>'), 
+			caption = _('@Taro100_bot\n@Taro100_bot\n@Taro100_bot\n\n<b>Таробот | Расклад онлайн | Карта дня</b>\nСамый большой бот для Таро гаданий в Telegram! Ответит на любые твои вопросы ❓❓❓\n\n<b><i>Пользуйся и делись с друзьями!</i></b>'), 
 			parse_mode = "HTML",
 			reply_markup = inline_keyboard.AddShare(buttons = ["Share", "Back"])
 			)
@@ -133,5 +137,5 @@ def decorators_additional_options(master_bot: TeleMaster, users: UsersManager, i
 		if not IsSubscripted(master_bot, users.auth(Call.from_user), Settings, inline_keyboard): 
 			master_bot.bot.answer_callback_query(Call.id)
 			return
-		send_settings_mailing(master_bot.bot, Call.message, inline_keyboard)
+		send_settings_mailing(master_bot.bot, Call.message, inline_keyboard, action = "delete")
 		master_bot.bot.answer_callback_query(Call.id)

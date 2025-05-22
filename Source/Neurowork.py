@@ -2,6 +2,7 @@ from dublib.TelebotUtils.Cache import TeleCache
 from dublib.Methods.Filesystem import ReadJSON
 
 from Source.Functions import _, CashingFiles
+from Source.UI.OnlineLayout import end_layout
 
 import telebot
 import random
@@ -21,6 +22,10 @@ class Neurowork:
 		
 		return character.lower() in alphabet
 	
+	def __choice_text(self, texts):
+		random_text = random.choice(texts)
+		return random_text
+
 	# Удаляем всё, что находится в тегах html
 	def __remove_html_tags(self, text):
 		return re.sub(r'<[^>]+>', '', text)
@@ -99,8 +104,9 @@ class Neurowork:
 					Text = self.GenerationOutcome(self.__NameCard(collection, 2), self.__NameCard(collection, 3), self.__NameCard(collection, 4), user_text)
 					self.__bot.send_message(
 						chat_id = chat_id,
-						text = Text,
-						parse_mode = "HTML" 
+						text = "\n\n".join(Text),
+						parse_mode = "HTML",
+						reply_markup = end_layout()
 						)
 					
 		Completed = True
@@ -149,7 +155,7 @@ class Neurowork:
 			_("Ничего себе! Вот это я понимаю запрос к картам..."),
 			_("Вот это ситуация! Довольно любопытный расклад...")
 		]
-		random_text = random.choice(texts)
+		random_text = self.__choice_text(texts)
 		Request = f"У тебя есть шаблон: {random_text} [question]."
 		Request += f"Тебе задали вопрос: {user_text}. Выведи шаблон учитывая, что спрашивающий имеет ввиду не тебя в вопросе, не добавляй восклицательный знак и двоеточие, а также не используй форматирование. Согласуй, учитывая правила русского языка."
 		Request += "Если вопрос является бессмысленным набором символов - выведи следующую строку: \"Ваше сообщение не понятно.\" не добавляя ничего другого."
@@ -175,12 +181,24 @@ class Neurowork:
 		return Text_response
 	
 	def GenerationOutcome(self, First: str, Second: str, Three: str, user_text: str):
-	
+		texts = [
+			_("В целом"),
+			_("Таким образом"),
+			_("Как разультат"),
+			_("В итоге")
+		]
+		random_text = self.__choice_text(texts)
 		Request = f"Проанализируй эти карты Таро: {First}, {Second} и {Three} и предоставь ответ в следующем формате на вопрос {user_text}:"
-		Request += f"В целом, карты показывают [помести сюда своё мнение о том, на что могут показывать указанные значения карт о заданном вопросе]."
+		Request += f"{random_text}, карты показывают [помести сюда своё мнение о том, на что могут показывать указанные значения карт о заданном вопросе]."
 		Request += "Не более 250 символов в тексте. Не меняй первые два слова!!! Не упоминай названия карт!!!"
 			
 		Text_response = self.generate_text(Request, 10)	
 		logging.info(f"Текст вопроса: {user_text},\nтекст для пользователя: {Text_response}")
 
-		return Text_response
+		Text = (
+			"<b>" + _("Заключение:") + "</b>",
+		  	Text_response,
+		  	"<i>" + _("Если желаете рассмотреть ваши вопросы более серьезно, то рекомендуем взять расклад у нашего Таро Мастера, где уже живой опытный эксперт даст вам действующие подсказки и советы!") + "</i>"
+		)
+
+		return Text
