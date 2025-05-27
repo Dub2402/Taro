@@ -89,7 +89,6 @@ class Mailer:
 							caption = Text, 
 							parse_mode = 'HTML'
 							)
-						print(Message.video)
 						self.__Card.AddCard(Message.video[0].file_id)
 						
 					logging.info(f"Карта дня отправлена {User.id} ")

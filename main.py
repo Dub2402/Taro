@@ -16,9 +16,9 @@ from Source.Mailer import Mailer
 from Source.Functions import IsSubscripted, CashingFiles, FindNearest, ChoiceMessage, CacherSending, UpdateThinkCardData, UpdateThinkCardData2, GetNumberCard, update_think_card, delete_thinking_messages
 from Source.Reader import Reader
 from Source.ValuesCard import heading_suits
-from Source.AdditionalOptions import decorators_additional_options
-from Source.BotAddition import send_settings_mailing
+from Source.UI.AdditionalOptions import Options
 from Source.UI.OnlineLayout import Layout
+from Source.UI.WorkpiecesMessages import WorkpiecesMessages
 
 import os
 import logging
@@ -45,8 +45,11 @@ Cacher.set_options(Settings["token"], Settings["chat_id"])
 Card = Cards(Bot, InlineKeyboard, Cacher)
 neurowork = Neurowork(Bot, Cacher)
 mailer = Mailer(Bot, usermanager, Card, InlineKeyboard)
+
 AdminPanel = Panel()
+sender = WorkpiecesMessages(Bot, InlineKeyboard)
 OnlineLayout = Layout()
+AddictionalOptional = Options(MasterBot, usermanager, InlineKeyboard, Settings, sender)
 reader = Reader(Settings)
 
 EnergyExchanger = Exchanger(Bot, usermanager)
@@ -204,7 +207,7 @@ def process_command_mailset(Message: types.Message):
 
 	User = usermanager.auth(Message.from_user)
 	if not IsSubscripted(MasterBot, User, Settings, InlineKeyboard): return
-	send_settings_mailing(Bot, Message, InlineKeyboard, action = "restart")
+	sender.send_settings_mailing(Message, action = "restart")
 
 @Bot.message_handler(commands = ["share"])
 def ProcessShareWithFriends(Message: types.Message):
@@ -258,7 +261,7 @@ def ProcessText(Message: types.Message):
 AdminPanel.decorators.inline_keyboards(Bot, usermanager)
 EnergyExchanger.decorators.inline_keyboards()
 
-decorators_additional_options(MasterBot, usermanager, InlineKeyboard, Settings, QrImage)
+AddictionalOptional.decorators.inline_keyboards(QrImage)
 OnlineLayout.decorators.inline_keyboards(Bot, usermanager, InlineKeyboard, StartAnimation)
 
 @Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("for_restart"))
@@ -304,33 +307,11 @@ def InlineButton(Call: types.CallbackQuery):
 		Bot.answer_callback_query(Call.id)
 		return
 	
-	Command = Call.data.split("_")[1]
-	action = Call.data.split("_")[2]
+	choice, action = Call.data.split("_")[1:]
+	choice: bool = choice == "yes"
 
-	if Command == "yes":
-		User.set_property("mailing", True)
-		if action == "delete":
-			Bot.delete_message(
-				chat_id = Call.message.chat.id,
-				message_id = Call.message.id
-				)
-		if action == "restart":
-			Bot.edit_message_text(
-				chat_id = User.id, 
-				text = _("Благодарим! Теперь ваше утро будет начинаться с магии карт Таро! 💌"),
-				message_id = Call.message.id,
-				reply_markup = InlineKeyboard.for_restart("Спасибо!")
-				)
-
-	else:
-		User.set_property("mailing", False)
-		Bot.edit_message_text(
-			text = _("Хорошо! Вы в любой момент сможете посмотреть <b>Карту дня</b> из главного меню ⭐️"),
-			chat_id = User.id,
-			message_id = Call.message.id,
-			parse_mode = "HTML",
-			reply_markup = InlineKeyboard.for_restart("Спасибо!")
-		)
+	User.set_property("mailing", choice)
+	sender.notification_result(message = Call.message, choice = choice, action = action)
 
 @Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("Card_Day"))
 def InlineButtonCardDay(Call: types.CallbackQuery):
