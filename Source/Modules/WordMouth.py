@@ -1,18 +1,19 @@
-from dublib.Methods.Filesystem import WriteJSON, ReadJSON
 from dublib.TelebotUtils import UsersManager, UserData
+from dublib.TelebotUtils.Cache import TeleCache
 from dublib.TelebotUtils import TeleMaster
 from dublib.Engine.GetText import _
+from dublib.Methods.Filesystem import WriteJSON, ReadJSON
 
-from Source.InlineKeyboards import InlineKeyboards
 from Source.Core.Reader import Reader
-from Source.Cards import Cards
+from Source.InlineKeyboards import InlineKeyboards
+
 
 from datetime import datetime
 import random
 import logging
 import os
 
-from telebot import types
+from telebot import TeleBot, types
 
 #==========================================================================================#
 # >>>>> НАБОР INLINE_KEYBOARDS <<<<< #
@@ -174,9 +175,8 @@ class Letters:
 	
 		today = datetime.now()
 		# random_hour = random.randint(9, 20)
-		random_hour = random.randint(22, 22)
-		random_minute = random.randint(0, 10)
-		# random_minute = random.randint(0, 59)
+		random_hour = random.randint(11, 11)
+		random_minute = random.randint(29, 30)
 
 		date_time = today.replace(hour = random_hour, minute = random_minute, second = 0).strftime("%H:%M:%S")
 
@@ -222,12 +222,14 @@ class Letters:
 		id_users = []
 
 		now = datetime.now().time()
-		for time in self.__Data():
-			if now >= datetime.strptime(time, "%H:%M:%S").time(): id_users.append(id_users)
+		for user_id, time in self.__Data.items():
+			if now >= datetime.strptime(time, "%H:%M:%S").time(): id_users.append(user_id)
 			
 		return id_users
 	
 	def delete_time_mailings(self, user_id: str):
+
+		"""Удаление данных произведённой рассылки."""
 		
 		self.__Data.pop(user_id, None)
 		WriteJSON("Data/WordMonth/Letters.json", self.__Data)
@@ -239,38 +241,36 @@ class Letters:
 class Decorators:
 	"""Набор декораторов."""
 
-	def __init__(self, masterbot: TeleMaster, users: UsersManager, WordMonth: WordMonth, reader: Reader):
+	def __init__(self, mailer: "Mailer"):
 
 		#---> Генерация динамических атрибутов.
 		#==========================================================================================#
-
-		self.__masterbot = masterbot
-		self.__users = users
-		self.__WordMonth = WordMonth
-		self.__reader = reader
-
-		self.__bot = self.__masterbot.bot
-
+		self.__Mailer = mailer
+		
 	def inline_keyboards(self):
 		"""
 		Обработка inline_keyboards.
 		"""
 
-		@self.__bot.callback_query_handler(func = lambda Callback: Callback.data == "send_appeal")
+		@self.__Mailer.bot.callback_query_handler(func = lambda Callback: Callback.data == "send_appeal")
 		def send_appeal(Call: types.CallbackQuery):
-			User = self.__users.auth(Call.from_user)
-			self.__masterbot.safely_delete_messages(
+			user = self.__Mailer.users.auth(Call.from_user)
+			self.__Mailer.masterbot.safely_delete_messages(
 				chat_id = Call.message.chat.id,
 				messages = Call.message.id
 			)
-			text = self.__WordMonth.randomize_text(texts = self.__reader.appeals)
-			self.__bot.send_message(
+			text = self.__Mailer.word_month.randomize_text(texts = self.__Mailer.reader.appeals)
+			self.__Mailer.masterbot.bot.send_message(
 				chat_id = Call.message.chat.id,
 				text = text,
 				reply_markup = WordMonthInlineTemplates.start_appeals(text)
 				)
 			
-			self.__bot.answer_callback_query(Call.id)
+			self.__Mailer.masterbot.bot.answer_callback_query(Call.id)
+
+#==========================================================================================#
+# >>>>> РАССЫЛЬЩИК <<<<< #
+#==========================================================================================#
 
 class Mailer:
 
@@ -301,6 +301,36 @@ class Mailer:
 		"""Набор декораторов."""
 
 		return self.__Decorators
+	
+	@property
+	def masterbot(self) -> TeleMaster:
+		"""Masterbot."""
+
+		return self.__masterbot
+	
+	@property
+	def bot(self) -> TeleBot:
+		"""Telegram bot."""
+
+		return self.__masterbot.bot
+
+	@property
+	def users(self) -> UsersManager:
+		"""Менеджер пользователей."""
+
+		return self.__users
+	
+	@property
+	def reader(self) -> Reader:
+		"""Читатель excel-файлов."""
+
+		return self.__reader
+	
+	@property
+	def cacher(self) -> TeleCache:
+		"""Менеджер кэша."""
+
+		return self.__cacher
 
 	#==========================================================================================#
 	# >>>>> ПРИВАТНЫЕ МЕТОДЫ <<<<< #
@@ -321,7 +351,7 @@ class Mailer:
 		"""
 
 		try:
-			appeals = True if self.word_month.is_mailing_day() else False
+			appeals = True if self.appeals.is_mailing_day() else False
 			self.__Message = self.__bot.send_video(
 				chat_id = User.id,
 				video = video,
@@ -336,52 +366,49 @@ class Mailer:
 
 		return self.__Message
 	
-	def __send_letters(self, User: UserData, video: str, text: str) -> types.Message:
+	def __send_letters(self, user_id: str, text: str):
 		"""
-		Рассылка карты дня
+		Рассылка посланий.
 
-		:param User: Данные пользователя.
-		:type User: UserData
-		:param video: Данные видео, которое будет отправлено в рассылке.
-		:type video: str
+		:param user_id: Id пользователя.
+		:type User: str
 		:param text: Данные текста, который будет отправлен в рассылке.
 		:type text: str
-		:return: Данные отправленного сообщения.
-		:rtype: types.Message
 		"""
+
+		User = self.__users.get_user(user_id)
 
 		try:
 			self.__Message = self.__bot.send_video(
 				chat_id = User.id,
-				video = video,
-				caption = text, 
-				parse_mode = "HTML"
+				video = self.cacher.get_real_cached_file(self.__settings["letters_animation"], types.InputMediaVideo),
+				caption = "<b><i>" + _("Послание Вселенной для тебя:") + "</b></i>" + "\n\n-" + text, 
+				parse_mode = "HTML",
+				reply_markup = InlineKeyboards.for_restart("Принимаю!")
 			)
-			logging.info(f"Карта дня отправлена {User.id}")
+			logging.info(f"Послание отправлено {User.id}")
 			User.set_chat_forbidden(False)
 
 		except: User.set_chat_forbidden(True)
 
 		self.__Letters.delete_time_mailings(str(User.id))
 
-		return self.__Message
-
 	#==========================================================================================#
 	# >>>>> ПУБЛИЧНЫЕ МЕТОДЫ <<<<< #
 	#==========================================================================================#
 
-	def __init__(self, masterbot: TeleMaster, users: UsersManager, Card: Cards, InlineKeyboard: InlineKeyboards, reader: Reader):
+	def __init__(self, masterbot: TeleMaster, users: UsersManager, reader: Reader, cacher: TeleCache, settings: dict):
 		"""
 		Инициализация.
 
-		:param bot: Telegram bot.
-		:type bot: TeleBot
-		:param usermanager: Менеджер пользователей.
-		:type usermanager: UsersManager
-		:param Card: работа с картами.
-		:type Card: Cards
-		:param InlineKeyboard: Набор inline-keyboards.
-		:type InlineKeyboard: InlineKeyboards
+		:param masterbot: Masterbot.
+		:type masterbot: TeleMaster
+		:param users: Менеджер пользователей.
+		:type users: UsersManager
+		:param reader: читатель excel-файлов.
+		:type reader: Reader
+		:param cacher: Менеджер кэша.
+		:type cacher: TeleCache
 		"""
 
 		#---> Генерация динамических атрибутов.
@@ -389,16 +416,14 @@ class Mailer:
 		
 		self.__masterbot = masterbot
 		self.__users = users
-		self.__Card = Card
-		self.__InlineKeyboard = InlineKeyboard
 		self.__reader = reader
-
-		self.__bot = self.__masterbot.bot
+		self.__cacher = cacher
+		self.__settings = settings
 
 		self.__WordMonth = WordMonth()
 		self.__Appeals = Appeals()
 		self.__Letters = Letters(users)
-		self.__Decorators = Decorators(self.__masterbot, self.__users, self.__WordMonth, self.__reader)
+		self.__Decorators = Decorators(self)
 
 	def card_day_mailing(self):
 		"""Рассылка карты дня."""
@@ -420,6 +445,6 @@ class Mailer:
 		"""Рассылка посланий."""
 
 		users_id = self.__Letters.users_mailing_now()
-		for User in users_id:
+		for user_id in users_id:
 			text = self.__WordMonth.randomize_text(self.__reader.letters)
-			self.__send_letters(User = User, text = text)
+			self.__send_letters(user_id = user_id, text = text, video = None)

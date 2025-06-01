@@ -5,24 +5,20 @@ from Source.InlineKeyboards import InlineKeyboards
 
 from telebot import TeleBot, types
 
-
 class WorkpiecesMessages:
 	"""Набор сообщений для пользователя"""
 
-	def __init__(self, bot: TeleBot, inline_keyboard: InlineKeyboards):
+	def __init__(self, bot: TeleBot):
 		"""
-		Инициализация
+		Инициализация.
 
 		:param bot: бот Telegram
 		:type bot: TeleBot
-		:param inline_keyboard: Inline-keyboard.
-		:type inline_keyboard: InlineKeyboards
 		"""
 
 		self.__bot = bot
-		self.__inline_keyboard = inline_keyboard
 
-	def send_settings_mailing(self, message: types.Message, action: str):
+	def settings_mailing(self, message: types.Message, action: str):
 		"""
 		Включение/отключение рассылки "карты дня"
 
@@ -32,7 +28,7 @@ class WorkpiecesMessages:
 		:type action: str
 		"""
 		
-		self.__bot.send_message(message.chat.id, _("Желаете включить/отключить утреннюю рассылку <b>Карты дня</b>?"), parse_mode = "HTML", reply_markup = self.__inline_keyboard.notifications(action))
+		self.__bot.send_message(message.chat.id, _("Желаете включить/отключить утреннюю рассылку <b>Карты дня</b>?"), parse_mode = "HTML", reply_markup = InlineKeyboards.notifications(action))
 
 	def notification_result(self, message: types.Message, action: str, choice: bool):
 		"""
@@ -46,7 +42,7 @@ class WorkpiecesMessages:
 		:type choice: bool
 		"""
 
-		button = self.__inline_keyboard.for_restart("Спасибо!") if action == "restart" else self.__inline_keyboard.for_delete("Спасибо!")
+		button = self.__inline_keyboard.for_restart("Спасибо!") if action == "restart" else InlineKeyboards.for_delete("Спасибо!")
 		text = _("Хорошо! Вы в любой момент сможете посмотреть <b>Карту дня</b> из главного меню"+ " ⭐️")
 		if choice: text = _("Благодарим! Теперь ваше утро будет начинаться с магии карт Таро!" + " 💌")
 
@@ -56,13 +52,3 @@ class WorkpiecesMessages:
 			message_id = message.id,
 			reply_markup = button
 		)
-		
-
-
-
-
-
-
-
-
-

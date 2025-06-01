@@ -10,7 +10,7 @@ import logging
 from datetime import datetime
 from telebot import TeleBot, types
 
-def IsSubscripted(MasterBot: TeleMaster, User: UserData, Settings: dict, InlineKeyboard: InlineKeyboards):
+def IsSubscripted(MasterBot: TeleMaster, User: UserData, Settings: dict):
 	if Settings["subscription_chanel"] == None:
 		IsSubscribed = True
 		return IsSubscribed
@@ -27,7 +27,7 @@ def IsSubscripted(MasterBot: TeleMaster, User: UserData, Settings: dict, InlineK
 			Message = MasterBot.bot.send_message(
 				chat_id = User.id, 
 				text = _("Чтобы использовать бот, станьте участником канала! %s") % Subscribtion_Link, 
-				reply_markup = InlineKeyboard.Subscribtion())
+				reply_markup = InlineKeyboards.Subscribtion())
 			User.set_property("Subscription", Message.id)
 			return IsSubscribed
 		
@@ -41,7 +41,7 @@ def IsSubscripted(MasterBot: TeleMaster, User: UserData, Settings: dict, InlineK
 			Message = MasterBot.bot.send_message(
 				chat_id = User.id, 
 				text = _("Чтобы использовать бот, станьте участником канала! %s") % Subscribtion_Link, 
-				reply_markup = InlineKeyboard.Subscribtion())
+				reply_markup = InlineKeyboards.Subscribtion())
 			User.set_property("Subscription", Message.id)
 
 		if IsSubscribed and Subscribtion_Message: 
@@ -54,12 +54,6 @@ def IsSubscripted(MasterBot: TeleMaster, User: UserData, Settings: dict, InlineK
 		if IsSubscribed and not Subscribtion_Message: 
 			return IsSubscribed
 		
-def CashingFiles(Cacher: TeleCache, path: str, type: types):
-	try:
-		File = Cacher.get_real_cached_file(path, type)
-		return File
-	except Exception as E: print(E)
-
 def IsNewRound(today: str, saved_date: str):
 	isNewRound = None
 
@@ -104,7 +98,7 @@ def FindNearest(today: str):
 	
 	return closest_past_date.strftime("%d.%m.%Y") if closest_past_date else None
 
-def ChoiceMessage(day_of_week: int, Bot: TeleBot, Call: types.CallbackQuery, InlineKeyboard: InlineKeyboards):
+def ChoiceMessage(day_of_week: int, Bot: TeleBot, Call: types.CallbackQuery) -> types.Message:
 	"""
 	Выбор сообщения в зависимости от дня недели
 
@@ -114,16 +108,14 @@ def ChoiceMessage(day_of_week: int, Bot: TeleBot, Call: types.CallbackQuery, Inl
 	:type Bot: TeleBot
 	:param Call: ThinkCard
 	:type Call: types.CallbackQuery
-	:param InlineKeyboard: экземпляр клавиатуры
-	:type InlineKeyboard: InlineKeyboards
 	:return: Сообщение отправленное пользователю
-	:rtype: _type_
+	:rtype: types.Message
 	"""
 	if day_of_week in (0, 1):
 		Think_message3 = Bot.send_message(
 			Call.message.chat.id, 
 			"Каждый <b>понедельник, среду и пятницу</b> наши эксперты обновляют для вас \"Загадай карту\". Мы хотим сделать ваш досуг с Тароботом еще интереснее)\n\nЖдём вас с нетерпением в <b>среду!</b> 💖",
-			reply_markup = InlineKeyboard.delete_before_mm(),
+			reply_markup = InlineKeyboards.delete_before_mm(),
 			parse_mode = "HTML"
 		)
 		return Think_message3
@@ -132,7 +124,7 @@ def ChoiceMessage(day_of_week: int, Bot: TeleBot, Call: types.CallbackQuery, Inl
 		Think_message3 = Bot.send_message(
 			Call.message.chat.id, 
 			"Каждый <b>понедельник, среду и пятницу</b> наши эксперты обновляют для вас \"Загадай карту\". Мы хотим сделать ваш досуг с Тароботом еще интереснее)\n\nЖдём вас с нетерпением в <b>пятницу!</b>💗",
-			reply_markup = InlineKeyboard.delete_before_mm(),
+			reply_markup = InlineKeyboards.delete_before_mm(),
 			parse_mode = "HTML"
 		)
 		return Think_message3
@@ -140,14 +132,14 @@ def ChoiceMessage(day_of_week: int, Bot: TeleBot, Call: types.CallbackQuery, Inl
 		Think_message3 = Bot.send_message(
 			Call.message.chat.id, 
 			"Каждый <b>понедельник, среду и пятницу</b> наши эксперты обновляют для вас \"Загадай карту\". Мы хотим сделать ваш досуг с Тароботом еще интереснее)\n\nЖдём вас с нетерпением в <b>понедельник!</b> 💞",
-			reply_markup = InlineKeyboard.delete_before_mm(),
+			reply_markup = InlineKeyboards.delete_before_mm(),
 			parse_mode = "HTML"
 		)
 		return Think_message3
 	
 def CacherSending(Cacher: TeleCache, Bot: TeleBot, path: str, User: UserData, number_card: int, adding: str = "", inline: InlineKeyboards = None):
 	
-	ThinkCard = CashingFiles(Cacher, path + f"/{number_card}.jpg", types.InputMediaPhoto)
+	ThinkCard = Cacher.get_real_cached_file(path + f"/{number_card}.jpg", types.InputMediaPhoto)
 
 	with open(path + f"/{number_card}.txt") as file:
 		Text = file.read()

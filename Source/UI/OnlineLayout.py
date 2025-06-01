@@ -37,17 +37,17 @@ class Decorators:
 	"""
 	Набор декораторов
 	"""
-	def __init__(self):
-		pass
 
-	def inline_keyboards(self, bot: TeleBot, users: UsersManager, InlineKeyboard: InlineKeyboards, StartAnimation: RealCachedFile):
+	def inline_keyboards(self, bot: TeleBot, users: UsersManager, StartAnimation: RealCachedFile):
 		"""
-		Inline-keyboards
+		Обработка inline_keyboards.
 
-		:param bot: _description_
+		:param bot: Telegram bot.
 		:type bot: TeleBot
-		:param users: _description_
+		:param users: Менеджер пользователей.
 		:type users: UsersManager
+		:param StartAnimation: Данные кэшированной анимации.
+		:type StartAnimation: RealCachedFile
 		"""
 
 		@bot.callback_query_handler(func = lambda Callback: Callback.data == "send_main_menu")
@@ -59,7 +59,7 @@ class Decorators:
 				animation = StartAnimation.file_id,
 				caption = None,
 				parse_mode = "HTML",
-				reply_markup = InlineKeyboard.SendMainMenu()
+				reply_markup = InlineKeyboards.main_menu()
 				)
 			
 		@bot.callback_query_handler(func = lambda Callback: Callback.data == "send_order_layout")
@@ -71,7 +71,7 @@ class Decorators:
 				animation = StartAnimation.file_id,
 				caption = "<b>" + _("РАСКЛАД ОТ МАСТЕРА") + "</b>",
 				parse_mode = "HTML",
-				reply_markup = InlineKeyboard.SendOrderLayout()
+				reply_markup = InlineKeyboards.SendOrderLayout()
 				)
 			
 class Layout:
