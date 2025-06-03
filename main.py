@@ -20,7 +20,7 @@ from Source.TeleBotAdminPanel.Core.Moderation import Moderator
 from Source.TeleBotAdminPanel import Panel
 from Source.InlineKeyboards import InlineKeyboards
 
-from Source.Neurowork import Neurowork
+from Source.Neurowork import NeuroRequestor
 from Source.Functions import IsSubscripted, FindNearest, ChoiceMessage, CacherSending, UpdateThinkCardData, UpdateThinkCardData2, GetNumberCard, update_think_card, delete_thinking_messages
 
 import dateparser
@@ -48,7 +48,7 @@ reader = Reader(Settings)
 Cacher = TeleCache()
 Cacher.set_options(Settings["token"], Settings["chat_id"])
 yes_no = YesNo(MasterBot, Cacher, reader, usermanager, Settings)
-neurowork = Neurowork(Bot, Cacher)
+Neurowork = NeuroRequestor(Bot, Cacher)
 mailer = Mailer(MasterBot, usermanager, reader, Cacher, Settings) 
 values_cards = ValuesCards(MasterBot, usermanager, Cacher, Settings)
 AdminPanel = Panel()
@@ -57,7 +57,7 @@ OnlineLayout = Layout()
 AddictionalOptional = Options(MasterBot, usermanager, Settings, sender, Cacher)
 EnergyExchanger = Exchanger(Bot, usermanager)
 Moderator.initialize(EnergyExchanger.get_unmoderated_mails, EnergyExchanger.moderate_mail)
-Thread(target = InternalCaching(Cacher).caching).start()
+# Thread(target = InternalCaching(Cacher).caching).start()
 
 logging.basicConfig(level = logging.INFO, encoding = "utf-8", filename = "LOGING.log", filemode = "w", force = True,
 	format = '%(asctime)s - %(levelname)s - %(message)s',
@@ -73,22 +73,35 @@ executors = {
 }
 scheduler.configure(executors = executors)
 
-scheduler.add_job(mailer.card_day_mailing, 'cron', hour = 0, minute = 0)
-scheduler.add_job(mailer.appeals.randomize_days, "cron", day_of_week = "mon", hour = 17, minute = 42)
-scheduler.add_job(mailer.letters.randomize_time, "cron", day = "2, 16", hour = 0, minute = 0)
-scheduler.add_job(mailer.letters_mailing, "cron", day = "2, 16", hour = "9-21", minute = "*")
+#==========================================================================================#
+# >>>>> ПРИЗЫВЫ И КАРТА ДНЯ <<<<< #
+#==========================================================================================#
+
+scheduler.add_job(mailer.appeals.randomize_days, "cron", day_of_week = "mon", hour = 0, minute = 0)
+scheduler.add_job(mailer.card_day_mailing, 'cron', hour = 8, minute = 0)
+
+#==========================================================================================#
+# >>>>> ПОСЛАНИЯ <<<<< #
+#==========================================================================================#
+
+scheduler.add_job(mailer.letters.randomize_time, "cron", day = "3, 17", hour = 0, minute = 0)
+scheduler.add_job(mailer.letters_mailing, "cron", day = "3, 17", hour = "9-21", minute = "*")
+
+#==========================================================================================#
+# >>>>> ЗАГАДАЙ КАРТУ И ОБМЕН ЭНЕРГИЕЙ <<<<< #
+#==========================================================================================#
+
 scheduler.add_job(update_think_card, 'cron', day_of_week = "mon, wed, fri", hour = 0, minute = 0, args = [usermanager])
 scheduler.add_job(EnergyExchanger.push_mails, "cron", day_of_week = "mon", hour = 0, minute = 0)
 scheduler.start()
-
 Clear()
 
 AdminPanel.decorators.commands(Bot, usermanager, Settings["password"])
 
+usermanager.remove_property("Planning_days")
+
 @Bot.message_handler(commands = ["start"])
 def ProcessCommandStart(Message: types.Message):
-	user = usermanager.auth(Message.from_user)
-
 	Message = Bot.send_message(
 		Message.chat.id,
 		text = _("<b>Добро пожаловать в Таробот!</b>\n\nСамый большой бот для Таро-гаданий в Telegram!\n\nЗадай боту любой❓️вопрос и наслаждайся ответом!"),
@@ -102,15 +115,15 @@ def ProcessCommandStart(Message: types.Message):
 		reply_markup = InlineKeyboards.main_menu(),
 		parse_mode = "HTML"
 	)
-
-	user.set_property("Current_place", None, force = False)
-	user.set_property("Card_name", None, force = False)
-	user.set_property("Question", None)
-	user.set_property("Generation", False)
-	user.set_property("Subscription", None, force = False)
-	user.clear_temp_properties()
-
-	if not IsSubscripted(MasterBot, user, Settings): return    
+	if not Message.from_user.is_bot:
+		user = usermanager.auth(Message.from_user)
+		user.set_property("Current_place", None, force = False)
+		user.set_property("Card_name", None, force = False)
+		user.set_property("Question", None)
+		user.set_property("Generation", False)
+		user.set_property("Subscription", None, force = False)
+		user.clear_temp_properties()
+		if not IsSubscripted(MasterBot, user, Settings): return    
 	
 @Bot.message_handler(commands = ["card"])
 def ProcessCommandCard(Message: types.Message):
@@ -176,33 +189,16 @@ def ProcessText(Message: types.Message):
 	if AdminPanel.procedures.text(Bot, usermanager, Message): return
 	if EnergyExchanger.procedures.text(Message): return
 
-	if user.expected_type == "Question":
-		user.set_property("Question", Message.text)
-		user.set_property("Generation", True)
+	if user.expected_type == "Question" or not user.get_property("Generation"):
 		user.set_expected_type(None)
-		logging.info(f"ID пользователя: {user.id}, текст вопроса: {Message.text}")
+		logging.info(f"ID пользователя: {user.id}.")
+		logging.info(f"Текст вопроса: {Message.text}")
 
 		try:
 			Bot.send_chat_action(Message.chat.id, action = "typing")
-			Completed = neurowork.AnswerForUser(Message.chat.id, user.get_property("Question"), user)
+			Neurowork.send_layout(user, Message.text)
 
-			if Completed:
-				user.set_property("Generation", False)
 		except Exception as ExceptionData: print(ExceptionData)
-
-		user.set_property("Generation", False)
-
-	else: 
-		if user.get_property("Generation"): pass
-		else:
-			user.set_property("Generation", True)
-			user.set_property("Question", Message.text)
-			logging.info(f"ID пользователя: {user.id}, текст вопроса: {Message.text}")
-			user.set_expected_type(None)
-			Bot.send_chat_action(Message.chat.id, action = "typing")
-			Completed = neurowork.AnswerForUser(Message.chat.id, user.get_property("Question"), user)
-			if Completed:
-				user.set_property("Generation", False)
 
 AdminPanel.decorators.inline_keyboards(Bot, usermanager)
 EnergyExchanger.decorators.inline_keyboards()

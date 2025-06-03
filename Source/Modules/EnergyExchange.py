@@ -202,7 +202,7 @@ class MailsContainer:
 		:type mail: str
 		"""
 
-		if mail not in self.all_mails: self.__Data["Сообщения клиентов"].append(mail)
+		if mail not in self.all_mails: self.__Data["Сообщения клиентов"].append(mail.strip())
 		self.save()
 
 	def reload(self):
@@ -214,6 +214,9 @@ class MailsContainer:
 			self.__Data = Data.to_dict(orient = "list")
 			self.__Data["Наши сообщения"] = list(filter(lambda Value: Value, self.__Data["Наши сообщения"]))
 			self.__Data["Сообщения клиентов"] = list(filter(lambda Value: Value, self.__Data["Сообщения клиентов"]))
+
+			for Type in ("Наши сообщения", "Сообщения клиентов"):
+				for Index in range(0, len(self.__Data[Type])): self.__Data[Type][Index] = self.__Data[Type][Index].strip()
 			
 		else: self.save()
 

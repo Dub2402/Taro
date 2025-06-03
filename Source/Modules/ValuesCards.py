@@ -164,7 +164,7 @@ class ValuesCardInlineTemplates:
 			_("6. В любовной сфере"): "Love",
 			_("7. Состояние здоровья"): "HealthStatus",
 			_("8. Перевернутая карта"): "Inverted",
-			_("Назад"): "generation_view"
+			_("◀️ Назад"): "generation_view"
 		}
 
 		for string in determinations.keys(): menu.add(types.InlineKeyboardButton(string, callback_data = determinations[string]), row_width = 1)
@@ -203,7 +203,6 @@ class Decorators:
 
 		self.__ValuesCardInlineTemplates = ValuesCardInlineTemplates()
 		self.__Cards = Cards()
-		self.__Titles = Titles()
 
 	def inline_keyboards(self):
 		"""Обработка inline_keyboards."""
@@ -228,13 +227,14 @@ class Decorators:
 		@self.__ValuesCards.bot.callback_query_handler(func = lambda Callback: Callback.data.startswith(("Cups", "Swords", "Wands", "Pentacles", "Arcanas")))
 		def choice_sections_cards(Call: types.CallbackQuery):
 			user = self.__ValuesCards.users.auth(Call.from_user)
+			print(Call.data)
 
 			if "_" in Call.data:
-				self.__Cards.card_and_choice_value(bot = self.__ValuesCards.bot, Call = Call, User = user, values_card_inline_keyboard = self.__ValuesCardInlineTemplates, cacher = self.__ValuesCards.cacher)
+				self.__Cards.card_and_choice_value(bot = self.__ValuesCards.bot, Call = Call, User = user, inline_keyboard = self.__ValuesCardInlineTemplates, cacher = self.__ValuesCards.cacher)
 			else:
 				type_card = Call.data
 
-				title = self.__Titles.generate_taro_name_section(type_card)
+				title = Titles.generate_taro_name_section(type_card)
 				self.__ValuesCards.bot.edit_message_caption(
 					caption = f"<b>{title}</b>", 
 					chat_id = Call.message.chat.id, 
@@ -293,7 +293,7 @@ class Decorators:
 			user = self.__ValuesCards.users.auth(Call.from_user)
 		
 			type_card, id_card = user.get_property("Current_place").split("_")
-			title = self.__Titles.generate_taro_name_section(type_card)
+			title = Titles.generate_taro_name_section(type_card)
 
 			Animation = self.__ValuesCards.cacher.get_real_cached_file(ReadJSON("Settings.json")["start_animation"], types.InputMediaAnimation)
 			if type_card == "Arcanas": 
@@ -315,11 +315,11 @@ class Decorators:
 			) 
 			self.__ValuesCards.bot.answer_callback_query(Call.id)
 
-		@self.__ValuesCards.bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("types_cards"))
+		@self.__ValuesCards.bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("sections_cards"))
 		def types_cards(Call: types.CallbackQuery):
 			User = self.__ValuesCards.users.auth(Call.from_user)
 			
-			self.__ValuesCards.bot.edit_message_caption(caption = _("<b>ЗНАЧЕНИЕ КАРТ</b>"), chat_id = Call.message.chat.id, message_id = Call.message.id, reply_markup = self.__ValuesCardInlineTemplates.types_cards(), parse_mode = "HTML")
+			self.__ValuesCards.bot.edit_message_caption(caption = _("<b>ЗНАЧЕНИЕ КАРТ</b>"), chat_id = Call.message.chat.id, message_id = Call.message.id, reply_markup = self.__ValuesCardInlineTemplates.sections_cards(), parse_mode = "HTML")
 			self.__ValuesCards.bot.answer_callback_query(Call.id)
 
 #==========================================================================================#
@@ -358,7 +358,6 @@ class Cards:
 		return str(determinations[index_roman])
 
 	def change_all_message(self, bot: TeleBot, media_type: types, media: RealCachedFile, text: str, Call: types.CallbackQuery, inline_keyboard: ValuesCardInlineTemplates):
-		print(media_type)
 		try:
 			bot.edit_message_media(
 				media = media_type(
@@ -384,6 +383,7 @@ class Cards:
 
 	def card_and_choice_value(self, bot: TeleBot, Call: types.CallbackQuery, User: UserData, inline_keyboard: ValuesCardInlineTemplates, cacher: TeleCache, text: str = ""):
 		Type, card_id = Call.data.split("_")
+		print(Type, card_id)
 	
 		if Type != "Arcanas": User.set_property("Current_place", Call.data)
 	
@@ -393,7 +393,7 @@ class Cards:
 			if Index == card_id:
 				Photo = cacher.get_real_cached_file(f"Materials/Values/{Type}/{filename}/image.jpg", types.InputMediaPhoto)
 
-				if Type == "Arcanas": User.set_property("Current_place", "Arcanas_"+ filename.split(".")[0])
+				if Type == "Arcanas": User.set_property("Current_place", "Arcanas_" + filename.split(".")[0])
 				CardName = filename.split(".")[1].upper().strip()
 				User.set_property("Card_name", CardName)
 

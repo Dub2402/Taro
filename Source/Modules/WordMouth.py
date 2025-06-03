@@ -174,9 +174,8 @@ class Letters:
 		"""
 	
 		today = datetime.now()
-		# random_hour = random.randint(9, 20)
-		random_hour = random.randint(11, 11)
-		random_minute = random.randint(29, 30)
+		random_hour = random.randint(9, 20)
+		random_minute = random.randint(0, 59)
 
 		date_time = today.replace(hour = random_hour, minute = random_minute, second = 0).strftime("%H:%M:%S")
 
@@ -260,13 +259,13 @@ class Decorators:
 				messages = Call.message.id
 			)
 			text = self.__Mailer.word_month.randomize_text(texts = self.__Mailer.reader.appeals)
-			self.__Mailer.masterbot.bot.send_message(
+			self.__Mailer.bot.send_message(
 				chat_id = Call.message.chat.id,
 				text = text,
 				reply_markup = WordMonthInlineTemplates.start_appeals(text)
 				)
 			
-			self.__Mailer.masterbot.bot.answer_callback_query(Call.id)
+			self.__Mailer.bot.answer_callback_query(Call.id)
 
 #==========================================================================================#
 # >>>>> РАССЫЛЬЩИК <<<<< #
@@ -352,7 +351,7 @@ class Mailer:
 
 		try:
 			appeals = True if self.appeals.is_mailing_day() else False
-			self.__Message = self.__bot.send_video(
+			self.__Message = self.__masterbot.bot.send_video(
 				chat_id = User.id,
 				video = video,
 				reply_markup = WordMonthInlineTemplates.appeal_or_delete(text = "Благодарю!", appeal = appeals),
@@ -379,10 +378,10 @@ class Mailer:
 		User = self.__users.get_user(user_id)
 
 		try:
-			self.__Message = self.__bot.send_video(
+			self.__Message = self.__masterbot.bot.send_video(
 				chat_id = User.id,
-				video = self.cacher.get_real_cached_file(self.__settings["letters_animation"], types.InputMediaVideo),
-				caption = "<b><i>" + _("Послание Вселенной для тебя:") + "</b></i>" + "\n\n-" + text, 
+				video = self.__cacher.get_real_cached_file(self.__settings["letters_animation"], types.InputMediaVideo).file_id,
+				caption = "<b><i>" + _("Послание Вселенной для тебя:") + "</i></b>" + "\n\n- " + text, 
 				parse_mode = "HTML",
 				reply_markup = InlineKeyboards.for_restart("Принимаю!")
 			)
@@ -432,14 +431,12 @@ class Mailer:
 			logging.info(f"Проверка наличия рассылки для {User.id}")
 
 			if User.has_property("mailing") and User.get_property("mailing"):
-				InstantCard = self.__Card.GetInstantCard()
-
-				if InstantCard: self.__send_card_day(User = User, video = InstantCard["video"], text = InstantCard["text"])
-
-				else:
-					Video, Text = self.__Card.GetCard()
-					Message = self.__send_card_day(User = User, video = open(f"{Video}", "rb"), text = Text)
-					self.__Card.AddCard(Message.video.file_id)
+				today = datetime.today().strftime("%d.%m.%Y")
+				text = None
+				with open(f"Materials/Texts/{today}.txt") as file:
+					text = file.read()
+				
+				self.__send_card_day(User = User, video = self.__cacher.get_real_cached_file(f"Materials/Video/{today}.mp4", types.InputMediaVideo).file_id, text = text)
 
 	def letters_mailing(self):
 		"""Рассылка посланий."""
@@ -447,4 +444,4 @@ class Mailer:
 		users_id = self.__Letters.users_mailing_now()
 		for user_id in users_id:
 			text = self.__WordMonth.randomize_text(self.__reader.letters)
-			self.__send_letters(user_id = user_id, text = text, video = None)
+			self.__send_letters(user_id = user_id, text = text)

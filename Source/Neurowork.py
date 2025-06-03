@@ -1,204 +1,261 @@
 from dublib.TelebotUtils.Cache import TeleCache
-from dublib.Methods.Filesystem import ReadJSON
+from dublib.Methods.Filesystem import ReadJSON, ListDir
+from dublib.TelebotUtils.Users import UserData
 
-from Source.Functions import _, CashingFiles
+from Source.Modules.solid_g4f.Connection.API import Requestor, Options
+from Source.Functions import _
 from Source.UI.OnlineLayout import end_layout
 
 import telebot
 import random
-import os
-import re
 from telebot import types
-from g4f.client import Client
-import logging
 
-class Neurowork:
+class NeuroRequestor:
+	"""Обработчик запросов к нейросети."""
 
-	@property
-	def __GenerationPhotos(self) -> int:
-		return random.randint(1,40)
-	
-	def __match_rus(self, character, alphabet=set('абвгдеёжзийклмнопрстуфхцчшщъыьэюя')):
-		
-		return character.lower() in alphabet
-	
-	def __choice_text(self, texts):
-		random_text = random.choice(texts)
-		return random_text
+	#==========================================================================================#
+	# >>>>> ПРИВАТНЫЕ МЕТОДЫ <<<<< #
+	#==========================================================================================#
 
-	# Удаляем всё, что находится в тегах html
-	def __remove_html_tags(self, text):
-		return re.sub(r'<[^>]+>', '', text)
-	
-	def __GetNumber(self, card: str):
-		return card.replace(".jpg", "").strip()
-
-	def __GetTextByCardNumber(self, number: int, Text_typle = ("Первая", "Вторая", "Третья")) -> str:
-		return Text_typle[number - 2]
-	
-	def __NameCard(self, collection: str, number: int):
-		return ReadJSON(f"Materials/Layouts/{collection}/cards.json")[number-2]
-	
-	def IsTextRussian(self, text):
-		fix_text = self.__remove_html_tags(text) 
-		IsRussian = True 
-		if not fix_text:
-			IsRussian = False
-		else:
-			for Character in fix_text:
-				if Character.isalpha() and not self.__match_rus(Character):
-					IsRussian = False
-					break
-
-		return IsRussian
-
-	def __init__(self, Bot: telebot.TeleBot, Cacher: TeleCache):
-		self.__bot = Bot   
-		self.__Cacher = Cacher
-		self.__Client = Client()
-
-	def AnswerForUser(self, chat_id: int, user_text: str, User):
-		Completed = False
-		
-		set_photos = self.__GenerationPhotos
-
-		for collection in os.listdir("Materials/Layouts"):
-			dir_set = collection.split(" ")[0]
-	
-			if int(dir_set) == set_photos:
-				Files = sorted(os.listdir(f"Materials/Layouts/{collection}"))
-				Files = list(filter(lambda List: List.endswith(".jpg"), Files))
-				for card in Files:
-					self.__bot.send_chat_action(chat_id, action = "typing")
-					NumberCard = self.__GetNumber(card)
-					PhotoID = CashingFiles(self.__Cacher, f"Materials/Layouts/{collection}/{card}", types.InputMediaPhoto)
-					if NumberCard == "1":
-						Text_response, Result = self.PreparationText(user_text)
-						if Result:
-							self.__bot.send_photo(
-								chat_id = chat_id,
-								photo = PhotoID.file_id,
-								caption = Text_response,
-									parse_mode = "HTML" 
-							)
-						else:
-							self.__bot.send_message(
-								chat_id = chat_id,
-								text = Text_response,
-								parse_mode = "HTML" 
-							)
-							break
-					else:
-						if Result:
-							CardNumber = self.__GetTextByCardNumber(int(NumberCard)) + " " + "карта"
-							CardName = self.__NameCard(collection, int(NumberCard))
-							Text = self.GenerationCardLayout(CardNumber, CardName, user_text)
-							self.__bot.send_photo(
-								chat_id = chat_id,
-								photo = PhotoID.file_id,
-								caption = Text,
-								parse_mode = "HTML" 
-							)
-				if Result:
-					self.__bot.send_chat_action(chat_id, action = "typing")
-					Text = self.GenerationOutcome(self.__NameCard(collection, 2), self.__NameCard(collection, 3), self.__NameCard(collection, 4), user_text)
-					self.__bot.send_message(
-						chat_id = chat_id,
-						text = "\n\n".join(Text),
-						parse_mode = "HTML",
-						reply_markup = end_layout()
-						)
-					
-		Completed = True
-		return Completed
-	
-	def generate_text(self, request: str, tries: int = 3) -> str | None:
+	def __FormatCardLayout(self, text: str) -> str | None:
 		"""
-		Генерирует текст по запросу.
-			request – текст запроса;\n
-			tries – количество попыток.
+		Форматирует ответ нейросети с раскладом.
+
+		:param text: Текст ответа.
+		:type text: str
+		:return: Форматированный ответ или `None` при отсутствии оного.
+		:rtype: str | None
 		"""
 
-		CurrentTry = 0
+		if not text: return
+		Replaces = {
+			"\n": "\n\n",
+			"«": "«<b>",
+			"»": "</b>»"
+		}
 
-		while CurrentTry < tries:
-			Response = self.__Client.chat.completions.create(model = "gpt-4o", messages = [{"role": "user", "content": request}])
-			Response: str = Response.choices[0].message.content.strip()
+		for Substring in Replaces.keys(): text = text.replace(Substring, Replaces[Substring])
 
-			if Response.startswith("You have reached your request limit for the hour."): continue
-			if type(Response) != str or not Response: continue
+		return text
 
-			if Response == "Ваше сообщение не понятно.": 
-				CurrentTry += 1
-				continue
+	def __FormatPreparation(self, text: str) -> str | None:
+		"""
+		Форматирует ответ нейросети с вступлением.
 
-			if not self.IsTextRussian(Response):
-				CurrentTry += 1
-				logging.warning(f"Иноязычная речь: {Response}")
-				continue
+		:param text: Текст ответа.
+		:type text: str
+		:return: Форматированный ответ или `None` при отсутствии оного.
+		:rtype: str | None
+		"""
 
-			Replaces = {
-				"\n": "\n\n",
-				"«": "«<b>",
-				"»": "</b>»"
-			}
+		if not text: return
+		Strings = (
+			"Хороший какой вопрос.",
+			"Спасибо, очень интересно.",
+			"Ничего себе.",
+			"Вот это ситуация."
+		)
 
-			for Substring in Replaces.keys(): Response = Response.replace(Substring, Replaces[Substring])
-			return Response
+		for String in Strings:
+			if String in text: text.replace(String, String[:-1] + "!") 
+
+		return text
+
+	def __ReadCardsData(self) -> dict[str, tuple]:
+		"""
+		Считывает данные карт.
+
+		:return: Словарь, ключём в котором является название комплекта, а значением набор карт в комплекте.
+		:rtype: dict[str, tuple]
+		"""
+
+		Data = dict()
+		for Set in ListDir("Materials/Layouts"): Data[Set] = tuple(ReadJSON(f"Materials/Layouts/{Set}/cards.json"))
+
+		return Data
+
+	#==========================================================================================#
+	# >>>>> ПУБЛИЧНЫЕ МЕТОДЫ <<<<< #
+	#==========================================================================================#
+
+	def __init__(self, bot: telebot.TeleBot, cacher: TeleCache):
+		"""
+		Обработчик запросов к нейросети.
+
+		:param bot: Бот Telegram
+		:type bot: telebot.TeleBot
+		:param cacher: Менеджер кэша Telegram.
+		:type cacher: TeleCache
+		"""
+
+		self.__Bot = bot
+		self.__Cacher = cacher
+
+		self.__Data: dict[str, tuple] = self.__ReadCardsData()
+
+	def send_layout(self, user: UserData, question: str):
+		"""
+		Отправляет расклад пользователю.
+
+		:param user: Данные пользователя.
+		:type user: UserData
+		:param question: Текст вопроса.
+		:type question: str
+		"""
+
 		
-	def PreparationText(self, user_text) -> tuple[str, bool]:
-		
-		texts = [
+		RequestOptions = Options()
+		RequestOptions.set_max_length(300)
+		RequestOptions.set_timeout(60)
+		RequestOptions.set_tries(10)
+		RequestOptions.set_model("gpt-4")
+		Generator = Requestor(RequestOptions)
+		Answers = {
+			1: None,
+			2: None,
+			3: None,
+			4: None,
+			5: None
+		}
+
+		user.set_property("Generation", True)
+		Collection = random.choice(tuple(self.__Data.keys()))
+
+		PreparationRequest = self.build_preparation_request(question)
+		FirstCardRequest = self.build_card_layout_request(self.__Data[Collection][0], "Первая карта", question)
+		SecondCardRequest = self.build_card_layout_request(self.__Data[Collection][1], "Вторая карта", question)
+		ThirdCardRequest = self.build_card_layout_request(self.__Data[Collection][2], "Третья карта", question)
+		OutcomeRequest = self.build_outcome_request(self.__Data[Collection][0], self.__Data[Collection][1], self.__Data[Collection][2], question)
+
+		Generator.start_thread_generation(PreparationRequest, Answers, 1)
+		Generator.start_thread_generation(FirstCardRequest, Answers, 2)
+		Generator.start_thread_generation(SecondCardRequest, Answers, 3)
+		Generator.start_thread_generation(ThirdCardRequest, Answers, 4)
+		Generator.start_thread_generation(OutcomeRequest, Answers, 5)
+
+		for Index in range(1, 5):
+			self.__Bot.send_chat_action(user.id, action = "typing")
+			ImageCache = self.__Cacher.get_real_cached_file(f"Materials/Layouts/{Collection}/{Index}.jpg", types.InputMediaPhoto)
+
+			if Index == 1:
+				Text = Generator.wait_thread_generation(Answers, 1).json["text"]
+				Text = self.__FormatPreparation(Text)
+
+				if Text and Text != "Ваше сообщение не понятно.": 
+					self.__Bot.send_photo(
+						chat_id = user.id,
+						photo = ImageCache.file_id,
+						caption = Text,
+						parse_mode = "HTML"
+					)
+
+				else:
+					self.__Bot.send_message(
+						chat_id = user.id,
+						text = _("Ваше сообщение не совсем понятно. Если у вас есть вопрос или тема, которую вы хотите обсудить, пожалуйста, напишите об этом. Я с радостью помогу вам!"),
+						parse_mode = "HTML" 
+					)
+					user.set_property("Generation", False)
+					return
+
+			else: 
+				Text = Generator.wait_thread_generation(Answers, Index).json["text"]
+				Text = self.__FormatCardLayout(Text)
+				self.__Bot.send_photo(
+					chat_id = user.id,
+					photo = ImageCache.file_id,
+					caption = Text,
+					parse_mode = "HTML" 
+				)
+
+		Text = Generator.wait_thread_generation(Answers, 5).json["text"]
+		Outcome = (
+			"<b>" + _("Заключение:") + "</b>",
+		  	Text + "\n",
+		  	"<i>" + _("Если желаете рассмотреть ваши вопросы более серьезно, то рекомендуем взять расклад у нашего <b>Таро Мастера</b>, где уже живой опытный эксперт даст вам действующие подсказки и советы!") + "</i>"
+		)
+		self.__Bot.send_message(
+			chat_id = user.id,
+			text = "\n".join(Outcome),
+			parse_mode = "HTML",
+			reply_markup = end_layout()
+		)
+
+		user.set_property("Generation", False)
+
+	#==========================================================================================#
+	# >>>>> ПУБЛИЧНЫЕ МЕТОДЫ ПОСТРОЕНИЯ ЗАПРОСОВ <<<<< #
+	#==========================================================================================#
+
+	def build_preparation_request(self, question: str) -> str:
+		"""
+		Строит текст первого запроса.
+
+		:param question: Вопрос пользователя.
+		:type question: str
+		:return: Текст запроса.
+		:rtype: str
+		"""
+
+		Starts = (
 			_("Ну что ж, давай погрузимся в тайны Таро..."),
 			_("Ухх.. Хороший какой вопрос! Сейчас посмотрим..."),
 			_("Спасибо, очень интересно! Сейчас разложим карты..."),
 			_("Ничего себе! Вот это я понимаю запрос к картам..."),
 			_("Вот это ситуация! Довольно любопытный расклад...")
-		]
-		random_text = self.__choice_text(texts)
-		Request = f"У тебя есть шаблон: {random_text} [question]."
-		Request += f"Тебе задали вопрос: {user_text}. Выведи шаблон учитывая, что спрашивающий имеет ввиду не тебя в вопросе, не добавляй восклицательный знак и двоеточие, а также не используй форматирование. Согласуй, учитывая правила русского языка."
-		Request += "Если вопрос является бессмысленным набором символов - выведи следующую строку: \"Ваше сообщение не понятно.\" не добавляя ничего другого."
-		Text_response = self.generate_text(Request, 10)
+		)
+		Start = random.choice(Starts)
+		Request = f"У тебя есть шаблон: {Start} [question]. "
+		Request += f"Тебе задали вопрос: {question}. Выведи шаблон и подставь вопрос. Согласуй вопрос с шаблоном, поставь во второе лицо, учитывай правила русского языка."
+		Request += "Если вопрос является бессмысленным набором символов или непонятен тебе, выведи следующую строку: \"Ваше сообщение не понятно.\", не добавляя ничего другого."
+		
+		return Request
 
-		if not Text_response: 
-			Text_response = "Ваше сообщение не совсем понятно. Если у вас есть вопрос или тема, которую вы хотите обсудить, пожалуйста, напишите об этом. Я с радостью помогу вам!"
-			Result = False
-		else: Result = True
-			
-		logging.info(f"Текст вопроса: {user_text},\nтекст для пользователя: {Text_response}")
-		return Text_response, Result
+	def build_card_layout_request(self, card_name: str, card_number: str, question: str) -> str:
+		"""
+		Строит текст запроса для конкретной карты.
 
-	def GenerationCardLayout(self, number: str, card: str, user_text: str) -> str:
+		:param card_name: Имя карты.
+		:type card_name: str
+		:param card_number: Номер карты.
+		:type card_number: str
+		:param question: Текст вопроса.
+		:type question: str
+		:return: Текст запроса.
+		:rtype: str
+		"""
 
-		Request = f"Проанализируй эти данные: {number}, {card} и {user_text} и предоставь ответ в следующем формате:"
-		Request += f"{number}, «{card}», может указывать на [помести сюда своё мнение о том, на что может указывать значение карты о заданном вопросе]."
+		Request = f"Проанализируй эти данные: {card_number}, {card_name} и {question} и предоставь ответ в следующем формате:"
+		Request += f"{card_number}, «{card_name}», может указывать на [помести сюда своё мнение о том, на что может указывать значение карты о заданном вопросе]."
 		Request += "Не более 250 символов в тексте. Не меняй первые два словосочетания!!!"
 
-		Text_response = self.generate_text(Request, 10)
-		logging.info(f"Текст вопроса: {user_text},\nтекст для пользователя: {Text_response}")
-
-		return Text_response
+		return Request
 	
-	def GenerationOutcome(self, First: str, Second: str, Three: str, user_text: str):
-		texts = [
+	def build_outcome_request(self, first_card: str, second_card: str, third_card: str, question: str) -> str:
+		"""
+		Строит текст запроса для резюмирования расклада.
+
+		:param first_card: Первая карта.
+		:type first_card: str
+		:param second_card: Вторая карта.
+		:type second_card: str
+		:param third_card: Третья карта.
+		:type third_card: str
+		:param question: Вопрос пользователя.
+		:type question: str
+		:return: Текст запроса.
+		:rtype: str
+		"""
+
+		Starts = [
 			_("В целом"),
 			_("Таким образом"),
 			_("Как разультат"),
 			_("В итоге")
 		]
-		random_text = self.__choice_text(texts)
-		Request = f"Проанализируй эти карты Таро: {First}, {Second} и {Three} и предоставь ответ в следующем формате на вопрос {user_text}:"
-		Request += f"{random_text}, карты показывают [помести сюда своё мнение о том, на что могут показывать указанные значения карт о заданном вопросе]."
+		Start = random.choice(Starts)
+		Request = f"Проанализируй эти карты Таро: {first_card}, {second_card} и {third_card} и предоставь ответ в следующем формате на вопрос {question}:"
+		Request += f"{Start}, карты показывают [помести сюда своё мнение о том, на что могут показывать указанные значения карт о заданном вопросе]."
 		Request += "Не более 250 символов в тексте. Не меняй первые два слова!!! Не упоминай названия карт!!!"
 			
-		Text_response = self.generate_text(Request, 10)	
-		logging.info(f"Текст вопроса: {user_text},\nтекст для пользователя: {Text_response}")
-
-		Text = (
-			"<b>" + _("Заключение:") + "</b>",
-		  	Text_response,
-		  	"<i>" + _("Если желаете рассмотреть ваши вопросы более серьезно, то рекомендуем взять расклад у нашего Таро Мастера, где уже живой опытный эксперт даст вам действующие подсказки и советы!") + "</i>"
-		)
-
-		return Text
+		return Request

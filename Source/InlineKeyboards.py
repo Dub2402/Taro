@@ -150,12 +150,12 @@ class InlineKeyboards:
 		
 		return Menu
 
-	def SendOrderLayout(self) -> types.InlineKeyboardMarkup:
+	def SendOrderLayout() -> types.InlineKeyboardMarkup:
 
 		Menu = types.InlineKeyboardMarkup()
 
 		Determinations = {
-			_("💔 Личная жизнь"): "GeneralMeaning",
+			_("💔 Личная жизнь"): "https://t.me/m/XVa5Zsn0OTli",
 			_("💫 Ближайшее будущее"): "https://t.me/m/6cDunvn0ZThi",
 			_("🧿 Дальнее будущее"): "https://t.me/m/_1rfsRNfY2Ri",
 			_("💼 Карьера и работа"): "https://t.me/m/o4AQSvQ_NGIy",

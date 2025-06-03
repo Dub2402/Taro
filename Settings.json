@@ -1,22 +1,13 @@
 {
-    "token":"",
-    "qr_id": "",
-    "start_id": "",
+    "token": "",
+    "qr_image": "",
+    "start_animation": "",
+    "letters_animation": "",
     "chat_id": null,
-    "mailing_time": "08:00",
     "subscription_chanel": null,
     "subscription_link": "",
     "password": "",
     "language": "ru",
     "letters": "",
-    "yes_no": "",
-    "planning_day": "3",
-    "planning_time": "0:0",
-    "mailings": "05:50",
-    "restart_mailings": true, 
-    "once_mailing": false,
-    "update_thinkcards": {
-        "days": "mon, wed, fri",
-        "time": "00:00"
-    }
+    "yes_no": ""
 }
