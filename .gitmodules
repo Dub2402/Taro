@@ -1,3 +1,6 @@
 [submodule "Source/TeleBotAdminPanel"]
 	path = Source/TeleBotAdminPanel
 	url = https://github.com/DUB1401/TeleBotAdminPanel
+[submodule "Source/Modules/solid_g4f"]
+	path = Source/Modules/solid_g4f
+	url = https://github.com/DUB1401/solid_g4f
