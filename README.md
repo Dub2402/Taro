@@ -57,12 +57,6 @@ pip install -r requirements.txt
 Путь к анимации, которая отправляется по команде /start.
 
 ```JSON
-"letters_animation": ""
-```
-
-Путь к анимации, которая отправляется с посланиями.
-
-```JSON
 "chat_id": null
 ```
 

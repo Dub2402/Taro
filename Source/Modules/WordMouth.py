@@ -4,9 +4,9 @@ from dublib.TelebotUtils import TeleMaster
 from dublib.Engine.GetText import _
 from dublib.Methods.Filesystem import WriteJSON, ReadJSON
 
+from Source.Modules.Subscription import Subscription
 from Source.Core.Reader import Reader
 from Source.InlineKeyboards import InlineKeyboards
-
 
 from datetime import datetime
 import random
@@ -42,7 +42,7 @@ class WordMonthInlineTemplates:
 		"""
 		Строит Inline-интерфейс:
 			Поделиться
-			В другой раз
+			В другой раз!
 
 		:return: inline-keyboard
 		:rtype: types.InlineKeyboardMarkup
@@ -54,7 +54,7 @@ class WordMonthInlineTemplates:
 			_("Поделиться"), 
 			switch_inline_query = text
 			)
-		for_delete = types.InlineKeyboardButton(_("В другой раз"), callback_data = "for_delete")
+		for_delete = types.InlineKeyboardButton(_("В другой раз!"), callback_data = "for_delete")
 
 		Menu.add(share, for_delete, row_width= 1) 
 
@@ -106,7 +106,7 @@ class Appeals:
 		:rtype: dict[str, list[int]]
 		"""
 	
-		return ReadJSON("Data/WordMonth//Appeals.json")[str(week)]
+		return ReadJSON("Data/WordMonth/Appeals.json")[str(week)]
 	
 	def __day_of_week(self) -> int:
 		"""
@@ -134,6 +134,12 @@ class Appeals:
 	# >>>>> ПУБЛИЧНЫЕ МЕТОДЫ <<<<< #
 	#==========================================================================================#
 	
+	def __init__(self, mailer: "Mailer"):
+
+		#---> Генерация динамических атрибутов.
+		#==========================================================================================#
+		self.__Mailer = mailer
+
 	def is_mailing_day(self) -> bool:
 		"""
 		Является ли сегодняшний день днём рассылки призыва.
@@ -148,12 +154,15 @@ class Appeals:
 	def randomize_days(self):
 		"""Разброс призывов по дням недели и сохранение в формате json."""
 		
-		days = random.sample(population = list(range(7)), k = 4)
+		days = random.sample(population = list(range(7)), k = 3)
 		days.sort()
 
 		Data = {}
 		Data[str(self.__week_of_year())] = days
 		WriteJSON("Data/WordMonth/Appeals.json", Data)
+
+	def click_update_card_day(self):
+		self.__Mailer.users.set_property("send_appeal", False)
 
 #==========================================================================================#
 # >>>>> ПОСЛАНИЯ <<<<< #
@@ -174,7 +183,7 @@ class Letters:
 		"""
 	
 		today = datetime.now()
-		random_hour = random.randint(9, 20)
+		random_hour = random.randint(9, 10)
 		random_minute = random.randint(0, 59)
 
 		date_time = today.replace(hour = random_hour, minute = random_minute, second = 0).strftime("%H:%M:%S")
@@ -254,6 +263,9 @@ class Decorators:
 		@self.__Mailer.bot.callback_query_handler(func = lambda Callback: Callback.data == "send_appeal")
 		def send_appeal(Call: types.CallbackQuery):
 			user = self.__Mailer.users.auth(Call.from_user)
+			if not self.__Mailer.subscription.IsSubscripted(user): 
+				self.__Mailer.bot.answer_callback_query(Call.id)
+				return
 			self.__Mailer.masterbot.safely_delete_messages(
 				chat_id = Call.message.chat.id,
 				messages = Call.message.id
@@ -265,6 +277,37 @@ class Decorators:
 				reply_markup = WordMonthInlineTemplates.start_appeals(text)
 				)
 			
+			self.__Mailer.bot.answer_callback_query(Call.id)
+
+		@self.__Mailer.bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("card_day"))
+		def card_day(Call: types.CallbackQuery):
+			user = self.__Mailer.users.auth(Call.from_user)
+			if not self.__Mailer.subscription.IsSubscripted(user): 
+				self.__Mailer.bot.answer_callback_query(Call.id)
+				return
+			
+			today = datetime.today().strftime("%d.%m.%Y")
+
+			with open(f"Materials/Texts/{today}.txt") as file:
+				text = file.read()
+
+			appeals = True if self.__Mailer.appeals.is_mailing_day() else False
+
+			if user.has_property("send_appeal"): send_appeal = user.get_property("send_appeal")
+			else: send_appeal = False
+
+			if appeals and not send_appeal: button = WordMonthInlineTemplates.appeal_or_delete(text = "Благодарю!", appeal = appeals) 
+			else: button = InlineKeyboards.for_delete("Благодарю!")
+
+			self.__Mailer.bot.send_video(
+				chat_id = Call.message.chat.id,
+				video = self.__Mailer.cacher.get_real_cached_file(f"Materials/Video/{today}.mp4", types.InputMediaVideo).file_id,
+				caption = text, 
+				reply_markup = button,
+				parse_mode = "HTML"
+				)
+			
+			user.set_property("send_appeal", True)
 			self.__Mailer.bot.answer_callback_query(Call.id)
 
 #==========================================================================================#
@@ -330,6 +373,12 @@ class Mailer:
 		"""Менеджер кэша."""
 
 		return self.__cacher
+	
+	@property
+	def subscription(self) -> Subscription:
+		"""Проверка подписки."""
+
+		return self.__subscription
 
 	#==========================================================================================#
 	# >>>>> ПРИВАТНЫЕ МЕТОДЫ <<<<< #
@@ -350,11 +399,10 @@ class Mailer:
 		"""
 
 		try:
-			appeals = True if self.appeals.is_mailing_day() else False
 			self.__Message = self.__masterbot.bot.send_video(
 				chat_id = User.id,
 				video = video,
-				reply_markup = WordMonthInlineTemplates.appeal_or_delete(text = "Благодарю!", appeal = appeals),
+				reply_markup = InlineKeyboards.for_delete("Да будет так!"),
 				caption = text, 
 				parse_mode = "HTML"
 			)
@@ -378,17 +426,20 @@ class Mailer:
 		User = self.__users.get_user(user_id)
 
 		try:
-			self.__Message = self.__masterbot.bot.send_video(
+			self.__Message = self.__masterbot.bot.send_animation(
 				chat_id = User.id,
-				video = self.__cacher.get_real_cached_file(self.__settings["letters_animation"], types.InputMediaVideo).file_id,
-				caption = "<b><i>" + _("Послание Вселенной для тебя:") + "</i></b>" + "\n\n- " + text, 
+				animation = self.__cacher.get_real_cached_file(
+					path = "Data/WordMonth/letters.gif", 
+					autoupload_type = types.InputMediaAnimation
+					).file_id,
+				caption = "<b><i>" + _("Тебе наставление от Мастера 🔥:") + "</i></b>" + "\n\n- " + text, 
 				parse_mode = "HTML",
 				reply_markup = InlineKeyboards.for_restart("Принимаю!")
 			)
 			logging.info(f"Послание отправлено {User.id}")
 			User.set_chat_forbidden(False)
 
-		except: User.set_chat_forbidden(True)
+		except ZeroDivisionError: User.set_chat_forbidden(True)
 
 		self.__Letters.delete_time_mailings(str(User.id))
 
@@ -396,7 +447,7 @@ class Mailer:
 	# >>>>> ПУБЛИЧНЫЕ МЕТОДЫ <<<<< #
 	#==========================================================================================#
 
-	def __init__(self, masterbot: TeleMaster, users: UsersManager, reader: Reader, cacher: TeleCache, settings: dict):
+	def __init__(self, masterbot: TeleMaster, users: UsersManager, reader: Reader, cacher: TeleCache, subscription: Subscription):
 		"""
 		Инициализация.
 
@@ -417,10 +468,10 @@ class Mailer:
 		self.__users = users
 		self.__reader = reader
 		self.__cacher = cacher
-		self.__settings = settings
+		self.__subscription = subscription
 
 		self.__WordMonth = WordMonth()
-		self.__Appeals = Appeals()
+		self.__Appeals = Appeals(self)
 		self.__Letters = Letters(users)
 		self.__Decorators = Decorators(self)
 

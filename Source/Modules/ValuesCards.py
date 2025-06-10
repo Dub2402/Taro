@@ -4,7 +4,7 @@ from dublib.TelebotUtils.Cache import TeleCache, RealCachedFile
 from dublib.Engine.GetText import _
 from dublib.Methods.Filesystem import ReadJSON
 
-from Source.Functions import IsSubscripted
+from Source.Modules.Subscription import Subscription
 
 from telebot import TeleBot, types
 import os
@@ -210,7 +210,7 @@ class Decorators:
 		@self.__ValuesCards.bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("value_card"))
 		def value_card(Call: types.CallbackQuery):
 			user = self.__ValuesCards.users.auth(Call.from_user)
-			if not IsSubscripted(self.__ValuesCards.masterbot, user, self.__ValuesCards.settings):
+			if not self.__ValuesCards.subscription.IsSubscripted(user):
 				self.__ValuesCards.bot.answer_callback_query(Call.id)
 				return
 
@@ -227,7 +227,9 @@ class Decorators:
 		@self.__ValuesCards.bot.callback_query_handler(func = lambda Callback: Callback.data.startswith(("Cups", "Swords", "Wands", "Pentacles", "Arcanas")))
 		def choice_sections_cards(Call: types.CallbackQuery):
 			user = self.__ValuesCards.users.auth(Call.from_user)
-			print(Call.data)
+			if not self.__ValuesCards.subscription.IsSubscripted(user):
+				self.__ValuesCards.bot.answer_callback_query(Call.id)
+				return
 
 			if "_" in Call.data:
 				self.__Cards.card_and_choice_value(bot = self.__ValuesCards.bot, Call = Call, User = user, inline_keyboard = self.__ValuesCardInlineTemplates, cacher = self.__ValuesCards.cacher)
@@ -248,6 +250,9 @@ class Decorators:
 		@self.__ValuesCards.bot.callback_query_handler(func = lambda Callback: Callback.data in ("GeneralMeaning", "PersonalState", "DeepLevel", "WorkCareer", "Finance", "Love", "HealthStatus", "Inverted"))
 		def choice_values_card(Call: types.CallbackQuery):
 			user = self.__ValuesCards.users.auth(Call.from_user)
+			if not self.__ValuesCards.subscription.IsSubscripted(user):
+				self.__ValuesCards.bot.answer_callback_query(Call.id)
+				return
 			card_position: str = user.get_property("Current_place")
 			type_card, id_card = card_position.split("_")
 
@@ -275,22 +280,37 @@ class Decorators:
 
 		@self.__ValuesCards.bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("values_card"))
 		def values_card(Call: types.CallbackQuery):
-			user = self.__ValuesCards.users.auth(Call.from_user)	
+			user = self.__ValuesCards.users.auth(Call.from_user)
+			if not self.__ValuesCards.subscription.IsSubscripted(user):
+				self.__ValuesCards.bot.answer_callback_query(Call.id)
+				return	
 
 			type_card = user.get_property("Current_place").split("_")[0]
 			card_name = user.get_property("Card_name")
 
 			if type_card == "Arcanas" and card_name:
 				senior_lasso = _("СТАРШИЙ АРКАН")
-				self.__ValuesCards.bot.edit_message_caption(caption = f"<b> {senior_lasso} «{card_name}»</b>", chat_id = Call.message.chat.id, message_id = Call.message.id, reply_markup = self.__ValuesCardInlineTemplates.values_card(), parse_mode = "HTML")
+				self.__ValuesCards.bot.edit_message_caption(
+					caption = f"<b> {senior_lasso} «{card_name}»</b>", 
+					chat_id = Call.message.chat.id, message_id = Call.message.id, 
+					reply_markup = self.__ValuesCardInlineTemplates.values_card(), 
+					parse_mode = "HTML")
 			else:
-				self.__ValuesCards.bot.edit_message_caption(caption = f"<b>«{card_name}»</b>", chat_id = Call.message.chat.id, message_id = Call.message.id, reply_markup = self.__ValuesCardInlineTemplates.values_card(), parse_mode = "HTML")
+				self.__ValuesCards.bot.edit_message_caption(
+					caption = f"<b>«{card_name}»</b>", 
+					chat_id = Call.message.chat.id, 
+					message_id = Call.message.id, 
+					reply_markup = self.__ValuesCardInlineTemplates.values_card(), 
+					parse_mode = "HTML")
 
 			self.__ValuesCards.bot.answer_callback_query(Call.id)
 
 		@self.__ValuesCards.bot.callback_query_handler(func = lambda Callback: Callback.data == "generation_view")
 		def back_generation_view_(Call: types.CallbackQuery):
 			user = self.__ValuesCards.users.auth(Call.from_user)
+			if not self.__ValuesCards.subscription.IsSubscripted(user):
+				self.__ValuesCards.bot.answer_callback_query(Call.id)
+				return
 		
 			type_card, id_card = user.get_property("Current_place").split("_")
 			title = Titles.generate_taro_name_section(type_card)
@@ -298,8 +318,16 @@ class Decorators:
 			Animation = self.__ValuesCards.cacher.get_real_cached_file(ReadJSON("Settings.json")["start_animation"], types.InputMediaAnimation)
 			if type_card == "Arcanas": 
 				id_card = int(self.__Cards.roman_to_arabic(id_card))
-				self.__Cards.change_all_message(self.__ValuesCards.bot, media_type = types.InputMediaAnimation, media = Animation.file_id, text = f"<b>{title}</b>", Call = Call, inline_keyboard = self.__ValuesCardInlineTemplates.generate_view(type_card, self.__ValuesCardInlineTemplates.get_page_keyboard(id_card)))
-			else: self.__Cards.change_all_message(self.__ValuesCards.bot, media_type = types.InputMediaAnimation, media = Animation.file_id, text = f"<b>{title}</b>", Call = Call, inline_keyboard = self.__ValuesCardInlineTemplates.generate_view(type_card, self.__ValuesCardInlineTemplates.get_page_keyboard(int(id_card) - 1)))
+				self.__Cards.change_all_message(
+					self.__ValuesCards.bot, media_type = types.InputMediaAnimation, 
+					media = Animation.file_id, text = f"<b>{title}</b>", 
+					Call = Call, 
+					inline_keyboard = self.__ValuesCardInlineTemplates.generate_view(type_card, self.__ValuesCardInlineTemplates.get_page_keyboard(id_card)))
+			else: self.__Cards.change_all_message(
+				self.__ValuesCards.bot, media_type = types.InputMediaAnimation, 
+				media = Animation.file_id, text = f"<b>{title}</b>", 
+				Call = Call, 
+				inline_keyboard = self.__ValuesCardInlineTemplates.generate_view(type_card, self.__ValuesCardInlineTemplates.get_page_keyboard(int(id_card) - 1)))
 			
 			self.__ValuesCards.bot.answer_callback_query(Call.id)
 
@@ -317,7 +345,10 @@ class Decorators:
 
 		@self.__ValuesCards.bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("sections_cards"))
 		def types_cards(Call: types.CallbackQuery):
-			User = self.__ValuesCards.users.auth(Call.from_user)
+			user = self.__ValuesCards.users.auth(Call.from_user)
+			if not self.__ValuesCards.subscription.IsSubscripted(user):
+				self.__ValuesCards.bot.answer_callback_query(Call.id)
+				return
 			
 			self.__ValuesCards.bot.edit_message_caption(caption = _("<b>ЗНАЧЕНИЕ КАРТ</b>"), chat_id = Call.message.chat.id, message_id = Call.message.id, reply_markup = self.__ValuesCardInlineTemplates.sections_cards(), parse_mode = "HTML")
 			self.__ValuesCards.bot.answer_callback_query(Call.id)
@@ -383,7 +414,6 @@ class Cards:
 
 	def card_and_choice_value(self, bot: TeleBot, Call: types.CallbackQuery, User: UserData, inline_keyboard: ValuesCardInlineTemplates, cacher: TeleCache, text: str = ""):
 		Type, card_id = Call.data.split("_")
-		print(Type, card_id)
 	
 		if Type != "Arcanas": User.set_property("Current_place", Call.data)
 	
@@ -435,10 +465,10 @@ class ValuesCards:
 		return self.__cacher
 	
 	@property
-	def settings(self) -> Decorators:
+	def subscription(self) -> Subscription:
 		"""Наcтройки бота."""
 
-		return self.__settings
+		return self.__subscription
 	
 	@property
 	def decorators(self) -> Decorators:
@@ -446,7 +476,7 @@ class ValuesCards:
 
 		return self.__Decorators
 
-	def __init__(self, masterbot: TeleMaster, users: UsersManager, cacher: TeleCache, settings: dict):
+	def __init__(self, masterbot: TeleMaster, users: UsersManager, cacher: TeleCache, subscription: Subscription):
 
 		#---> Генерация динамических атрибутов.
 		#==========================================================================================#
@@ -454,6 +484,6 @@ class ValuesCards:
 		self.__masterbot = masterbot
 		self.__users = users
 		self.__cacher = cacher
-		self.__settings = settings
+		self.__subscription = subscription
 
 		self.__Decorators = Decorators(self)	

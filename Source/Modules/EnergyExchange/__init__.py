@@ -1,9 +1,16 @@
+from .Scheduler import Scheduler
+from .Options import Options
+
+from Source.UI.AdditionalOptions import InlineTemplates
+from Source.Modules.Subscription import Subscription
+from Source.InlineKeyboards import InlineKeyboards
+
 from dublib.Methods.Filesystem import MakeRootDirectories, ReadJSON, WriteJSON
 from dublib.TelebotUtils.Users import UserData, UsersManager
 from dublib.TelebotUtils.Master import TeleMaster
+from dublib.TelebotUtils.Cache import TeleCache
 from dublib.Engine.GetText import _
 
-from typing import Iterable
 from time import sleep
 import random
 import os
@@ -11,142 +18,6 @@ import os
 from telebot import TeleBot, types
 import xlsxwriter
 import pandas
-
-#==========================================================================================#
-# >>>>> ФУНКЦИИ <<<<< #
-#==========================================================================================#
-
-def OpenExchanger(bot: TeleBot, user: UserData):
-	"""
-	Отправляет стартовое сообщение обмена энергии.
-
-	:param bot: Бот Telegram.
-	:type bot: TeleBot
-	:param user: Данные пользователя.
-	:type user: UserData
-	"""
-
-	Text = (
-		_("Весь мир существует по законам обмена энергией. И наш бот - <b>Таробот</b>, тому не исключение. Только у нас энергия тепла, любви и добра!"),
-		_("Стань участником программы взаимной поддержки и напиши свое собственное послание. Оно придёт абсолютно рандомному участнику нашего бота и поднимет ему настроение)"),
-		_("<b><i>А кто-то может написать и тебе!</i></b>")
-	)
-	bot.send_message(
-		chat_id = user.id,
-		text = "\n\n".join(Text),
-		parse_mode = "HTML",
-		reply_markup = ExchangerInlineTemplates.start(user)
-	)
-
-#==========================================================================================#
-# >>>>> ВСПОМОГАТЕЛЬНЫЕ СТРУКТУРЫ ДАННЫХ <<<<< #
-#==========================================================================================#
-
-class Options:
-	"""Параметры обмена энергией пользователя."""
-
-	#==========================================================================================#
-	# >>>>> СВОЙСТВА <<<<< #
-	#==========================================================================================#
-
-	@property
-	def mails(self) -> list[str]:
-		"""Последовательность посланий пользователю."""
-
-		return self.__Data["mails"]
-
-	@property
-	def removable_messages(self) -> list[int]:
-		"""Последовательность ID удаляемых сообщений."""
-
-		return self.__Data["removable_messages"]
-	
-	#==========================================================================================#
-	# >>>>> ПРИВАТНЫЕ МЕТОДЫ <<<<< #
-	#==========================================================================================#
-	
-	def __ParseData(self):
-		"""Парсит параметры обмена энергией."""
-
-		if self.__User.has_property("energy_exchange"): self.__Data = self.__User.get_property("energy_exchange")
-		else: self.save()
-
-	#==========================================================================================#
-	# >>>>> ПУБЛИЧНЫЕ МЕТОДЫ <<<<< #
-	#==========================================================================================#
-
-	def __init__(self, user: UserData):
-		"""
-		Параметры обмена энергией пользователя.
-
-		:param user: Данные пользователя.
-		:type user: UserData
-		"""
-
-		#---> Генерация динамических свойств.
-		#==========================================================================================#
-		self.__User = user
-
-		self.__Data = {
-			"removable_messages": [],
-			"mails": []
-		}
-
-		self.__ParseData()
-
-	def add_removable_messages(self, messages: int | Iterable[int]):
-		"""
-		Добавляет ID сообщений или конкретного сообщения в набор удаляемых.
-
-		:param messages: ID одного или нескольких сообщений.
-		:type messages: int | Iterable[int]
-		"""
-
-		if type(messages) == int: messages = [messages]
-		else: messages = list(messages)
-
-		self.__Data["removable_messages"] += messages
-		self.save()
-
-	def delete_removable_messages(self, bot: TeleBot):
-		"""
-		Удаляет сообщения из содержащегося в параметрах списка.
-
-		:param bot: Бот Telegram.
-		:type bot: TeleBot
-		"""
-
-		for MessageID in self.__Data["removable_messages"]: TeleMaster(bot).safely_delete_messages(self.__User.id, MessageID)
-		self.__Data["removable_messages"] = list()
-		self.save()
-
-	def push_mail(self, mail: str):
-		"""
-		Добавляет послание в почтовый ящик пользователя.
-
-		:param mail: Текст послания.
-		:type mail: str
-		"""
-
-		self.__Data["mails"].append(mail)
-		self.save()
-
-	def remove_mail(self, mail: str):
-		"""
-		Удаляет послание с указанным текстом.
-
-		:param mail: Текст послания.
-		:type mail: str
-		"""
-
-		try: self.__Data["mails"].remove(mail)
-		except ValueError: pass
-		self.save()
-
-	def save(self):
-		"""Сохраняет параметры обмена энергией."""
-
-		self.__User.set_property("energy_exchange", self.__Data)
 
 #==========================================================================================#
 # >>>>> КОНТЕЙНЕРЫ ПОСЛАНИЙ <<<<< #
@@ -334,8 +205,8 @@ class ExchangerInlineTemplates:
 		"""Строит Inline-интерфейс: конец работы."""
 
 		Menu = types.InlineKeyboardMarkup()
-		More = types.InlineKeyboardButton(_("Написать ещё"), callback_data = "ee_message")
-		ThankYou = types.InlineKeyboardButton(_("Спасибо, чуть позже!"), callback_data = "ee_to_menu")
+		More = types.InlineKeyboardButton(_("Написать ещё" + " +"), callback_data = "ee_message")
+		ThankYou = types.InlineKeyboardButton(_("Спасибо, чуть позже!"), callback_data = "ee_main_menu")
 		Menu.add(More, ThankYou, row_width = 1)
 
 		return Menu
@@ -344,8 +215,8 @@ class ExchangerInlineTemplates:
 		"""Строит Inline-интерфейс: одобрение посланий."""
 
 		Menu = types.InlineKeyboardMarkup()
-		Edit = types.InlineKeyboardButton(_("Исправить"), callback_data = "ee_edit")
-		Confirm = types.InlineKeyboardButton(_("Подтвердить"), callback_data = "ee_confirm")
+		Edit = types.InlineKeyboardButton("✍️ " + _("Исправить"), callback_data = "ee_edit")
+		Confirm = types.InlineKeyboardButton("✅️ " +_("Подтвердить"), callback_data = "ee_confirm")
 		Menu.add(Edit, Confirm, row_width = 1)
 
 		return Menu
@@ -391,9 +262,14 @@ class Decorators:
 	"""Набор декораторов."""
 
 	def __init__(self, exchanger: "Exchanger"):
+		"""
+		Набор декораторов.
 
-		#---> Генерация динамических свойств.
-		#==========================================================================================#
+		:param exchanger: Модуль обмена энергией.
+		:type exchanger: Exchanger
+		"""
+
+
 		self.__Exchanger = exchanger
 
 	def inline_keyboards(self):
@@ -402,42 +278,69 @@ class Decorators:
 		bot = self.__Exchanger.bot
 		users = self.__Exchanger.users
 
-		@bot.callback_query_handler(func = lambda Callback: Callback.data == "ee_accept")
-		def Accept(Call: types.CallbackQuery):
+		@bot.callback_query_handler(func = lambda Callback: Callback.data == "energy_exchange")
+		def Open(Call: types.CallbackQuery):
+			"""
+			Отправляет стартовое сообщение обмена энергии.
+
+			:param Call: energy_exchange
+			:type Call: types.CallbackQuery
+			"""
+
 			User = users.auth(Call.from_user)
-			UserOptions = Options(User)
-			UserOptions.remove_mail(Call.message.text)
-			TeleMaster(bot).safely_delete_messages(Call.from_user.id, Call.message.id)
-
-			if not UserOptions.mails:
-				UserOptions.delete_removable_messages(bot)
-				Start(Call)
-
-		@bot.callback_query_handler(func = lambda Callback: Callback.data == "ee_close")
-		def Close(Call: types.CallbackQuery):
-			TeleMaster(bot).safely_delete_messages(Call.from_user.id, Call.message.id) 
+			if not self.__Exchanger.subscription.IsSubscripted(User): 
+				self.__Exchanger.bot.answer_callback_query(Call.id)
+				return
+			
+			self.__Exchanger.open(User, Call.message.id)
+			self.__Exchanger.bot.answer_callback_query(Call.id)
 
 		@bot.callback_query_handler(func = lambda Callback: Callback.data == "ee_confirm")
 		def Confirm(Call: types.CallbackQuery):
 			User = users.auth(Call.from_user)
+			UserOptions = Options(User)
+			if not self.__Exchanger.subscription.IsSubscripted(User): 
+				self.__Exchanger.bot.answer_callback_query(Call.id)
+				return
+			
 			User.set_expected_type(None)
 			self.__Exchanger.unmoderated_mails.append(User.get_property("ee_new_message"))
 			User.clear_temp_properties()
 
 			Text = (
-				_("Ваше послание успешно отправлено на проверку!"),
-				_("Если вы в хорошем настроении, то напишите ещё что-то. Вам это вернётся в 10 раз больше 😊!")
+				_("<i>" + "Ваше послание успешно отправлено на проверку!" + "</i>"),
+				_("Если вы в хорошем настроении, то напишите ещё что-то. Вам это вернётся <b>в 10 раз больше!</b>" + " 😊")
 			)
 			TeleMaster(bot).safely_delete_messages(Call.from_user.id, Call.message.id)
-			bot.send_message(
+			Message = bot.send_message(
 				chat_id = Call.from_user.id,
 				text = "\n\n".join(Text),
+				parse_mode = "HTML",
 				reply_markup = ExchangerInlineTemplates.end()
 			)
+			UserOptions.add_removable_messages(Message.id)
+
+		@bot.callback_query_handler(func = lambda Callback: Callback.data == "ee_accept")
+		def Accept(Call: types.CallbackQuery):
+			User = users.auth(Call.from_user)
+			if not self.__Exchanger.subscription.IsSubscripted(User): 
+				self.__Exchanger.bot.answer_callback_query(Call.id)
+				return
+			UserOptions = Options(User)
+			UserOptions.remove_mail(Call.message.text)
+			TeleMaster(bot).safely_delete_messages(Call.from_user.id, Call.message.id)
+			self.__Exchanger.open(User)
+
+			if not UserOptions.mails:
+				UserOptions.delete_removable_messages(bot)
+				Start(Call)
 
 		@bot.callback_query_handler(func = lambda Callback: Callback.data == "ee_edit")
 		def Edit(Call: types.CallbackQuery):
 			User = users.auth(Call.from_user)
+			if not self.__Exchanger.subscription.IsSubscripted(User): 
+				self.__Exchanger.bot.answer_callback_query(Call.id)
+				return
 			UserOptions = Options(User)
 
 			TeleMaster(bot).safely_delete_messages(Call.from_user.id, Call.message.id)
@@ -452,7 +355,11 @@ class Decorators:
 		def Message(Call: types.CallbackQuery):
 			User = users.auth(Call.from_user)
 			UserOptions = Options(User)
-			TeleMaster(bot).safely_delete_messages(Call.from_user.id, Call.message.id)
+			bot.answer_callback_query(Call.id)
+
+			if not self.__Exchanger.subscription.IsSubscripted(User): 
+				self.__Exchanger.bot.answer_callback_query(Call.id)
+				return
 
 			if UserOptions.mails: 
 				UserOptions.add_removable_messages(bot.send_message(Call.from_user.id, _("ВАШИ ПОСЛАНИЯ:")).id)
@@ -473,22 +380,27 @@ class Decorators:
 			else:
 				Text = (
 					_("У вас пока нет входящих посланий! Но не переживайте!"),
-					_("<b>Вы самый лучший человек на планете Земля!</b> Хорошего вам дня!)")
+					_("<b>Вы самый лучший человек на планете Земля! Хорошего вам дня!)</b>" + " 💋")
 				)
 				bot.send_message(
 					chat_id = Call.from_user.id,
 					text = "\n\n".join(Text),
 					parse_mode = "HTML",
-					reply_markup = ExchangerInlineTemplates.thank_you("Спасибо, очень приятно!")
+					reply_markup = ExchangerInlineTemplates.thank_you(_("Спасибо, очень приятно!"))
 				)
 
 		@bot.callback_query_handler(func = lambda Callback: Callback.data == "ee_message")
 		def Message(Call: types.CallbackQuery):
 			User = users.auth(Call.from_user)
+			bot.answer_callback_query(Call.id)
+
+			if not self.__Exchanger.subscription.IsSubscripted(User): 
+				self.__Exchanger.bot.answer_callback_query(Call.id)
+				return
+			
 			UserOptions = Options(User)
 			User.set_expected_type("ee_message")
 
-			TeleMaster(bot).safely_delete_messages(Call.from_user.id, Call.message.id)
 			UserOptions.add_removable_messages(
 				bot.send_message(
 					chat_id = Call.from_user.id,
@@ -500,28 +412,49 @@ class Decorators:
 		@bot.callback_query_handler(func = lambda Callback: Callback.data == "ee_start")
 		def Start(Call: types.CallbackQuery):
 			User = users.auth(Call.from_user)
+			if not self.__Exchanger.subscription.IsSubscripted(User): 
+				self.__Exchanger.bot.answer_callback_query(Call.id)
+				return
 			TeleMaster(bot).safely_delete_messages(Call.from_user.id, Call.message.id)
-			OpenExchanger(bot, User)
 
 		@bot.callback_query_handler(func = lambda Callback: Callback.data == "ee_to_menu")
 		def ToMenu(Call: types.CallbackQuery):
 			User = users.auth(Call.from_user)
+
+			if not self.__Exchanger.subscription.IsSubscripted(User): 
+				self.__Exchanger.bot.answer_callback_query(Call.id)
+				return
+			
 			User.set_expected_type(None)
 			UserOptions = Options(User)
 			TeleMaster(bot).safely_delete_messages(Call.from_user.id, Call.message.id)
 			UserOptions.delete_removable_messages(bot)
+			# Условие исправляет попытку редактирования меню при пустом почтовом ящике.
+			if UserOptions.mails: self.__Exchanger.open(User)
 
-			Text = (
-				_("Весь мир существует по законам обмена энергией. И наш бот - <b>Таробот</b>, тому не исключение. Только у нас энергия тепла, любви и добра!"),
-				_("Стань участником программы взаимной поддержки и напиши свое собственное послание. Оно придёт абсолютно рандомному участнику нашего бота и поднимет ему настроение)"),
-				_("<b>А кто-то может написать и тебе!</b>")
-			)
-			bot.send_message(
-				chat_id = User.id,
-				text = "\n\n".join(Text),
-				parse_mode = "HTML",
-				reply_markup = ExchangerInlineTemplates.start(User)
-			)
+		@bot.callback_query_handler(func = lambda Callback: Callback.data == "ee_close")
+		def Close(Call: types.CallbackQuery):
+			User = users.auth(Call.from_user)
+			UserOptions = Options(User)
+
+			if not self.__Exchanger.subscription.IsSubscripted(User): 
+				self.__Exchanger.bot.answer_callback_query(Call.id)
+				return
+			
+			UserOptions.delete_removable_messages(bot)
+			self.__Exchanger.close(User)
+
+		@bot.callback_query_handler(func = lambda Callback: Callback.data == "ee_main_menu")
+		def FullClose (Call: types.CallbackQuery):
+			User = users.auth(Call.from_user)
+			UserOptions = Options(User)
+
+			if not self.__Exchanger.subscription.IsSubscripted(User): 
+				self.__Exchanger.bot.answer_callback_query(Call.id)
+				return
+			
+			UserOptions.delete_removable_messages(bot)
+			self.__Exchanger.full_close(User)
 
 class Procedures:
 	"""Набор процедур."""
@@ -557,7 +490,7 @@ class Procedures:
 			Text = (
 				_("<b>ВАШ ТЕКСТ:</b>"),
 				message.text,
-				_("<i>Проверьте, пожалуйста, все ли правильно вы написали.</i>")
+				_("<i>Проверьте, пожалуйста, все ли правильно вы написали?</i>")
 			)
 			UserOptions.add_removable_messages(
 				bot.send_message(
@@ -600,6 +533,18 @@ class Exchanger:
 		"""Менеджер пользователей."""
 
 		return self.__Users
+	
+	@property
+	def cacher(self) -> TeleCache:
+		"""Менеджер кэша."""
+
+		return self.__cacher
+	
+	@property
+	def subscription(self) -> Subscription:
+		"""Проверка подписки."""
+
+		return self.__subscription
 
 	#==========================================================================================#
 	# >>>>> КОНТЕЙНЕРЫ ПОСЛАНИЙ <<<<< #
@@ -637,7 +582,7 @@ class Exchanger:
 	# >>>>> ПУБЛИЧНЫЕ МЕТОДЫ <<<<< #
 	#==========================================================================================#
 
-	def __init__(self, bot: TeleBot, users: UsersManager):
+	def __init__(self, bot: TeleBot, users: UsersManager, cacher: TeleCache, subscription: Subscription):
 		"""
 		Модуль обмена энергией.
 
@@ -647,10 +592,10 @@ class Exchanger:
 		:type users: UsersManager
 		"""
 
-		#---> Генерация динамических свойств.
-		#==========================================================================================#
 		self.__Bot = bot
 		self.__Users = users
+		self.__cacher = cacher
+		self.__subscription = subscription
 
 		MakeRootDirectories(["Data/Exchange"])
 
@@ -682,15 +627,87 @@ class Exchanger:
 		self.__UnmoderatedBuffer.remove(mail)
 		if status: self.__MailsContainer.append(mail)
 
-	def open(self, user: UserData):
+	def open(self, user: UserData, message_id: int | None = None):
 		"""
-		Отправляет стартовое сообщение модуля обмена энергии.
+		Редактирует сообщение в стартовое сообщение модуля обмена энергии.
+		
+		:param user: Данные пользователя.
+		:type user: UserData
+		:param message_id: ID сообщения.
+		:type message_id: int
+		"""
+
+		UserOptions = Options(user)
+		Text = (
+				_("Весь мир существует по законам обмена энергией. И наш бот - <b>Таробот</b>, тому не исключение. Только у нас энергия тепла, любви и добра!"),
+				_("<i>Стань участником программы взаимной поддержки и напиши свое собственное послание. Оно прилетит абсолютно рандомному участнику нашего бота и поднимет ему настроение 🤗</i>"),
+				_("<b><i>А кто-то может написать и тебе!)</i></b>")
+			)
+
+		File = self.cacher.get_real_cached_file(
+			path = "Data/Exchange/start.gif", 
+			autoupload_type = types.InputMediaAnimation
+		)
+		
+		if not message_id: message_id = UserOptions.menu_message_id
+		else: UserOptions.set_menu_message_id(message_id)
+		
+		message_id = self.bot.edit_message_media(
+			media = types.InputMediaAnimation(
+				media = File.file_id,
+				caption = "\n\n".join(Text),
+				parse_mode = "HTML"
+			),
+			chat_id = user.id,
+			message_id = message_id,
+			reply_markup = ExchangerInlineTemplates.start(user)
+		).id
+
+	def close(self, user: UserData):
+		"""
+		Редактирует меню обмена энергии в меню дополнительных опций.
 		
 		:param user: Данные пользователя.
 		:type user: UserData
 		"""
 
-		OpenExchanger(self.__Bot, user)
+		file = self.cacher.get_real_cached_file(
+			path = "Start.mp4", 
+			autoupload_type = types.InputMediaAnimation
+		)
+		
+		self.bot.edit_message_media(
+			media = types.InputMediaAnimation(
+				media = file.file_id,
+				caption = "<b>ДОП. ОПЦИИ</b>",
+				parse_mode = "HTML"
+			),
+			chat_id = user.id,
+			message_id = Options(user).menu_message_id,
+			reply_markup = InlineTemplates.additional_options(user)
+		)
+
+	def full_close(self, user: UserData):
+		"""
+		Редактирует меню обмена энергии в главное меню бота.
+		
+		:param user: Данные пользователя.
+		:type user: UserData
+		"""
+
+		file = self.cacher.get_real_cached_file(
+			path = "Start.mp4", 
+			autoupload_type = types.InputMediaAnimation
+		)
+		
+		self.bot.edit_message_media(
+			media = types.InputMediaAnimation(
+				media = file.file_id
+			),
+			chat_id = user.id,
+			message_id = Options(user).menu_message_id,
+			reply_markup = InlineKeyboards.main_menu()
+		)
 
 	def push_mails(self):
 		"""Запускает расфасовку посланий пользователям."""

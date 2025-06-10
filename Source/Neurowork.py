@@ -127,6 +127,12 @@ class NeuroRequestor:
 		ThirdCardRequest = self.build_card_layout_request(self.__Data[Collection][2], "Третья карта", question)
 		OutcomeRequest = self.build_outcome_request(self.__Data[Collection][0], self.__Data[Collection][1], self.__Data[Collection][2], question)
 
+		RequestsCollection = {
+			2: FirstCardRequest,
+			3: SecondCardRequest,
+			4: ThirdCardRequest
+		}
+
 		Generator.start_thread_generation(PreparationRequest, Answers, 1)
 		Generator.start_thread_generation(FirstCardRequest, Answers, 2)
 		Generator.start_thread_generation(SecondCardRequest, Answers, 3)
@@ -138,7 +144,7 @@ class NeuroRequestor:
 			ImageCache = self.__Cacher.get_real_cached_file(f"Materials/Layouts/{Collection}/{Index}.jpg", types.InputMediaPhoto)
 
 			if Index == 1:
-				Text = Generator.wait_thread_generation(Answers, 1).json["text"]
+				Text = Generator.generate(PreparationRequest).json["text"]
 				Text = self.__FormatPreparation(Text)
 
 				if Text and Text != "Ваше сообщение не понятно.": 
@@ -159,7 +165,7 @@ class NeuroRequestor:
 					return
 
 			else: 
-				Text = Generator.wait_thread_generation(Answers, Index).json["text"]
+				Text = Generator.generate(RequestsCollection[Index]).json["text"]
 				Text = self.__FormatCardLayout(Text)
 				self.__Bot.send_photo(
 					chat_id = user.id,
@@ -168,11 +174,11 @@ class NeuroRequestor:
 					parse_mode = "HTML" 
 				)
 
-		Text = Generator.wait_thread_generation(Answers, 5).json["text"]
+		Text = Generator.generate(OutcomeRequest).json["text"]
 		Outcome = (
 			"<b>" + _("Заключение:") + "</b>",
 		  	Text + "\n",
-		  	"<i>" + _("Если желаете рассмотреть ваши вопросы более серьезно, то рекомендуем взять расклад у нашего <b>Таро Мастера</b>, где уже живой опытный эксперт даст вам действующие подсказки и советы!") + "</i>"
+		  	"<i>" + _("Если желаете рассмотреть ваши вопросы более детально, то рекомендуем вам взять расклад у нашего <b>Таро Мастера</b>. Это живой и опытный эксперт, который даст вам самые действенные подсказки и советы!") + "</i>"
 		)
 		self.__Bot.send_message(
 			chat_id = user.id,

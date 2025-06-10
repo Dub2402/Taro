@@ -5,7 +5,7 @@ from dublib.TelebotUtils.Cache import TeleCache
 from dublib.Engine.GetText import _
 
 from Source.InlineKeyboards import InlineKeyboards
-from Source.Functions import IsSubscripted
+from Source.Modules.Subscription import Subscription
 from Source.Core.Reader import Reader
 
 from time import sleep
@@ -49,8 +49,8 @@ class Decorators:
 
 		@self.__YesNo.bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("yes_no"))
 		def yes_no(Call: types.CallbackQuery):
-			User = self.__YesNo.users.auth(Call.from_user)
-			if not IsSubscripted(self.__YesNo.masterbot, User, self.__YesNo.settings):
+			user = self.__YesNo.users.auth(Call.from_user)
+			if not self.__YesNo.subscription.IsSubscripted(user): 
 				self.__YesNo.bot.answer_callback_query(Call.id)
 				return
 			
@@ -65,6 +65,9 @@ class Decorators:
 		@self.__YesNo.bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("open_card"))
 		def InlineButtonCardDay(Call: types.CallbackQuery):
 			user = self.__YesNo.users.auth(Call.from_user)
+			if not self.__YesNo.subscription.IsSubscripted(user): 
+				self.__YesNo.bot.answer_callback_query(Call.id)
+				return
 			
 			self.__YesNo.masterbot.safely_delete_messages(
 				Call.message.chat.id,
@@ -136,12 +139,12 @@ class YesNo:
 		return self.__users
 	
 	@property
-	def settings(self) -> dict:
-		"""Настройки бота."""
+	def subscription(self) -> Subscription:
+		"""Проверка подписки."""
 
-		return self.__settings
+		return self.__subscription
 	
-	def __init__(self, masterbot: TeleMaster, cacher: TeleCache, reader: Reader, users: UsersManager, settings: dict) -> None:
+	def __init__(self, masterbot: TeleMaster, cacher: TeleCache, reader: Reader, users: UsersManager, subscription: Subscription) -> None:
 		"""
 		Инициализация
 
@@ -155,7 +158,7 @@ class YesNo:
 		self.__cacher = cacher
 		self.__reader = reader
 		self.__users = users
-		self.__settings = settings
+		self.__subscription = subscription
 		
 		self.__Decorators = Decorators(self)
 					

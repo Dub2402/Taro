@@ -4,6 +4,9 @@ from dublib.TelebotUtils import TeleMaster
 from dublib.TelebotUtils.Cache import RealCachedFile
 
 from Source.InlineKeyboards import InlineKeyboards
+from Source.Modules.Subscription import Subscription
+
+import random
 
 from telebot import TeleBot, types
 
@@ -34,9 +37,10 @@ def end_layout() -> types.InlineKeyboardMarkup:
 #==========================================================================================#
 
 class Decorators:
-	"""
-	Набор декораторов
-	"""
+	"""Набор декораторов."""
+
+	def __init__(self, layout: "Layout"):
+		self.__Layout = layout
 
 	def inline_keyboards(self, bot: TeleBot, users: UsersManager, StartAnimation: RealCachedFile):
 		"""
@@ -53,7 +57,13 @@ class Decorators:
 		@bot.callback_query_handler(func = lambda Callback: Callback.data == "send_main_menu")
 		def send_main_menu(Call: types.CallbackQuery):
 			User = users.auth(Call.from_user)
-			bot.answer_callback_query(Call.id)
+			if not self.__Layout.subscription.IsSubscripted(User):
+				bot.answer_callback_query(Call.id)
+				return
+			bot.send_message(
+				chat_id = Call.message.chat.id,
+				text = self.__Layout.end_phrases()
+			)
 			bot.send_animation(
 				Call.message.chat.id,
 				animation = StartAnimation.file_id,
@@ -65,29 +75,61 @@ class Decorators:
 		@bot.callback_query_handler(func = lambda Callback: Callback.data == "send_order_layout")
 		def send_order_layout(Call: types.CallbackQuery):
 			User = users.auth(Call.from_user)
-			bot.answer_callback_query(Call.id)
+			if not self.__Layout.subscription.IsSubscripted(User):
+				bot.answer_callback_query(Call.id)
+				return
 			bot.send_animation(
 				chat_id = Call.message.chat.id,
 				animation = StartAnimation.file_id,
-				caption = "<b>" + _("РАСКЛАД ОТ МАСТЕРА") + "</b>",
+				caption = "<b>" + _("РАСКЛАД У МАСТЕРА") + "</b>",
 				parse_mode = "HTML",
 				reply_markup = InlineKeyboards.SendOrderLayout()
 				)
 			
 class Layout:
-	"""
-	Расклад от языковой модели
-	"""
+	"""Расклад от языковой модели."""
 
 	@property
 	def decorators(self) -> Decorators:
 		"""Наборы декораторов."""
 
 		return self.__Decorators
+	
+	@property
+	def subscription(self) -> Subscription:
+		"""Проверка подписки."""
 
-	def __init__(self):
+		return self.__subscription
+
+	def __init__(self, subscription: Subscription):
 		"""Панель управления."""
 
 		#---> Генерация динамических атрибутов.
 		#==========================================================================================#
-		self.__Decorators = Decorators()
+
+		self.__Decorators = Decorators(self)
+		self.__subscription = subscription
+
+	def end_phrases(self) -> str:
+		"""
+		Выбирает текст фразы в конце расклада.
+
+		:return: Текст фразы.
+		:rtype: str
+		"""
+
+		texts = [
+			"Во благо!\nХорошего вам дня!)",
+			"На здоровье!\nБудем рады вам сделать ещё расклад!)",
+			"Всегда рады помочь!\nВы наш самый ценный пользователь!",
+		   	"Всегда пожалуйста!\nЗадавайте любые вопросы и в любое время!)",
+			"Вам спасибо!\nМы очень рады, что вы с нами!",
+			"Рады быть полезными!\nКогда вы счастливы - мы ещё счастливее!)",
+			"Мы рады, что вам понравилось!\nС удовольствием разложим карты снова!)",
+			"Это мы благодарим за ваш вопрос!)\nОбращайтесь!",
+			"Мы всегда рядом!\nУ вас довольно интересные вопросы!)",
+			"Приятно с вами иметь дело!\nИ запросы у вас необычные!)"
+		]
+		text = random.choice(texts)
+
+		return text

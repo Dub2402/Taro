@@ -1,12 +1,11 @@
-from dublib.TelebotUtils.Users import UsersManager
+from dublib.TelebotUtils.Users import UsersManager, UserData
 from dublib.TelebotUtils.Cache import TeleCache
 from dublib.TelebotUtils import TeleMaster
 from dublib.Engine.GetText import _
-from dublib.TelebotUtils.Cache import RealCachedFile
 
-from Source.Modules.EnergyExchange import OpenExchanger
+from Source.Modules.Subscription import Subscription
+from Source.Modules.EnergyExchange.Options import Options as ExchangeOptions
 from Source.InlineKeyboards import InlineKeyboards
-from Source.Functions import IsSubscripted
 from Source.UI.WorkpiecesMessages import WorkpiecesMessages
 
 from telebot import TeleBot, types
@@ -15,27 +14,50 @@ from telebot import TeleBot, types
 # >>>>> INLINE_KEYBOARD <<<<< #
 #==========================================================================================#
 
-def keyboard_additional_options() -> types.InlineKeyboardMarkup:
-	"""
-	Клавиатура с кнопками: 
-		💟 Обмен энергией
-		📲 Рассылка Карты дня
-		📣 Поделиться с друзьями
-		◀️ Назад
+class InlineTemplates:
+	"""Набор Inline-keyboards."""
 
-	:return: Клавиатура дополнительных опций
-	:rtype: types.InlineKeyboardMarkup
-	"""
-	Menu = types.InlineKeyboardMarkup()
+	def additional_options(user: UserData) -> types.InlineKeyboardMarkup:
+		"""
+		Inline-клавиатура: дополнительные опций: 
 
-	energy_exchange = types.InlineKeyboardButton(_("💟 Обмен энергией"), callback_data = "energy_exchange")
-	mailing_card_day = types.InlineKeyboardButton(_("📲 Рассылка Карты дня"), callback_data = "mailing_card_day")
-	share = types.InlineKeyboardButton(_("📣 Поделиться с друзьями"), callback_data = "share")
-	back = types.InlineKeyboardButton(_("◀️ Назад"), callback_data = "main_menu")
+		:return: Inline-keyboard.
+		:rtype: types.InlineKeyboardMarkup
+		"""
 
-	Menu.add(energy_exchange, mailing_card_day, share, back, row_width = 1) 
+		menu = types.InlineKeyboardMarkup()
 
-	return Menu
+		UserOptions = ExchangeOptions(user)
+		Notifications = " (" + str(len(UserOptions.mails)) + ")" if UserOptions.mails else ""
+
+		determinations = {
+			_("💟 Обмен энергией") + Notifications: "energy_exchange",
+			_("📣 Поделиться с друзьями"): "share",
+			_("📲 Рассылка Карты дня"): "mailing_card_day",
+			_("🤖 Перезапуск бота"): "restart_bot",
+			_("◀️ Назад"): "main_menu"
+		}
+
+		for string in determinations.keys(): menu.add(types.InlineKeyboardButton(string, callback_data = determinations[string]), row_width = 1)
+		return menu
+
+	def restart_bot() -> types.InlineKeyboardMarkup:
+		"""
+		Inline-клавиатура: перезапуск бота: 
+
+		:return: Inline-keyboard.
+		:rtype: types.InlineKeyboardMarkup
+		"""
+
+		menu = types.InlineKeyboardMarkup()
+
+		determinations = {
+			_("Перезапустить сейчас!"): "for_restart",
+			_("◀️ Назад"): "for_delete"
+		}
+
+		for string in determinations.keys(): menu.add(types.InlineKeyboardButton(string, callback_data = determinations[string]), row_width = 1)
+		return menu
 
 #==========================================================================================#
 # >>>>> ДЕКОРАТОРЫ <<<<< #
@@ -51,6 +73,7 @@ class Decorators:
 		:param options: Дополнительный функционал
 		:type options: Options
 		"""
+
 		self.__Options = options
 
 	def inline_keyboards(self):
@@ -65,29 +88,17 @@ class Decorators:
 			:type Call: types.CallbackQuery
 			"""
 
-			User = self.__Options.users.auth(Call.from_user)
-			if not IsSubscripted(self.__Options.masterbot, User, self.__Options.settings): 
+			user = self.__Options.users.auth(Call.from_user)
+			if not self.__Options.subscription.IsSubscripted(user):
 				self.__Options.bot.answer_callback_query(Call.id)
 				return
-			self.__Options.bot.edit_message_caption(
+			Message = self.__Options.bot.edit_message_caption(
 				caption = "<b>ДОП. ОПЦИИ</b>",
 				chat_id = Call.message.chat.id,
 				message_id = Call.message.id,
 				parse_mode = "HTML",
-				reply_markup = keyboard_additional_options()
+				reply_markup = self.__Options.inline_templates.additional_options(user)
 			)
-			self.__Options.bot.answer_callback_query(Call.id)
-
-		@self.__Options.bot.callback_query_handler(func = lambda Callback: Callback.data == "energy_exchange")
-		def click_energy_exchange(Call: types.CallbackQuery):
-			"""
-			Открывает меню обмена энергией
-
-			:param Call: energy_exchange
-			:type Call: types.CallbackQuery
-			"""
-			
-			OpenExchanger(self.__Options.bot, self.__Options.users.auth(Call.from_user))
 			self.__Options.bot.answer_callback_query(Call.id)
 			
 		@self.__Options.bot.callback_query_handler(func = lambda Callback: Callback.data == "share")
@@ -98,12 +109,17 @@ class Decorators:
 			:param Call: share
 			:type Call: types.CallbackQuery
 			"""
+
+			user = self.__Options.users.auth(Call.from_user)
+			if not self.__Options.subscription.IsSubscripted(user):
+				self.__Options.bot.answer_callback_query(Call.id)
+				return
 			path = self.__Options.settings["qr_image"]
 			
 			self.__Options.bot.send_photo(
 				chat_id = Call.message.chat.id, 
 				photo = self.__Options.cacher.get_real_cached_file(path, types.InputMediaPhoto).file_id,
-				caption = _('@Taro100_bot\n@Taro100_bot\n@Taro100_bot\n\n<b>Таробот | Расклад онлайн | Карта дня</b>\nСамый большой бот для Таро гаданий в Telegram! Ответит на любые твои вопросы ❓❓❓\n\n<b><i>Пользуйся и делись с друзьями!</i></b>'), 
+				caption = _('@Taro100_bot\n@Taro100_bot\n@Taro100_bot\n\n<b>Таробот | Расклад онлайн | Карта дня</b>\nСамый большой бот для Таро-гаданий в Telegram! Ответит на любые твои вопросы ❓❓❓\n\n<b><i>Пользуйся и делись с друзьями!</i></b>'), 
 				parse_mode = "HTML",
 				reply_markup = InlineKeyboards.AddShare(buttons = ["Share", "Back"])
 				)
@@ -117,9 +133,44 @@ class Decorators:
 			:param Call: mailing_card_day
 			:type Call: types.CallbackQuery
 			"""
-
+			user = self.__Options.users.auth(Call.from_user)
+			if not self.__Options.subscription.IsSubscripted(user):
+				self.__Options.bot.answer_callback_query(Call.id)
+				return
 			self.__Options.sender.settings_mailing(Call.message, action = "delete")
 			self.__Options.bot.answer_callback_query(Call.id)
+
+		@self.__Options.bot.callback_query_handler(func = lambda Callback: Callback.data == "restart_bot")
+		def click_restart_bot(Call: types.CallbackQuery):
+			"""
+			Нажатие на кнопку: "🤖 Перезапуск бота"
+
+			:param Call: mailing_card_day
+			:type Call: types.CallbackQuery
+			"""
+
+			user = self.__Options.users.auth(Call.from_user)
+			if not self.__Options.subscription.IsSubscripted(user):
+				self.__Options.bot.answer_callback_query(Call.id)
+				return
+			Text = (
+				("<b><i>" + _("Если у вас случилось так, что бот глючит или перестает вам отвечать, то не переживайте! Такое бывает, и это происходит по независящим от нас причинам!") + "</i></b>"),
+				_("Это могут быть или сбои в Telegram, или слабая скорость интернета, или загруженность сервера и запросов. Вы можете в любой момент его <u>перезапустить</u> двумя способами:"),
+				("1️⃣ ") + _("В левом нижнем углу есть синяя кнопочка \"Меню\". Можете на неё нажать и далее нажать на \"Перезапустить бот 🚀\""),
+				("2️⃣ ") + _("Или самому написать в чат слово на английском языке с черточкой и отправить! Вот так: /start"),
+				("<i>" + _("Далее подождать чуть-чуть, и он в любом случае заработает!") + "</i>"),
+				("<b>" + _("Главное не паникуйте, ведь нам нужны всегда счастливые и здоровые пользователи !!!\nМы вами дорожим! 🥰" + "</b>"))
+			   )
+			self.__Options.bot.send_animation(
+				chat_id = Call.message.chat.id, 
+				animation = self.__Options.cacher.get_real_cached_file(
+					path = "Data/AdditionalOptions/restart.gif",
+					autoupload_type = types.InputMediaAnimation
+					).file_id,
+				caption = "\n\n".join(Text),
+				parse_mode = "HTML",
+				reply_markup = self.__Options.inline_templates.restart_bot()
+			)
 
 class Options:
 	"""Раздел бота, отвечающий за дополнительный функционал"""
@@ -158,11 +209,23 @@ class Options:
 	
 	@property
 	def cacher(self) -> TeleCache:
-		"""Основные настройки"""
+		"""Основные настройки."""
 		
 		return self.__cacher
-
-	def __init__(self, masterbot: TeleMaster, users: UsersManager, Settings: dict, sender: WorkpiecesMessages, cacher: TeleCache):
+	
+	@property
+	def subscription(self) -> Subscription:
+		"""Проверка подписки."""
+		
+		return self.__subscription
+	
+	@property
+	def inline_templates(self) -> InlineTemplates:
+		"""Набор inline-keyboards."""
+		
+		return self.__inline_templates
+	
+	def __init__(self, masterbot: TeleMaster, users: UsersManager, Settings: dict, sender: WorkpiecesMessages, cacher: TeleCache, subscription: Subscription):
 		"""
 		Инициализация   
 
@@ -179,8 +242,10 @@ class Options:
 		"""
 
 		self.__Decorators = Decorators(self)
+		self.__inline_templates = InlineTemplates
 		self.__masterbot = masterbot
 		self.__users = users
 		self.__settings = Settings
 		self.__sender = sender
 		self.__cacher = cacher
+		self.__subscription = subscription

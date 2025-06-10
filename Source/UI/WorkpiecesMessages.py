@@ -1,5 +1,6 @@
 from dublib.Engine.GetText import _
-from dublib.TelebotUtils.Users import UserData
+from dublib.TelebotUtils.Cache import TeleCache
+from dublib.TelebotUtils import UsersManager
 
 from Source.InlineKeyboards import InlineKeyboards
 
@@ -8,7 +9,7 @@ from telebot import TeleBot, types
 class WorkpiecesMessages:
 	"""Набор сообщений для пользователя"""
 
-	def __init__(self, bot: TeleBot):
+	def __init__(self, bot: TeleBot, cacher: TeleCache):
 		"""
 		Инициализация.
 
@@ -17,6 +18,7 @@ class WorkpiecesMessages:
 		"""
 
 		self.__bot = bot
+		self.__cacher = cacher
 
 	def settings_mailing(self, message: types.Message, action: str):
 		"""
@@ -42,7 +44,7 @@ class WorkpiecesMessages:
 		:type choice: bool
 		"""
 
-		button = self.__inline_keyboard.for_restart("Спасибо!") if action == "restart" else InlineKeyboards.for_delete("Спасибо!")
+		button = InlineKeyboards.for_restart("Спасибо!") if action == "restart" else InlineKeyboards.for_delete("Спасибо!")
 		text = _("Хорошо! Вы в любой момент сможете посмотреть <b>Карту дня</b> из главного меню"+ " ⭐️")
 		if choice: text = _("Благодарим! Теперь ваше утро будет начинаться с магии карт Таро!" + " 💌")
 
@@ -50,5 +52,30 @@ class WorkpiecesMessages:
 			chat_id = message.chat.id, 
 			text = text,
 			message_id = message.id,
-			reply_markup = button
+			reply_markup = button,
+			parse_mode = "HTML"
 		)
+
+	def restart_messages(self, Message: types.Message, user: UsersManager):
+		Message = self.__bot.send_message(
+			Message.chat.id,
+			text = _("<b>Добро пожаловать в Таробот!</b>\n\nСамый большой бот для Таро-гаданий в Telegram!\n\nЗадай боту любой❓️вопрос и наслаждайся ответом!"),
+			parse_mode = "HTML"
+		)
+
+		Message = self.__bot.send_animation(
+			Message.chat.id,
+			animation = self.__cacher.get_real_cached_file(
+				path = "Start.mp4", autoupload_type = types.InputMediaAnimation
+				).file_id,
+			caption = None,
+			reply_markup = InlineKeyboards.main_menu(),
+			parse_mode = "HTML"
+		)
+		user.set_property("is_chat_forbidden", True, force = True)
+		user.set_property("Current_place", None, force = False)
+		user.set_property("Card_name", None, force = False)
+		user.set_property("Question", None)
+		user.set_property("Generation", False)
+		user.set_property("Subscription", None, force = False)
+		user.clear_temp_properties()

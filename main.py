@@ -1,63 +1,68 @@
+from Source.Modules.EnergyExchange import Exchanger, Scheduler as ExchangeScheduler
+from Source.Modules.ValuesCards import ValuesCards
+from Source.UI.AdditionalOptions import Options
+from Source.UI.OnlineLayout import Layout
+from Source.Modules.YesNo import YesNo
+
+from Source.TeleBotAdminPanel.Core.Moderation import Moderator
+from Source.TeleBotAdminPanel.Core.Uploading import Uploader
+from Source.Core.AdditionalColumns import *
+from Source.TeleBotAdminPanel import Panel
+
+from Source.Functions import FindNearest, ChoiceMessage, CacherSending, UpdateThinkCardData, UpdateThinkCardData2, GetNumberCard, update_think_card, delete_thinking_messages
+from Source.UI.WorkpiecesMessages import WorkpiecesMessages
+from Source.Modules.InternalСaching import InternalCaching
+from Source.Core.BlackDictionary import BlackDictionary
+from Source.Modules.Subscription import Subscription
+from Source.InlineKeyboards import InlineKeyboards
+from Source.Neurowork import NeuroRequestor
+from Source.Modules.WordMouth import Mailer
+from Source.Core.Reader import Reader
+
 from dublib.TelebotUtils.Cache import TeleCache
+from dublib.Methods.Filesystem import ReadJSON
 from dublib.TelebotUtils import UsersManager
 from dublib.TelebotUtils import TeleMaster
 from dublib.Engine.GetText import GetText
-from dublib.Methods.Filesystem import ReadJSON
 from dublib.Methods.System import Clear
 
-from Source.Modules.InternalСaching import InternalCaching
-from Source.Modules.EnergyExchange import Exchanger
-from Source.Modules.ValuesCards import ValuesCards
-from Source.Modules.YesNo import YesNo
-from Source.Modules.WordMouth import Mailer
-
-from Source.Core.BlackDictionary import BlackDictionary
-from Source.Core.Reader import Reader
-from Source.UI.WorkpiecesMessages import WorkpiecesMessages
-from Source.UI.AdditionalOptions import Options
-from Source.UI.OnlineLayout import Layout
-from Source.TeleBotAdminPanel.Core.Moderation import Moderator
-from Source.TeleBotAdminPanel import Panel
-from Source.InlineKeyboards import InlineKeyboards
-
-from Source.Neurowork import NeuroRequestor
-from Source.Functions import IsSubscripted, FindNearest, ChoiceMessage, CacherSending, UpdateThinkCardData, UpdateThinkCardData2, GetNumberCard, update_think_card, delete_thinking_messages
-
+from datetime import datetime
+from threading import Thread
 import dateparser
 import logging
 import os
 
-from datetime import datetime
-from threading import Thread
-from time import sleep
-
 from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.executors.pool import ThreadPoolExecutor
 from telebot import types
+
+Clear()
 
 Settings = ReadJSON("Settings.json")
 
-GetText.initialize("Taro", Settings["language"], "locales")
-_ = GetText.gettext
-
 MasterBot = TeleMaster(Settings["token"])
 Bot = MasterBot.bot
+scheduler = BackgroundScheduler()
 
 usermanager = UsersManager("Data/Users")
-reader = Reader(Settings)
 Cacher = TeleCache()
 Cacher.set_options(Settings["token"], Settings["chat_id"])
-yes_no = YesNo(MasterBot, Cacher, reader, usermanager, Settings)
+subscription = Subscription(MasterBot, Settings["subscription_chanel"], Cacher)
+reader = Reader(Settings)
+mailer = Mailer(MasterBot, usermanager, reader, Cacher, subscription) 
+AdminPanel = Panel(Bot, usermanager, Settings["password"])
+sender = WorkpiecesMessages(Bot, Cacher)
+
+yes_no = YesNo(MasterBot, Cacher, reader, usermanager, subscription)
+values_cards = ValuesCards(MasterBot, usermanager, Cacher, subscription)
 Neurowork = NeuroRequestor(Bot, Cacher)
-mailer = Mailer(MasterBot, usermanager, reader, Cacher, Settings) 
-values_cards = ValuesCards(MasterBot, usermanager, Cacher, Settings)
-AdminPanel = Panel()
-sender = WorkpiecesMessages(Bot)
-OnlineLayout = Layout()
-AddictionalOptional = Options(MasterBot, usermanager, Settings, sender, Cacher)
-EnergyExchanger = Exchanger(Bot, usermanager)
+OnlineLayout = Layout(subscription)
+AddictionalOptional = Options(MasterBot, usermanager, Settings, sender, Cacher, subscription)
+
+EnergyExchanger = Exchanger(Bot, usermanager, Cacher, subscription)
+ExchangeSchedulerObject = ExchangeScheduler(EnergyExchanger, scheduler)
+
 Moderator.initialize(EnergyExchanger.get_unmoderated_mails, EnergyExchanger.moderate_mail)
-# Thread(target = InternalCaching(Cacher).caching).start()
+Uploader.set_uploadable_files(["Data/Exchange/Mails.xlsx"])
 
 logging.basicConfig(level = logging.INFO, encoding = "utf-8", filename = "LOGING.log", filemode = "w", force = True,
 	format = '%(asctime)s - %(levelname)s - %(message)s',
@@ -66,69 +71,50 @@ logging.basicConfig(level = logging.INFO, encoding = "utf-8", filename = "LOGING
 logging.getLogger("pyTelegramBotAPI").setLevel(logging.WARNING)
 logging.getLogger("requests").setLevel(logging.WARNING)
 
-scheduler = BackgroundScheduler()
-
-executors = {
-	'default': ThreadPoolExecutor(1)
-}
-scheduler.configure(executors = executors)
+GetText.initialize("Taro", Settings["language"], "locales")
+_ = GetText.gettext
 
 #==========================================================================================#
 # >>>>> ПРИЗЫВЫ И КАРТА ДНЯ <<<<< #
 #==========================================================================================#
 
-scheduler.add_job(mailer.appeals.randomize_days, "cron", day_of_week = "mon", hour = 0, minute = 0)
+scheduler.add_job(mailer.appeals.click_update_card_day, 'cron', hour = 0, minute = 0)
+scheduler.add_job(mailer.appeals.randomize_days, "cron", day_of_week = "mon", hour = 17, minute = 54)
 scheduler.add_job(mailer.card_day_mailing, 'cron', hour = 8, minute = 0)
 
 #==========================================================================================#
 # >>>>> ПОСЛАНИЯ <<<<< #
 #==========================================================================================#
 
-scheduler.add_job(mailer.letters.randomize_time, "cron", day = "3, 17", hour = 0, minute = 0)
-scheduler.add_job(mailer.letters_mailing, "cron", day = "3, 17", hour = "9-21", minute = "*")
+scheduler.add_job(mailer.letters.randomize_time, "cron", day = "9, 19, 28", hour = 0, minute = 0)
+scheduler.add_job(mailer.letters_mailing, "cron", day = "9, 19, 28", hour = "9-21", minute = "*")
 
 #==========================================================================================#
 # >>>>> ЗАГАДАЙ КАРТУ И ОБМЕН ЭНЕРГИЕЙ <<<<< #
 #==========================================================================================#
 
 scheduler.add_job(update_think_card, 'cron', day_of_week = "mon, wed, fri", hour = 0, minute = 0, args = [usermanager])
-scheduler.add_job(EnergyExchanger.push_mails, "cron", day_of_week = "mon", hour = 0, minute = 0)
 scheduler.start()
-Clear()
 
-AdminPanel.decorators.commands(Bot, usermanager, Settings["password"])
+EnergyExchanger.push_mails()
+# for user in usermanager.users:
+# 	if user.has_property("ap"): user.delete()
 
-usermanager.remove_property("Planning_days")
+# Thread(target = InternalCaching(Cacher).caching).start()
+
+AdminPanel.decorators.commands()
 
 @Bot.message_handler(commands = ["start"])
 def ProcessCommandStart(Message: types.Message):
-	Message = Bot.send_message(
-		Message.chat.id,
-		text = _("<b>Добро пожаловать в Таробот!</b>\n\nСамый большой бот для Таро-гаданий в Telegram!\n\nЗадай боту любой❓️вопрос и наслаждайся ответом!"),
-		parse_mode = "HTML"
-	)
-
-	Message = Bot.send_animation(
-		Message.chat.id,
-		animation = Cacher.get_real_cached_file(Settings["start_animation"], types.InputMediaAnimation).file_id,
-		caption = None,
-		reply_markup = InlineKeyboards.main_menu(),
-		parse_mode = "HTML"
-	)
-	if not Message.from_user.is_bot:
-		user = usermanager.auth(Message.from_user)
-		user.set_property("Current_place", None, force = False)
-		user.set_property("Card_name", None, force = False)
-		user.set_property("Question", None)
-		user.set_property("Generation", False)
-		user.set_property("Subscription", None, force = False)
-		user.clear_temp_properties()
-		if not IsSubscripted(MasterBot, user, Settings): return    
+	user = usermanager.auth(Message.from_user)
+	user.set_property("name", Message.from_user.full_name)
+	if not subscription.IsSubscripted(user): return
+	sender.restart_messages(Message, user)
 	
 @Bot.message_handler(commands = ["card"])
 def ProcessCommandCard(Message: types.Message):
 	user = usermanager.auth(Message.from_user)
-	if not IsSubscripted(MasterBot, user, Settings): return
+	if not subscription.IsSubscripted(user): return
 
 	if len(Message.text.split(" ")) == 2:
 		user_date = Message.text.split(" ")[-1]
@@ -165,27 +151,26 @@ def process_command_mailset(Message: types.Message):
 	"""
 
 	user = usermanager.auth(Message.from_user)
-	if not IsSubscripted(MasterBot, user, Settings): return
+	if not subscription.IsSubscripted(user): return
 	sender.settings_mailing(Message, action = "restart")
 
 @Bot.message_handler(commands = ["share"])
 def ProcessShareWithFriends(Message: types.Message):
 	user = usermanager.auth(Message.from_user)
-	if not IsSubscripted(MasterBot, user, Settings): return
+	if not subscription.IsSubscripted(user): return
 
 	Bot.send_photo(
 		Message.chat.id, 
 		photo = Cacher.get_real_cached_file(Settings["qr_image"], types.InputMediaPhoto).file_id,
-		caption = _('@Taro100_bot\n@Taro100_bot\n@Taro100_bot\n\n<b>Таробот | Расклад онлайн | Карта дня</b>\nСамый большой бот для Таро гаданий в Telegram! Ответит на любые твои вопросы ❓❓❓\n\n<b><i>Пользуйся и делись с друзьями!</i></b>'), 
+		caption = _('@Taro100_bot\n@Taro100_bot\n@Taro100_bot\n\n<b>Таробот | Расклад онлайн | Карта дня</b>\nСамый большой бот для Таро-гаданий в Telegram! Ответит на любые твои вопросы ❓❓❓\n\n<b><i>Пользуйся и делись с друзьями!</i></b>'), 
 		reply_markup = InlineKeyboards.AddShare(["Share"]), 
 		parse_mode = "HTML"
 		)
-	
-AdminPanel.decorators.reply_keyboards(Bot, usermanager)	
 
 @Bot.message_handler(content_types = ["text"])
 def ProcessText(Message: types.Message):
 	user = usermanager.auth(Message.from_user)
+	if not subscription.IsSubscripted(user): return
 	if AdminPanel.procedures.text(Bot, usermanager, Message): return
 	if EnergyExchanger.procedures.text(Message): return
 
@@ -200,7 +185,7 @@ def ProcessText(Message: types.Message):
 
 		except Exception as ExceptionData: print(ExceptionData)
 
-AdminPanel.decorators.inline_keyboards(Bot, usermanager)
+AdminPanel.decorators.inline_keyboards()
 EnergyExchanger.decorators.inline_keyboards()
 
 AddictionalOptional.decorators.inline_keyboards()
@@ -211,24 +196,30 @@ yes_no.decorators.inline_keyboards()
 
 @Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("for_restart"))
 def InlineButtonAccept(Call: types.CallbackQuery):
-	User = usermanager.auth(Call.from_user)
+	user = usermanager.auth(Call.from_user)
+	if not subscription.IsSubscripted(user):
+		Bot.answer_callback_query(Call.id)
+		return
 	MasterBot.safely_delete_messages(
 		Call.message.chat.id,
 		Call.message.id
 	)
-	ProcessCommandStart(Call.message)
+	sender.restart_messages(Call.message)
 	Bot.answer_callback_query(Call.id)
 
 @Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("Subscribe"))
 def InlineButtonAllTaro(Call: types.CallbackQuery):
-	User = usermanager.auth(Call.from_user)
-	if not IsSubscripted(MasterBot, User, Settings):
+	user = usermanager.auth(Call.from_user)
+	if not subscription.IsSubscripted(user):
 		Bot.answer_callback_query(Call.id)
 		return
 	
 @Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("for_delete"))
 def InlineButtonAccept(Call: types.CallbackQuery):
-	User = usermanager.auth(Call.from_user)
+	user = usermanager.auth(Call.from_user)
+	if not subscription.IsSubscripted(user):
+		Bot.answer_callback_query(Call.id)
+		return
 	MasterBot.safely_delete_messages(
 		Call.message.chat.id,
 		Call.message.id
@@ -237,53 +228,33 @@ def InlineButtonAccept(Call: types.CallbackQuery):
 
 @Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("delete_before_mm"))
 def InlineButtonAccept(Call: types.CallbackQuery):
-	User = usermanager.auth(Call.from_user)
-	delete_thinking_messages(User, MasterBot, Call)
+	user = usermanager.auth(Call.from_user)
+	if not subscription.IsSubscripted(user):
+		Bot.answer_callback_query(Call.id)
+		return
+	delete_thinking_messages(user, MasterBot, Call)
 	Bot.answer_callback_query(Call.id)
 
 @Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("notifications"))
 def InlineButton(Call: types.CallbackQuery):
-	User = usermanager.auth(Call.from_user)
-	if not IsSubscripted(MasterBot, User, Settings):
+	user = usermanager.auth(Call.from_user)
+	if not subscription.IsSubscripted(user):
 		Bot.answer_callback_query(Call.id)
 		return
-	print(Call.data)
 	choice, action = Call.data.split("_")[1:]
 	choice: bool = choice == "yes"
 
-	User.set_property("mailing", choice)
+	user.set_property("mailing", choice)
 	sender.notification_result(message = Call.message, choice = choice, action = action)
-
-@Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("Card_Day"))
-def InlineButtonCardDay(Call: types.CallbackQuery):
-	User = usermanager.auth(Call.from_user)
-	if not IsSubscripted(MasterBot, User, Settings):
-		Bot.answer_callback_query(Call.id)
-		return
-	
-	today = datetime.today().strftime("%d.%m.%Y")
-
-	with open(f"Materials/Texts/{today}.txt") as file:
-		text = file.read()
-
-	Bot.send_video(
-		chat_id = Call.message.chat.id,
-		video = Cacher.get_real_cached_file(f"Materials/Video/{today}.mp4", types.InputMediaVideo).file_id,
-		caption = text, 
-		reply_markup = InlineKeyboards.for_delete("Да будет так!"),
-		parse_mode = "HTML"
-		)
-
-	Bot.answer_callback_query(Call.id)
 	
 @Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("order_layout"))
 def InlineButtonRemoveReminder(Call: types.CallbackQuery):
-	User = usermanager.auth(Call.from_user)
-	if not IsSubscripted(MasterBot, User, Settings):
+	user = usermanager.auth(Call.from_user)
+	if not subscription.IsSubscripted(user):
 		Bot.answer_callback_query(Call.id)
 		return
 	Bot.edit_message_caption(
-		caption = "<b>" + _("РАСКЛАД ОТ МАСТЕРА") + "</b>",
+		caption = "<b>" + _("РАСКЛАД У МАСТЕРА") + "</b>",
 		chat_id = Call.message.chat.id,
 		message_id = Call.message.id,
 		reply_markup = InlineKeyboards.SendOrderLayout(),
@@ -293,28 +264,28 @@ def InlineButtonRemoveReminder(Call: types.CallbackQuery):
 
 @Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("Online_Layout"))
 def InlineButtonRemoveReminder(Call: types.CallbackQuery):
-	User = usermanager.auth(Call.from_user)
-	if not IsSubscripted(MasterBot, User, Settings):
+	user = usermanager.auth(Call.from_user)
+	if not subscription.IsSubscripted(user):
 		Bot.answer_callback_query(Call.id)
 		return
 	Bot.send_chat_action(Call.message.chat.id, action = "typing")
 	
-	if not User.get_property("Generation"):
+	if not user.get_property("Generation"):
 		Bot.send_message(
 			Call.message.chat.id,
 			_("Дорогой мой друг, задай мне вопрос, который больше всего тебя сейчас волнует!"))
-		User.set_expected_type("Question")
+		user.set_expected_type("Question")
 	
 	Bot.answer_callback_query(Call.id)
 
 @Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("ThinkCard"))
 def InlineButtonRemoveReminder(Call: types.CallbackQuery):
-	User = usermanager.auth(Call.from_user)
-	if not IsSubscripted(MasterBot, User, Settings):
+	user = usermanager.auth(Call.from_user)
+	if not subscription.IsSubscripted(user):
 		Bot.answer_callback_query(Call.id)
 		return
 	
-	User.set_property("ThinkCard", {"day": None, "messages": [], "number": None}, force = False)
+	user.set_property("ThinkCard", {"day": None, "messages": [], "number": None}, force = False)
 	today_date = datetime.now().strftime("%d.%m.%Y")
 	path = f"Materials/ChoiceCard/{today_date}"
 	day_of_week = datetime.now().weekday()
@@ -324,34 +295,34 @@ def InlineButtonRemoveReminder(Call: types.CallbackQuery):
 		path = f"Materials/ChoiceCard/{today_date}"
 
 	if "_" not in Call.data:
-		number_card = GetNumberCard(User, Call, write = False)
+		number_card = GetNumberCard(user, Call, write = False)
 		
 		if number_card == None: 
-			Think_message = CacherSending(Cacher, Bot, path, User, 0, inline = InlineKeyboards.SendThinkCard())
-			UpdateThinkCardData(User, Think_message)
+			Think_message = CacherSending(Cacher, Bot, path, user, 0, inline = InlineKeyboards.SendThinkCard())
+			UpdateThinkCardData(user, Think_message)
 		else: 
-			delete_thinking_messages(User, MasterBot, Call)
-			Think_message1 = CacherSending(Cacher, Bot, path, User, 0)
-			ThinkCardData = User.get_property("ThinkCard")
-			MasterBot.safely_delete_messages(Call.message.chat.id, User.get_property("ThinkCard")["messages"])
+			delete_thinking_messages(user, MasterBot, Call)
+			Think_message1 = CacherSending(Cacher, Bot, path, user, 0)
+			ThinkCardData = user.get_property("ThinkCard")
+			MasterBot.safely_delete_messages(Call.message.chat.id, user.get_property("ThinkCard")["messages"])
 			ThinkCardData["messages"] = []
-			User.set_property("ThinkCard", ThinkCardData)
+			user.set_property("ThinkCard", ThinkCardData)
 
-			Think_message2 = CacherSending(Cacher, Bot, path, User, number_card, "\n<b><i>С любовью, Галина Мастер Таро!</i></b>")
+			Think_message2 = CacherSending(Cacher, Bot, path, user, number_card, "\n<b><i>С любовью, Галина Таро Мастер!</i></b>")
 			Think_message3 = ChoiceMessage(day_of_week, Bot, Call)
-			UpdateThinkCardData2(User, [Think_message1.id, Think_message2.id, Think_message3.id], number_card, today_date)
+			UpdateThinkCardData2(user, [Think_message1.id, Think_message2.id, Think_message3.id], number_card, today_date)
 	else:
-		number_card = GetNumberCard(User, Call)
-		Think_message2 = CacherSending(Cacher, Bot, path, User, number_card, "\n<b><i>С любовью, Галина Мастер Таро!</i></b>")
+		number_card = GetNumberCard(user, Call)
+		Think_message2 = CacherSending(Cacher, Bot, path, user, number_card, "\n<b><i>С любовью, Галина Таро Мастер!</i></b>")
 		Think_message3 = ChoiceMessage(day_of_week, Bot, Call)
-		UpdateThinkCardData2(User, [Think_message2.id, Think_message3.id], number_card, today_date)
+		UpdateThinkCardData2(user, [Think_message2.id, Think_message3.id], number_card, today_date)
 
 	Bot.answer_callback_query(Call.id)
 
 @Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("all_taro"))
 def InlineButtonAllTaro(Call: types.CallbackQuery):
-	User = usermanager.auth(Call.from_user)
-	if not IsSubscripted(MasterBot, User, Settings):
+	user = usermanager.auth(Call.from_user)
+	if not subscription.IsSubscripted(user):
 		Bot.answer_callback_query(Call.id)
 		return
 	
@@ -366,8 +337,8 @@ def InlineButtonAllTaro(Call: types.CallbackQuery):
 
 @Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("main_menu"))
 def InlineButtonAllTaro(Call: types.CallbackQuery):
-	User = usermanager.auth(Call.from_user)
-	if not IsSubscripted(MasterBot, User, Settings):
+	user = usermanager.auth(Call.from_user)
+	if not subscription.IsSubscripted(user):
 		Bot.answer_callback_query(Call.id)
 		return
 	
@@ -381,9 +352,7 @@ def InlineButtonAllTaro(Call: types.CallbackQuery):
 
 	Bot.answer_callback_query(Call.id)
 
-AdminPanel.decorators.photo(Bot, usermanager)
-
-@Bot.message_handler(content_types = ["audio", "document", "video", "voice"])
+@Bot.message_handler(content_types = ["audio", "document", "video", "voice", "photo"])
 def File(Message: types.Message):
 	User = usermanager.auth(Message.from_user)
 	AdminPanel.procedures.files(Bot, User, Message)
