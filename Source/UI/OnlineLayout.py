@@ -71,6 +71,7 @@ class Decorators:
 				parse_mode = "HTML",
 				reply_markup = InlineKeyboards.main_menu()
 				)
+			bot.answer_callback_query(Call.id)
 			
 		@bot.callback_query_handler(func = lambda Callback: Callback.data == "send_order_layout")
 		def send_order_layout(Call: types.CallbackQuery):
@@ -85,6 +86,7 @@ class Decorators:
 				parse_mode = "HTML",
 				reply_markup = InlineKeyboards.SendOrderLayout()
 				)
+			bot.answer_callback_query(Call.id)
 			
 class Layout:
 	"""Расклад от языковой модели."""

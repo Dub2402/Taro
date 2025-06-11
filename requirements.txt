@@ -1,5 +1,5 @@
 -r Source/TeleBotAdminPanel/requirements.txt
-dublib == 0.19.1
+dublib == 0.20.1
 g4f == 0.5.3.0
 apscheduler
 pandas

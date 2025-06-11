@@ -79,7 +79,7 @@ _ = GetText.gettext
 #==========================================================================================#
 
 scheduler.add_job(mailer.appeals.click_update_card_day, 'cron', hour = 0, minute = 0)
-scheduler.add_job(mailer.appeals.randomize_days, "cron", day_of_week = "mon", hour = 17, minute = 54)
+scheduler.add_job(mailer.appeals.randomize_days, "cron", day_of_week = "mon", hour = 0, minute = 0)
 scheduler.add_job(mailer.card_day_mailing, 'cron', hour = 8, minute = 0)
 
 #==========================================================================================#
@@ -97,7 +97,7 @@ scheduler.add_job(update_think_card, 'cron', day_of_week = "mon, wed, fri", hour
 scheduler.start()
 
 EnergyExchanger.push_mails()
-# for user in usermanager.users:
+# for user in usermanager.users: 
 # 	if user.has_property("ap"): user.delete()
 
 # Thread(target = InternalCaching(Cacher).caching).start()
@@ -108,8 +108,7 @@ AdminPanel.decorators.commands()
 def ProcessCommandStart(Message: types.Message):
 	user = usermanager.auth(Message.from_user)
 	user.set_property("name", Message.from_user.full_name)
-	if not subscription.IsSubscripted(user): return
-	sender.restart_messages(Message, user)
+	sender.send_start_messages(user)
 	
 @Bot.message_handler(commands = ["card"])
 def ProcessCommandCard(Message: types.Message):
@@ -204,12 +203,13 @@ def InlineButtonAccept(Call: types.CallbackQuery):
 		Call.message.chat.id,
 		Call.message.id
 	)
-	sender.restart_messages(Call.message)
+	sender.send_start_messages(user, title = False)
 	Bot.answer_callback_query(Call.id)
 
 @Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("Subscribe"))
 def InlineButtonAllTaro(Call: types.CallbackQuery):
 	user = usermanager.auth(Call.from_user)
+
 	if not subscription.IsSubscripted(user):
 		Bot.answer_callback_query(Call.id)
 		return

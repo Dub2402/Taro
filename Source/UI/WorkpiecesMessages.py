@@ -1,8 +1,8 @@
-from dublib.Engine.GetText import _
-from dublib.TelebotUtils.Cache import TeleCache
-from dublib.TelebotUtils import UsersManager
-
 from Source.InlineKeyboards import InlineKeyboards
+
+from dublib.TelebotUtils import TeleCache, TeleMaster
+from dublib.TelebotUtils import UserData
+from dublib.Engine.GetText import _
 
 from telebot import TeleBot, types
 
@@ -56,26 +56,41 @@ class WorkpiecesMessages:
 			parse_mode = "HTML"
 		)
 
-	def restart_messages(self, Message: types.Message, user: UsersManager):
-		Message = self.__bot.send_message(
-			Message.chat.id,
-			text = _("<b>Добро пожаловать в Таробот!</b>\n\nСамый большой бот для Таро-гаданий в Telegram!\n\nЗадай боту любой❓️вопрос и наслаждайся ответом!"),
-			parse_mode = "HTML"
-		)
+	def send_start_messages(self, user: UserData, title: bool = True):
+		"""
+		Отправляет стартовые сообщения.
 
-		Message = self.__bot.send_animation(
-			Message.chat.id,
+		:param user: Данные пользователя.
+		:type user: UserData
+		:param title: Указывает, требуется ли прикреплять сообщение-заголовок.
+		:type title: bool
+		"""
+
+
+		if user.has_property("start_message_id"): TeleMaster(self.__bot).safely_delete_messages(user.id, user.get_property("start_message_id"))
+
+		if title:
+			self.__bot.send_message(
+				user.id,
+				text = _("<b>Добро пожаловать в Таробот!</b>\n\nСамый большой бот для Таро-гаданий в Telegram!\n\nЗадай боту любой❓️вопрос и наслаждайся ответом!"),
+				parse_mode = "HTML"
+			).id
+
+		AnimationMessageID = self.__bot.send_animation(
+			user.id,
 			animation = self.__cacher.get_real_cached_file(
 				path = "Start.mp4", autoupload_type = types.InputMediaAnimation
 				).file_id,
 			caption = None,
 			reply_markup = InlineKeyboards.main_menu(),
 			parse_mode = "HTML"
-		)
-		user.set_property("is_chat_forbidden", True, force = True)
-		user.set_property("Current_place", None, force = False)
-		user.set_property("Card_name", None, force = False)
+		).id
+		
+		user.set_property("start_message_id", AnimationMessageID)
+		user.set_chat_forbidden(False)
 		user.set_property("Question", None)
 		user.set_property("Generation", False)
+		user.set_property("Current_place", None, force = False)
+		user.set_property("Card_name", None, force = False)
 		user.set_property("Subscription", None, force = False)
 		user.clear_temp_properties()

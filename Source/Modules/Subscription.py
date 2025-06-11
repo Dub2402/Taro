@@ -1,3 +1,5 @@
+from Source.UI.WorkpiecesMessages import WorkpiecesMessages
+
 from dublib.TelebotUtils.Cache import TeleCache
 from dublib.TelebotUtils.Users import UserData
 from dublib.TelebotUtils import TeleMaster
@@ -35,8 +37,7 @@ class Subscription:
 		
 		Text = (
 			("<b><i>" + _("Друзья, чтобы использовать бот, подпишитесь на 2 наших канала спонсора! 💔") + "</i></b>"),
-			_("Как подпишетесь - нажмите на кнопку \"Я подписался!\""),
-			("<b><i>" + _("И мы вас с удовольствием окунем в волшебный мир Таро!") + "</i></b>")
+			_("Как подпишетесь - нажмите на кнопку \"Я подписался!\"")
 		)
 		
 		Message = self.__masterbot.bot.send_message(
@@ -48,29 +49,13 @@ class Subscription:
 		)
 
 		User.set_property("Subscription", Message.id)
-		
-	def __send_main_menu(self, User: UserData):
-		"""
-		Отправка главного меню.
-
-		:param User: Данные пользователя.
-		:type User: UserData
-		"""
-
-		self.__masterbot .bot.send_animation(
-			chat_id = User.id, 
-			animation = self.__cacher.get_real_cached_file(
-				path = "Start.mp4", autoupload_type = types.InputMediaAnimation
-				).file_id,
-			caption = None,
-			reply_markup = BasicInlineKeyboards.main_menu(),
-			parse_mode = "HTML"
-		)
 
 	def __init__(self, masterbot: TeleMaster, chanel: list[int], cacher: TeleCache):
 		self.__masterbot = masterbot
 		self.__chanel = chanel
 		self.__cacher = cacher
+
+		self.__Templates = WorkpiecesMessages(self.__masterbot.bot, self.__cacher)
 
 	def IsSubscripted(self, User: UserData):
 		if not self.__chanel: return True
@@ -95,7 +80,7 @@ class Subscription:
 		
 		if IsSubscribed and Subscribtion_Message: 
 			self.__masterbot.safely_delete_messages(User.id, Subscribtion_Message)
-			self.__send_main_menu(User)
+			self.__Templates.send_start_messages(User, title = False)
 			User.set_property("Subscription", None)
 			
 			return IsSubscribed

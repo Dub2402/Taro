@@ -22,7 +22,7 @@ class InlineKeyboards:
 		for button in buttons:
 			if button == "Share":
 				Menu.add(types.InlineKeyboardButton(
-					_("Поделиться"), 
+					_("Поделиться!"), 
 					switch_inline_query = _('\n@Taro100_bot\n@Taro100_bot\n\n**Таробот | Расклад онлайн | Карта дня**\nСамый большой бот для Таро-гаданий в Telegram! Ответит на любые твои вопросы ❓❓❓\n\n__Пользуйся и делись с друзьями!__'))
 					)
 			if button == "Back":

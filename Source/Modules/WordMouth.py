@@ -439,7 +439,7 @@ class Mailer:
 			logging.info(f"Послание отправлено {User.id}")
 			User.set_chat_forbidden(False)
 
-		except ZeroDivisionError: User.set_chat_forbidden(True)
+		except: User.set_chat_forbidden(True)
 
 		self.__Letters.delete_time_mailings(str(User.id))
 
