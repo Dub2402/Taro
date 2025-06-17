@@ -56,8 +56,8 @@ class Decorators:
 
 		@bot.callback_query_handler(func = lambda Callback: Callback.data == "send_main_menu")
 		def send_main_menu(Call: types.CallbackQuery):
-			User = users.auth(Call.from_user)
-			if not self.__Layout.subscription.IsSubscripted(User):
+			user = users.auth(Call.from_user)
+			if not self.__Layout.subscription.IsSubscripted(user):
 				bot.answer_callback_query(Call.id)
 				return
 			bot.send_message(
@@ -69,7 +69,7 @@ class Decorators:
 				animation = StartAnimation.file_id,
 				caption = None,
 				parse_mode = "HTML",
-				reply_markup = InlineKeyboards.main_menu()
+				reply_markup = InlineKeyboards.main_menu(user)
 				)
 			bot.answer_callback_query(Call.id)
 			

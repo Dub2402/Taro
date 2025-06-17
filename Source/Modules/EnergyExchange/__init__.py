@@ -706,7 +706,7 @@ class Exchanger:
 			),
 			chat_id = user.id,
 			message_id = Options(user).menu_message_id,
-			reply_markup = InlineKeyboards.main_menu()
+			reply_markup = InlineKeyboards.main_menu(user)
 		)
 
 	def push_mails(self):
@@ -714,7 +714,16 @@ class Exchanger:
 
 		if not self.__MailsContainer.all_mails: return
 
-		for User in self.__Users.users:
-			UserOptions = Options(User)
-			Mail = random.choice(self.__MailsContainer.all_mails)
-			if len(UserOptions.mails) < 10 and Mail not in UserOptions.mails: UserOptions.push_mail(Mail)
+		for User in self.__Users.users: self.push_mail(User)
+
+	def push_mail(self, user: UserData):
+		"""
+		Помещает послание в почтовый ящик пользователя.
+
+		:param user: Данные пользователя.
+		:type user: UserData
+		"""
+
+		UserOptions = Options(user)
+		Mail = random.choice(self.__MailsContainer.all_mails)
+		if len(UserOptions.mails) < 10 and Mail not in UserOptions.mails: UserOptions.push_mail(Mail)

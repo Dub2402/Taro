@@ -1,5 +1,8 @@
+from Source.Modules.EnergyExchange.Options import Options as ExchangeOptions
+
 from telebot import types
 
+from dublib.TelebotUtils.Users import UserData
 from dublib.Engine.GetText import _
 from dublib.Polyglot import HTML
 
@@ -50,7 +53,7 @@ class InlineKeyboards:
 
 		return Menu
 		
-	def main_menu() -> types.InlineKeyboardMarkup:
+	def main_menu(user: UserData) -> types.InlineKeyboardMarkup:
 		"""
 		Клавиатура с кнопками: 
 			Карта дня | Да/Нет
@@ -62,11 +65,14 @@ class InlineKeyboards:
 		:rtype: types.InlineKeyboardMarkup
 		"""
 
+		UserOptions = ExchangeOptions(user)
+		Notifications = " (" + str(len(UserOptions.mails)) + ")" if UserOptions.mails else ""
+
 		Menu = types.InlineKeyboardMarkup()
 		
 		CardDay = types.InlineKeyboardButton(_("Карта дня"), callback_data = "card_day")
 		YesNo = types.InlineKeyboardButton(_("Да/Нет"), callback_data = "yes_no")
-		Additional_options = types.InlineKeyboardButton(_("Доп. опции"), callback_data = "additional_options")
+		Additional_options = types.InlineKeyboardButton(_("Доп. опции" + Notifications), callback_data = "additional_options")
 		OrderLayout = types.InlineKeyboardButton(_("Расклад у Мастера 🔥"), callback_data = "order_layout")
 		ThinkCard = types.InlineKeyboardButton(_("Загадай карту"), callback_data = "ThinkCard")
 		Online_layout = types.InlineKeyboardButton(_("Онлайн расклад 💫"), callback_data = "Online_Layout")

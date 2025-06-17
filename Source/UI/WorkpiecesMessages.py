@@ -82,7 +82,7 @@ class WorkpiecesMessages:
 				path = "Start.mp4", autoupload_type = types.InputMediaAnimation
 				).file_id,
 			caption = None,
-			reply_markup = InlineKeyboards.main_menu(),
+			reply_markup = InlineKeyboards.main_menu(user),
 			parse_mode = "HTML"
 		).id
 		

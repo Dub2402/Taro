@@ -26,6 +26,7 @@ from dublib.TelebotUtils import TeleMaster
 from dublib.Engine.GetText import GetText
 from dublib.Methods.System import Clear
 
+
 from datetime import datetime
 from threading import Thread
 import dateparser
@@ -106,7 +107,11 @@ AdminPanel.decorators.commands()
 
 @Bot.message_handler(commands = ["start"])
 def ProcessCommandStart(Message: types.Message):
-	user = usermanager.auth(Message.from_user)
+	if not usermanager.is_user_exists(Message.from_user.id): 
+		user = usermanager.auth(Message.from_user)
+		EnergyExchanger.push_mail(user)
+	else: user = usermanager.auth(Message.from_user)
+	
 	user.set_property("name", Message.from_user.full_name)
 	sender.send_start_messages(user)
 	
@@ -346,7 +351,7 @@ def InlineButtonAllTaro(Call: types.CallbackQuery):
 		caption = None,
 		chat_id = Call.message.chat.id,
 		message_id = Call.message.id,
-		reply_markup = InlineKeyboards.main_menu(), 
+		reply_markup = InlineKeyboards.main_menu(user), 
 		parse_mode = "HTML"
 	)
 

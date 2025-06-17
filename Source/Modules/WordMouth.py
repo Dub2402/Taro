@@ -432,7 +432,7 @@ class Mailer:
 					path = "Data/WordMonth/letters.gif", 
 					autoupload_type = types.InputMediaAnimation
 					).file_id,
-				caption = "<b><i>" + _("Тебе наставление от Мастера 🔥:") + "</i></b>" + "\n\n- " + text, 
+				caption = "<i>" + _("Наставление от Мастера 🔥 для тебя:") + "</i>" + "\n\n- " + "<b>" + text + "</b>", 
 				parse_mode = "HTML",
 				reply_markup = InlineKeyboards.for_restart("Принимаю!")
 			)
