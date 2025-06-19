@@ -97,7 +97,6 @@ scheduler.add_job(mailer.letters_mailing, "cron", day = "9, 19, 28", hour = "9-2
 scheduler.add_job(update_think_card, 'cron', day_of_week = "mon, wed, fri", hour = 0, minute = 0, args = [usermanager])
 scheduler.start()
 
-EnergyExchanger.push_mails()
 # for user in usermanager.users: 
 # 	if user.has_property("ap"): user.delete()
 
@@ -114,7 +113,18 @@ def ProcessCommandStart(Message: types.Message):
 	
 	user.set_property("name", Message.from_user.full_name)
 	sender.send_start_messages(user)
-	
+
+@Bot.message_handler(commands = ["dev"])
+def ProcessCommandStart(Message: types.Message):
+	user = usermanager.auth(Message.from_user)
+
+	user.remove_permissions("developer") if user.has_permissions(["developer", "admin"]) else user.add_permissions("developer")
+	text = "Режим разработчика включен." if user.has_permissions(["developer", "admin"]) else "Режим разработчика выключен."
+	Bot.send_message(
+		chat_id = Message.chat.id,
+		text = text
+	)
+
 @Bot.message_handler(commands = ["card"])
 def ProcessCommandCard(Message: types.Message):
 	user = usermanager.auth(Message.from_user)
@@ -174,11 +184,11 @@ def ProcessShareWithFriends(Message: types.Message):
 @Bot.message_handler(content_types = ["text"])
 def ProcessText(Message: types.Message):
 	user = usermanager.auth(Message.from_user)
-	if not subscription.IsSubscripted(user): return
 	if AdminPanel.procedures.text(Bot, usermanager, Message): return
+	if not subscription.IsSubscripted(user): return
 	if EnergyExchanger.procedures.text(Message): return
 
-	if user.expected_type == "Question" or not user.get_property("Generation"):
+	if user.expected_type == "Question" or not user.has_property("Generation"):
 		user.set_expected_type(None)
 		logging.info(f"ID пользователя: {user.id}.")
 		logging.info(f"Текст вопроса: {Message.text}")
