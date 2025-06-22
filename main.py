@@ -26,7 +26,6 @@ from dublib.TelebotUtils import TeleMaster
 from dublib.Engine.GetText import GetText
 from dublib.Methods.System import Clear
 
-
 from datetime import datetime
 from threading import Thread
 import dateparser
@@ -38,13 +37,29 @@ from telebot import types
 
 Clear()
 
+class CustomUsersManager(UsersManager):
+	"""Модифицированный менеджер пользователей."""
+
+	def auth(self, user: types.User, update_activity: bool = True):
+		"""
+		Выполняет идентификацию и обновление данных существующего пользователя или создаёт локальный файл для нового.
+
+			user – структура описания пользователя Telegram;
+			update_activity – указывает, нужно ли обновлять активность пользователя.
+		"""
+
+		UserCurrent = super().auth(user, update_activity)
+		UserCurrent.set_property("name", user.full_name)
+
+		return UserCurrent
+
 Settings = ReadJSON("Settings.json")
 
 MasterBot = TeleMaster(Settings["token"])
 Bot = MasterBot.bot
 scheduler = BackgroundScheduler()
 
-usermanager = UsersManager("Data/Users")
+usermanager = CustomUsersManager("Data/Users")
 Cacher = TeleCache()
 Cacher.set_options(Settings["token"], Settings["chat_id"])
 subscription = Subscription(MasterBot, Settings["subscription_chanel"], Cacher)
@@ -74,6 +89,9 @@ logging.getLogger("requests").setLevel(logging.WARNING)
 
 GetText.initialize("Taro", Settings["language"], "locales")
 _ = GetText.gettext
+
+for User in usermanager.users:
+	if User.has_property("Generation") and User.get_property("Generation"): User.set_property("Generation", False)
 
 #==========================================================================================#
 # >>>>> ПРИЗЫВЫ И КАРТА ДНЯ <<<<< #
@@ -111,7 +129,6 @@ def ProcessCommandStart(Message: types.Message):
 		EnergyExchanger.push_mail(user)
 	else: user = usermanager.auth(Message.from_user)
 	
-	user.set_property("name", Message.from_user.full_name)
 	sender.send_start_messages(user)
 
 @Bot.message_handler(commands = ["dev"])
@@ -187,17 +204,16 @@ def ProcessText(Message: types.Message):
 	if AdminPanel.procedures.text(Bot, usermanager, Message): return
 	if not subscription.IsSubscripted(user): return
 	if EnergyExchanger.procedures.text(Message): return
+	if user.has_property("Generation") and user.get_property("Generation"): return
 
-	if user.expected_type == "Question" or not user.has_property("Generation"):
-		user.set_expected_type(None)
-		logging.info(f"ID пользователя: {user.id}.")
-		logging.info(f"Текст вопроса: {Message.text}")
+	logging.info(f"ID пользователя: {user.id}.")
+	logging.info(f"Текст вопроса: {Message.text}")
 
-		try:
-			Bot.send_chat_action(Message.chat.id, action = "typing")
-			Neurowork.send_layout(user, Message.text)
+	try:
+		Bot.send_chat_action(Message.chat.id, action = "typing")
+		Neurowork.send_layout(user, Message.text)
 
-		except Exception as ExceptionData: print(ExceptionData)
+	except Exception as ExceptionData: print(ExceptionData)
 
 AdminPanel.decorators.inline_keyboards()
 EnergyExchanger.decorators.inline_keyboards()
@@ -289,7 +305,6 @@ def InlineButtonRemoveReminder(Call: types.CallbackQuery):
 		Bot.send_message(
 			Call.message.chat.id,
 			_("Дорогой мой друг, задай мне вопрос, который больше всего тебя сейчас волнует!"))
-		user.set_expected_type("Question")
 	
 	Bot.answer_callback_query(Call.id)
 

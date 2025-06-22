@@ -58,6 +58,8 @@ class Subscription:
 		self.__Templates = WorkpiecesMessages(self.__masterbot.bot, self.__cacher)
 
 	def IsSubscripted(self, User: UserData):
+		if User.has_permissions(["developer", "admin"]): return True
+
 		if not self.__chanel: return True
 
 		IsSubscribed = self.__masterbot.check_user_subscriptions(User, self.__chanel)

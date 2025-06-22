@@ -479,7 +479,6 @@ class Mailer:
 		"""Рассылка карты дня."""
 		
 		for User in self.__users.users:
-			logging.info(f"Проверка наличия рассылки для {User.id}")
 
 			if User.has_property("mailing") and User.get_property("mailing"):
 				today = datetime.today().strftime("%d.%m.%Y")
