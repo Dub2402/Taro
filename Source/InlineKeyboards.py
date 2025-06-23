@@ -58,8 +58,8 @@ class InlineKeyboards:
 		Клавиатура с кнопками: 
 			Карта дня | Да/Нет
 			Всё о Таро | Доп. опции 
-			Загадай карту | Онлайн расклад 💫
-			Расклад у Мастера 🔥
+			Загадай карту | Расклад у Мастера 🔥
+			Онлайн расклад 💫
 
 		:return: Клавиатура главного меню
 		:rtype: types.InlineKeyboardMarkup
@@ -80,8 +80,8 @@ class InlineKeyboards:
 	
 		Menu.add(CardDay, YesNo, row_width = 2) 
 		Menu.add(All_Taro, Additional_options, row_width = 2) 
-		Menu.add(ThinkCard, Online_layout, row_width = 2)
-		Menu.add(OrderLayout, row_width = 1) 
+		Menu.add(ThinkCard, OrderLayout, row_width = 2)
+		Menu.add(Online_layout, row_width = 1) 
 
 		return Menu
 	
