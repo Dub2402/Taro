@@ -15,7 +15,15 @@ from telebot import types
 @dataclass(frozen = True)
 class SpecificQuestion:
 	type: str | None
-	variant: str | None
+	reaction: str | None
+	main_variant: str | None
+	alt_variants: tuple[str] | None
+
+	def print(self):
+		print("Type:", self.type)
+		print("Reaction:", self.reaction)
+		print("Main variant:", self.main_variant)
+		print("Alternative variants:", self.alt_variants)
 
 class NeuroRequestor:
 	"""Обработчик запросов к нейросети."""
@@ -81,28 +89,41 @@ class NeuroRequestor:
 
 		return Data
 	
-	def __choice_handler(self, question: str) -> SpecificQuestion:
+	def __ParseQuestionData(self, question: str) -> SpecificQuestion:
 
+		alt_variants = list()
 		handler = None
-		variant = None
+		reaction = None
+		main_variant = None
 
 		words = question.split(" ")
+
 		for word in words:
-			if word and word == "ли":
-				handler = "reaction"
-				variant = random.choice(("нейтральному", "положительному", "положительному", "негативному"))
-				break
+			if not word: continue
 
-		if not handler:
-			response: str | None = self.__Generator.generate(self.build_training_request(question)).json["text"]
-			print(response)
-
-			if response.count(";"):
-				handler = "answer"
-				variants = tuple(response.strip().split(";"))
-				if variants: variant = random.choice(variants)
+			if word in ("или", "между"):
 		
-		return SpecificQuestion(handler, variant)
+				response: str | None = self.__Generator.generate(self.build_training_request(question)).json["text"]
+
+				if response.count(";"):
+					handler = "answer"
+					variants = response.strip().split(";")
+
+					for Index in range(len(variants)): variants[Index] = variants[Index].strip()
+
+					if variants: 
+						main_variant = random.choice(variants)
+						alt_variants = variants
+						alt_variants.remove(main_variant)
+						alt_variants = tuple(alt_variants)
+
+			elif word == "ли":
+				handler = "reaction"
+				reaction = random.choice(("нейтральному", "положительному", "положительному", "негативному"))
+
+		if main_variant: reaction = None
+					
+		return SpecificQuestion(handler, reaction, main_variant, alt_variants)
 
 	#==========================================================================================#
 	# >>>>> ПУБЛИЧНЫЕ МЕТОДЫ <<<<< #
@@ -142,21 +163,19 @@ class NeuroRequestor:
 		"""
 
 		reaction = None
-		answer = None
 
 		user.set_property("Generation", True)
 		Collection = random.choice(tuple(self.__Data.keys()))
 
-		specific_question_data = self.__choice_handler(question)
-		if specific_question_data.type == "reaction": reaction = specific_question_data.variant
-		elif specific_question_data.type == "answer": answer = specific_question_data.variant
-		
+		question_data = self.__ParseQuestionData(question)
+		question_data.print()
+		if question_data.type == "reaction": reaction = question_data.main_variant
 		
 		PreparationRequest = self.build_preparation_request(question)
-		FirstCardRequest = self.build_card_layout_request(self.__Data[Collection][0], "Первая карта", question, reaction, answer)
-		SecondCardRequest = self.build_card_layout_request(self.__Data[Collection][1], "Вторая карта", question, reaction, answer)
-		ThirdCardRequest = self.build_card_layout_request(self.__Data[Collection][2], "Третья карта", question, reaction, answer)
-		OutcomeRequest = self.build_outcome_request(self.__Data[Collection][0], self.__Data[Collection][1], self.__Data[Collection][2], question, reaction, answer)
+		FirstCardRequest = self.build_card_layout_request(self.__Data[Collection][0], "Первая карта", question, reaction, question_data.main_variant, question_data.alt_variants)
+		SecondCardRequest = self.build_card_layout_request(self.__Data[Collection][1], "Вторая карта", question, reaction, question_data.main_variant, question_data.alt_variants)
+		ThirdCardRequest = self.build_card_layout_request(self.__Data[Collection][2], "Третья карта", question, reaction, question_data.main_variant, question_data.alt_variants)
+		OutcomeRequest = self.build_outcome_request(self.__Data[Collection][0], self.__Data[Collection][1], self.__Data[Collection][2], question, reaction, question_data.main_variant, question_data.alt_variants)
 
 		RequestsCollection = {
 			2: FirstCardRequest,
@@ -169,8 +188,8 @@ class NeuroRequestor:
 			ImageCache = self.__Cacher.get_real_cached_file(f"Materials/Layouts/{Collection}/{Index}.jpg", types.InputMediaPhoto)
 
 			if Index == 1:
-				Text = self.__Generator.generate(PreparationRequest).json["text"]
-
+				Text: str = self.__Generator.generate(PreparationRequest).json["text"]
+				if Text: Text = Text.replace("*", "")
 				Text = self.__FormatPreparation(Text)
 
 				if Text and Text != "Ваше сообщение не понятно.": 
@@ -194,8 +213,13 @@ class NeuroRequestor:
 					logging.info(f"{user.id}, Ваше сообщение не совсем понятно. Если у вас есть вопрос или тема, которую вы хотите обсудить, пожалуйста, напишите об этом. Я с радостью помогу вам!")
 					return
 
-			else: 
-				Text = self.__Generator.generate(RequestsCollection[Index]).json["text"]
+			else:
+				Response = self.__Generator.generate(RequestsCollection[Index])
+				Text: str | None = Response.json["text"]
+				
+				if Text: Text = Text.replace("*", "")
+				else: logging.error(Response.json)
+
 				Text = self.__FormatCardLayout(Text)
 				self.__Bot.send_photo(
 					chat_id = user.id,
@@ -205,7 +229,8 @@ class NeuroRequestor:
 				)
 				logging.info(f"{user.id, Text}")
 
-		Text = self.__Generator.generate(OutcomeRequest).json["text"]
+		Text: str = self.__Generator.generate(OutcomeRequest).json["text"]
+		if Text: Text = Text.replace("*", "")
 		Outcome = (
 			"<b>" + _("Заключение:") + "</b>",
 		  	Text + "\n",
@@ -235,7 +260,7 @@ class NeuroRequestor:
 		"""
 
 		Request = f"Тебе задали вопрос: {question}."
-		Request += "Перечисли варианты из этого вопроса, разделяя точкой с запятой, не добавляй форматирования и ничего лишнего."
+		Request += "Перечисли варианты из этого вопроса, если они есть, в именительном падеже, разделяя точкой с запятой, не добавляй форматирования и ничего лишнего."
 		
 		return Request
 	
@@ -257,13 +282,13 @@ class NeuroRequestor:
 			_("Вот это ситуация! Довольно любопытный расклад...")
 		)
 		Start = random.choice(Starts)
-		Request = f"У тебя есть шаблон: {Start} [question]."
-		Request += f"Тебе задали вопрос: {question}. Выведи шаблон и подставь вопрос. Согласуй вопрос с шаблоном, поставь во второе лицо, учитывай правила русского языка."
-		Request += "Если вопрос является бессмысленным набором символов или непонятен тебе, выведи следующую строку: \"Ваше сообщение не понятно.\", не добавляя ничего другого."
+		Request = f"У тебя есть шаблон: {Start} [question]. "
+		Request += f"Тебе задали вопрос: \"{question}\". Выведи шаблон и подставь вопрос. Согласуй вопрос с шаблоном, поставь во второе лицо, учитывай правила русского языка. "
+		Request += "Если вопрос является бессмысленным набором символов или непонятен тебе, выведи следующую строку: \"Ваше сообщение не понятно.\", не добавляя ничего другого. "
 		
 		return Request
 
-	def build_card_layout_request(self, card_name: str, card_number: str, question: str, reaction: str | None = None, answer: str | None = None) -> str:
+	def build_card_layout_request(self, card_name: str, card_number: str, question: str, reaction: str | None = None, answer: str | None = None, alt_variants: tuple[str] | None = None) -> str:
 		"""
 		Строит текст запроса для конкретной карты.
 
@@ -279,15 +304,30 @@ class NeuroRequestor:
 		:rtype: str
 		"""
 
-		Request = f"Проанализируй эти данные: номер карты в раскладе - {card_number}, тип карты - {card_name} и вопрос пользователя {question} и общий ответ на расклад и предоставь ответ в следующем формате:"
-		Request += f"{card_number}, «{card_name}», [помести сюда ответ исходя из значений карты таро {card_name}]."
-		if reaction: Request += f"Склоняйся к {reaction} ответу на вопрос. Не упоминай сам вопрос в ответе!"
-		if answer: Request += f"Склоняй к такому  ответу на вопрос \"{answer}\". Не упоминай сам вопрос в ответе! Добавь аргументы, почему твой ответ на вопрос именно такой."
-		Request += "Не более 250 символов в тексте. Не меняй первые два словосочетания!!!"
+		Request = f"Проанализируй эти данные: номер карты в раскладе - \"{card_number}\", тип карты - \"{card_name}\", вопрос пользователя - \"{question}\" и предоставь ответ в следующем формате: "
+		Request += f"{card_number}, «{card_name}», [помести сюда ответ исходя из трактовки карты таро {card_name}]. "
+
+		if answer:
+			
+			match card_number:
+
+				case "Первая карта":
+					Request += "Только общая характеристика внутреннего мира или характера вопрошающего. "
+
+				case "Вторая карта": 
+					if alt_variants: Request += f"Аргументируй, почему карта не советует следующий вариант: " + random.choice(alt_variants) + "." + "При необходимости "
+
+				case "Третья карта":
+					Request += f"Аргументируй, почему карта советует следующий вариант: {answer} "
+
+			# Request += f"Склоняй к такому ответу на вопрос \"{answer}\". "
+
+		if reaction and not answer: Request += f"Склоняйся к {reaction} ответу на вопрос. "
+		Request += "Не более 250 символов в тексте. Сделай свой ответ уникальным и неповторимым."
 
 		return Request
 	
-	def build_outcome_request(self, first_card: str, second_card: str, third_card: str, question: str, reaction: str | None = None, answer: str | None = None) -> str:
+	def build_outcome_request(self, first_card: str, second_card: str, third_card: str, question: str, reaction: str | None = None, answer: str | None = None, alt_variants: list[str] | None = None) -> str:
 		"""
 		Строит текст запроса для резюмирования расклада.
 
@@ -313,10 +353,10 @@ class NeuroRequestor:
 		]
 
 		Start = random.choice(Starts)
-		Request = f"Проанализируй эти карты Таро: {first_card}, {second_card}, {third_card} и предоставь ответ в следующем формате на вопрос {question}:"
-		Request += f"{Start}, [помести сюда резюмированное значение карт Таро в заданном вопросе]."
-		if reaction: Request += f"Склоняйся к {reaction} ответу на вопрос."
-		if answer: Request += f"Склоняй к такому ответу на вопрос \"{answer}\". Не упоминай сам вопрос в ответе!"
-		Request += "Не более 250 символов в тексте. Не меняй первые два слова!!! Не упоминай названия карт!!!"
+		Request = f"Проанализируй эти карты Таро: {first_card}, {second_card}, {third_card} и предоставь ответ в следующем формате на вопрос {question}: "
+		Request += f"{Start}, [помести сюда резюмированное значение карт Таро в заданном вопросе]. "
+		if reaction and not answer: Request += f"Склоняйся к {reaction} ответу на вопрос. "
+		elif answer: Request += f"Склоняй к такому ответу на вопрос \"{answer}\". Добавь аргументы, почему твой ответ на вопрос именно такой. Сделай свой ответ уникальным и неповторимым. "
+		Request += "Не более 250 символов в тексте."
 			
 		return Request
