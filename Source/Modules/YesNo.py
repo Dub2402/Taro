@@ -73,6 +73,17 @@ class Decorators:
 				Call.message.chat.id,
 				Call.message.id
 			)
+
+			stiker_message = self.__YesNo.bot.send_message(
+				chat_id = Call.message.chat.id, 
+				text = "🔮"
+				)
+			sleep(2.5)
+
+			self.__YesNo.masterbot.safely_delete_messages(
+				Call.message.chat.id,
+				stiker_message.id
+			)
 			
 			image, choice_type = self.__YesNo.ChoiceRandomCard()
 			if choice_type == "Straight":
@@ -85,7 +96,7 @@ class Decorators:
 			
 			card, value = self.__YesNo.Get_Text(image, cards, values)
 			PhotoID = self.__YesNo.cacher.get_real_cached_file(image, types.InputMediaPhoto)
-			sleep(1)
+
 			self.__YesNo.bot.send_photo(
 				Call.message.chat.id, 
 				photo = PhotoID.file_id,
