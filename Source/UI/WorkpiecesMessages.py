@@ -66,13 +66,12 @@ class WorkpiecesMessages:
 		:type title: bool
 		"""
 
-
 		if user.has_property("start_message_id"): TeleMaster(self.__bot).safely_delete_messages(user.id, user.get_property("start_message_id"))
 
 		if title:
 			self.__bot.send_message(
 				user.id,
-				text = _("<b>Добро пожаловать в Таробот!</b>\n\nСамый большой бот для Таро-гаданий в Telegram!\n\nЗадай боту любой❓️вопрос и наслаждайся ответом!"),
+				text = _("<b>Добро пожаловать в Таробот!</b>\n\nСамый популярный бот для Таро-гаданий в Telegram!\n\nЗадай боту любой❓️вопрос и наслаждайся ответом!"),
 				parse_mode = "HTML"
 			).id
 
