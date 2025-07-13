@@ -5,19 +5,39 @@ from Source.UI.AdditionalOptions import InlineTemplates
 from Source.Modules.Subscription import Subscription
 from Source.InlineKeyboards import InlineKeyboards
 
-from dublib.Methods.Filesystem import MakeRootDirectories, ReadJSON, WriteJSON
+from dublib.Methods.Filesystem import MakeRootDirectories, ReadJSON, WriteJSON, ListDir
 from dublib.TelebotUtils.Users import UserData, UsersManager
 from dublib.TelebotUtils.Master import TeleMaster
 from dublib.TelebotUtils.Cache import TeleCache
 from dublib.Engine.GetText import _
 
 from time import sleep
+from os import PathLike
 import random
 import os
 
 from telebot import TeleBot, types
 import xlsxwriter
 import pandas
+
+def randomize_animation(path_to_animations: PathLike) -> str:
+	"""
+	Выбирает рандомную анимацию из необходимой папки.
+
+	:param path_to_animations: Путь к папке с гифками.
+	:type path_to_animations: PathLike
+	:return: Название рандомной гифки.
+	:rtype: str
+	"""
+
+	animation_paths = list()
+
+	for animation_path in ListDir(path_to_animations):
+		animation_paths.append(animation_path)
+
+	name_animation = random.choice(animation_paths)
+
+	return name_animation
 
 #==========================================================================================#
 # >>>>> КОНТЕЙНЕРЫ ПОСЛАНИЙ <<<<< #
@@ -234,7 +254,7 @@ class ExchangerInlineTemplates:
 
 		Menu = types.InlineKeyboardMarkup()
 		Mail = types.InlineKeyboardButton(_("Моя почта") + Notifications, callback_data = "ee_mails")
-		NewMessage = types.InlineKeyboardButton(_("Написать послание"), callback_data = "ee_message")
+		NewMessage = types.InlineKeyboardButton(_("Написать послание" + " " + "+"), callback_data = "ee_message")
 		Back = types.InlineKeyboardButton("◀️ " + _("Назад"), callback_data = "ee_close")
 		Menu.add(Mail, NewMessage, Back, row_width = 1)
 
@@ -268,7 +288,6 @@ class Decorators:
 		:param exchanger: Модуль обмена энергией.
 		:type exchanger: Exchanger
 		"""
-
 
 		self.__Exchanger = exchanger
 
@@ -309,15 +328,23 @@ class Decorators:
 
 			Text = (
 				_("<i>" + "Ваше послание успешно отправлено на проверку!" + "</i>"),
+				_("<b>" + "Спасибо за ваш вклад в Таробот!" + "</b>"),
 				_("Если вы в хорошем настроении, то напишите ещё что-то. Вам это вернётся <b>в 10 раз больше!</b>" + " 😊")
 			)
 			TeleMaster(bot).safely_delete_messages(Call.from_user.id, Call.message.id)
-			Message = bot.send_message(
+
+			name_animation = randomize_animation("Data/Exchange/Thanks")
+			Message = bot.send_animation(
 				chat_id = Call.from_user.id,
-				text = "\n\n".join(Text),
+				animation = self.__Exchanger.cacher.get_real_cached_file(
+					path = f"Data/Exchange/Thanks/{name_animation}",
+					autoupload_type = types.InputMediaAnimation,
+					).file_id,
+				caption = "\n\n".join(Text),
 				parse_mode = "HTML",
 				reply_markup = ExchangerInlineTemplates.end()
 			)
+
 			UserOptions.add_removable_messages(Message.id)
 
 		@bot.callback_query_handler(func = lambda Callback: Callback.data == "ee_accept")
@@ -362,7 +389,7 @@ class Decorators:
 				return
 
 			if UserOptions.mails: 
-				UserOptions.add_removable_messages(bot.send_message(Call.from_user.id, _("ВАШИ ПОСЛАНИЯ:")).id)
+				UserOptions.add_removable_messages(bot.send_message(Call.from_user.id, _("ВХОДЯЩИЕ ПОСЛАНИЯ:")).id)
 
 				for Mail in UserOptions.mails:
 					UserOptions.add_removable_messages(bot.send_message(Call.from_user.id, Mail, reply_markup = ExchangerInlineTemplates.accept()).id)
@@ -404,7 +431,7 @@ class Decorators:
 			UserOptions.add_removable_messages(
 				bot.send_message(
 					chat_id = Call.from_user.id,
-					text = _("У вас есть лимит на 200 символов, чтобы обрадовать человека и написать свой текст:"),
+					text = _("У вас есть лимит на 200 символов, чтобы обрадовать человека и написать свой текст!\n\nНапишите его прям под этим сообщением:"),
 					reply_markup = ExchangerInlineTemplates.thank_you(_("Спасибо, чуть позже придумаю!"))
 				).id
 			)
@@ -613,7 +640,7 @@ class Exchanger:
 		"""
 
 		return self.unmoderated_mails.mails
-
+	
 	def moderate_mail(self, mail: str, status: bool):
 		"""
 		Выполняет обработку модерации послания.
@@ -641,11 +668,13 @@ class Exchanger:
 		Text = (
 				_("Весь мир существует по законам обмена энергией. И наш бот - <b>Таробот</b>, тому не исключение. Только у нас энергия тепла, любви и добра!"),
 				_("<i>Стань участником программы взаимной поддержки и напиши свое собственное послание. Оно прилетит абсолютно рандомному участнику нашего бота и поднимет ему настроение 🤗</i>"),
-				_("<b><i>А кто-то может написать и тебе!)</i></b>")
+				_("<b><i>А кто-то может написать и тебе!</i></b>")
 			)
+		
+		name_animation = randomize_animation(path_to_animations = "Data/Exchange/Start")
 
 		File = self.cacher.get_real_cached_file(
-			path = "Data/Exchange/start.gif", 
+			path = f"Data/Exchange/Start/{name_animation}", 
 			autoupload_type = types.InputMediaAnimation
 		)
 		
