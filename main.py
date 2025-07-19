@@ -1,4 +1,6 @@
 from Source.Modules.EnergyExchange import Exchanger, Scheduler as ExchangeScheduler
+from Source.Modules.AscendTaro import Ascend
+from Source.Modules.AscendTaro.MessagesSender import Sender as AscendSender
 from Source.Modules.ValuesCards import ValuesCards
 from Source.UI.AdditionalOptions import Options
 from Source.UI.OnlineLayout import Layout
@@ -17,7 +19,7 @@ from Source.Modules.Subscription import Subscription
 from Source.InlineKeyboards import InlineKeyboards
 from Source.Neurowork import NeuroRequestor
 from Source.Modules.WordMouth import Mailer
-from Source.Core.Reader import Reader
+from Source.Core.ExcelTools import Reader
 
 from dublib.TelebotUtils.Cache import TeleCache
 from dublib.Methods.Filesystem import ReadJSON
@@ -44,25 +46,45 @@ class CustomUsersManager(UsersManager):
 		"""
 		Выполняет идентификацию и обновление данных существующего пользователя или создаёт локальный файл для нового.
 
-			user – структура описания пользователя Telegram;
-			update_activity – указывает, нужно ли обновлять активность пользователя.
+		:param user: Cтруктура описания пользователя Telegram.
+		:type user: User
+		:param update_activity: Указывает, нужно ли обновлять активность пользователя. По умолчанию `True`.
+		:type update_activity: bool
 		"""
 
 		UserCurrent = super().auth(user, update_activity)
 		UserCurrent.set_property("name", user.full_name)
 
+		if not UserCurrent.has_property("index"): UserCurrent.set_property("index", self.get_new_index())
+
 		return UserCurrent
+	
+	def get_new_index(self) -> int:
+		"""
+		Генериурет новый порядковый номер для аккаунта.
+
+		:return: Порядковый номер.
+		:rtype: int
+		"""
+
+		Indexes = list()
+
+		for CurrentUser in self.users:
+			if CurrentUser.has_property("index"): Indexes.append(CurrentUser.get_property("index"))
+
+		return max(Indexes) + 1 if Indexes else 1
 
 Settings = ReadJSON("Settings.json")
 
 MasterBot = TeleMaster(Settings["token"])
 Bot = MasterBot.bot
+
 scheduler = BackgroundScheduler()
 
 usermanager = CustomUsersManager("Data/Users")
 Cacher = TeleCache()
 Cacher.set_options(Settings["token"], Settings["chat_id"])
-subscription = Subscription(MasterBot, Settings["subscription_chanel"], Cacher)
+subscription = Subscription(MasterBot, Settings["subscription_chanel"], Cacher, usermanager)
 reader = Reader(Settings)
 mailer = Mailer(MasterBot, usermanager, reader, Cacher, subscription) 
 AdminPanel = Panel(Bot, usermanager, Settings["password"])
@@ -72,15 +94,15 @@ yes_no = YesNo(MasterBot, Cacher, reader, usermanager, subscription)
 values_cards = ValuesCards(MasterBot, usermanager, Cacher, subscription)
 Neurowork = NeuroRequestor(Bot, Cacher)
 OnlineLayout = Layout(subscription)
-AddictionalOptional = Options(MasterBot, usermanager, Settings, sender, Cacher, subscription)
+AddictionalOptional = Options(MasterBot, usermanager, Settings, sender, Cacher, subscription, reader)
 
 EnergyExchanger = Exchanger(Bot, usermanager, Cacher, subscription)
 ExchangeSchedulerObject = ExchangeScheduler(EnergyExchanger, scheduler)
 
 Moderator.initialize(EnergyExchanger.get_unmoderated_mails, EnergyExchanger.moderate_mail)
-Uploader.set_uploadable_files(["Data/Exchange/Mails.xlsx"])
+Uploader.set_uploadable_files("Data/Exchange/Mails.xlsx")
 
-logging.basicConfig(level = logging.INFO, encoding = "utf-8", filename = "LOGING.log", filemode = "w", force = True,
+logging.basicConfig(level = logging.DEBUG, encoding = "utf-8", filename = "LOGING.log", filemode = "w", force = True,
 	format = '%(asctime)s - %(levelname)s - %(message)s',
 	datefmt = '%Y-%m-%d %H:%M:%S')
 
@@ -90,8 +112,10 @@ logging.getLogger("requests").setLevel(logging.WARNING)
 GetText.initialize("Taro", Settings["language"], "locales")
 _ = GetText.gettext
 
-for User in usermanager.users:
+for User in usermanager.users: 
 	if User.has_property("Generation") and User.get_property("Generation"): User.set_property("Generation", False)
+
+usermanager.remove_property("Question")
 
 #==========================================================================================#
 # >>>>> ПРИЗЫВЫ И КАРТА ДНЯ <<<<< #
@@ -105,8 +129,8 @@ scheduler.add_job(mailer.card_day_mailing, 'cron', hour = 8, minute = 0)
 # >>>>> ПОСЛАНИЯ <<<<< #
 #==========================================================================================#
 
-scheduler.add_job(mailer.letters.randomize_time, "cron", day = "9, 19, 28", hour = 0, minute = 0)
-scheduler.add_job(mailer.letters_mailing, "cron", day = "9, 19, 28", hour = "9-21", minute = "*")
+scheduler.add_job(mailer.letters.randomize_time, "cron", day = "8, 18, 28", hour = 0, minute = 0) 
+scheduler.add_job(mailer.letters_mailing, "cron", day = "8, 18, 28", hour = "9-21", minute = "*")
 
 #==========================================================================================#
 # >>>>> ЗАГАДАЙ КАРТУ И ОБМЕН ЭНЕРГИЕЙ <<<<< #
@@ -115,20 +139,19 @@ scheduler.add_job(mailer.letters_mailing, "cron", day = "9, 19, 28", hour = "9-2
 scheduler.add_job(update_think_card, 'cron', day_of_week = "mon, wed, fri", hour = 0, minute = 0, args = [usermanager])
 scheduler.start()
 
-# for user in usermanager.users: 
-# 	if user.has_property("ap"): user.delete()
-
-# Thread(target = InternalCaching(Cacher).caching).start()
+Thread(target = InternalCaching(Cacher).caching).start()
 
 AdminPanel.decorators.commands()
 
 @Bot.message_handler(commands = ["start"])
 def ProcessCommandStart(Message: types.Message):
-	if not usermanager.is_user_exists(Message.from_user.id): 
+	if not usermanager.is_user_exists(Message.from_user.id):  
 		user = usermanager.auth(Message.from_user)
+		if Message.text != "/start": user.set_property("invited_by", int(Message.text.split(" ")[-1]))
 		EnergyExchanger.push_mail(user)
 	else: user = usermanager.auth(Message.from_user)
 	
+	if not user.has_property("registration_date"): user.set_property("registration_date", datetime.now().strftime("%d.%m.%Y"))
 	sender.send_start_messages(user)
 
 @Bot.message_handler(commands = ["dev"])
@@ -147,6 +170,7 @@ def ProcessCommandCard(Message: types.Message):
 	user = usermanager.auth(Message.from_user)
 	if not subscription.IsSubscripted(user): return
 
+	Message_send = False
 	if len(Message.text.split(" ")) == 2:
 		user_date = Message.text.split(" ")[-1]
 		try:
@@ -154,22 +178,40 @@ def ProcessCommandCard(Message: types.Message):
 			with open(f"Materials/Texts/{datekey}.txt") as file:
 				text = file.read()
 
-			Bot.send_video(
-				chat_id = Message.chat.id,
-				video = Cacher.get_real_cached_file(f"Materials/Video/{datekey}.mp4", types.InputMediaVideo).file_id,
-				caption = text, 
-				parse_mode = "HTML"
-				)
+			try:
+				Message_send = Bot.send_video(
+					chat_id = Message.chat.id,
+					video = Cacher.get_real_cached_file(f"Materials/Video/{datekey}.mp4", types.InputMediaVideo).file_id,
+					caption = text, 
+					parse_mode = "HTML"
+					)
+				
+			except FileNotFoundError: 
+				Message_send = Bot.send_photo(
+					chat_id = Message.chat.id,
+					photo = Cacher.get_real_cached_file(f"Materials/Photo/{datekey}.jpg", types.InputMediaPhoto).file_id,
+					caption = text, 
+					parse_mode = "HTML"
+					)
 			
 		except FileNotFoundError: 
+			if not Message_send and text:
+				Bot.send_message(
+					chat_id = Message.chat.id,
+					text = text, 
+					parse_mode = "HTML"
+					)
+			else:
+
+				Bot.send_message(
+					Message.chat.id,
+					text = _("Такой даты пока не существует.")
+					)
+				
+		except Exception as E:
 			Bot.send_message(
 				Message.chat.id,
-				text = _("Такой даты пока не существует.")
-				)
-		except:
-			Bot.send_message(
-				Message.chat.id,
-				text = _("Команда введена неправильно. Формат команды: /card 21.01.2025")
+				text = _(f"{E}, Команда введена неправильно. Формат команды: /card 21.01.2025")
 				)
 
 @Bot.message_handler(commands = ["mailset"])
@@ -193,7 +235,7 @@ def ProcessShareWithFriends(Message: types.Message):
 	Bot.send_photo(
 		Message.chat.id, 
 		photo = Cacher.get_real_cached_file(Settings["qr_image"], types.InputMediaPhoto).file_id,
-		caption = _('@Taro100_bot\n@Taro100_bot\n@Taro100_bot\n\n<b>Таробот | Расклад онлайн | Карта дня</b>\nСамый большой бот для Таро-гаданий в Telegram! Ответит на любые твои вопросы ❓❓❓\n\n<b><i>Пользуйся и делись с друзьями!</i></b>'), 
+		caption = _('@Taro100_bot\n@Taro100_bot\n@Taro100_bot\n\n<b>Таробот | Расклад онлайн | Карта дня</b>\nСамый популярный бот для Таро-гаданий в Telegram! Ответит на любые твои вопросы ❓❓❓\n\n<b><i>Пользуйся и делись с друзьями!</i></b>'), 
 		reply_markup = InlineKeyboards.AddShare(["Share"]), 
 		parse_mode = "HTML"
 		)
@@ -206,14 +248,17 @@ def ProcessText(Message: types.Message):
 	if EnergyExchanger.procedures.text(Message): return
 	if user.has_property("Generation") and user.get_property("Generation"): return
 
-	logging.info(f"ID пользователя: {user.id}.")
-	logging.info(f"Текст вопроса: {Message.text}")
+	if user.expected_type == "question":
+		logging.info(f"ID пользователя: {user.id}.")
+		logging.info(f"Текст вопроса: {Message.text}")
 
-	try:
-		Bot.send_chat_action(Message.chat.id, action = "typing")
-		Neurowork.send_layout(user, Message.text)
+		try:
+			Bot.send_chat_action(Message.chat.id, action = "typing")
+			Neurowork.send_layout(user, Message.text)
 
-	except Exception as ExceptionData: print(ExceptionData)
+		except Exception as ExceptionData:
+			logging.error(str(ExceptionData))
+			user.set_property("Generation", False)
 
 AdminPanel.decorators.inline_keyboards()
 EnergyExchanger.decorators.inline_keyboards()
@@ -285,7 +330,7 @@ def InlineButtonRemoveReminder(Call: types.CallbackQuery):
 		Bot.answer_callback_query(Call.id)
 		return
 	Bot.edit_message_caption(
-		caption = "<b>" + _("РАСКЛАД У МАСТЕРА") + "</b>",
+		caption = "<b>" + _("РАСКЛАД У МАСТЕРА") + "</b>" + "\n\n" + _("Возьми расклад у Мастера, и реши одну из своих проблем:"),
 		chat_id = Call.message.chat.id,
 		message_id = Call.message.id,
 		reply_markup = InlineKeyboards.SendOrderLayout(),
@@ -299,12 +344,33 @@ def InlineButtonRemoveReminder(Call: types.CallbackQuery):
 	if not subscription.IsSubscripted(user):
 		Bot.answer_callback_query(Call.id)
 		return
+	if not Ascend(user = user).is_layout_available:
+		AscendSender(bot = Bot, cacher = Cacher).limiter_layouts(chat_id = Call.message.chat.id)
+		Bot.answer_callback_query(Call.id)
+		return
+
 	Bot.send_chat_action(Call.message.chat.id, action = "typing")
+
+	general_questions = reader.random_general_question
+
+	text = (
+		_("Дорогой мой друг, задай мне вопрос, который больше всего тебя сейчас волнует!") + "\n",
+		"<b>" + _("Например:") + "</b>",
+		"<b>- </b>" + "<i>" + reader.random_love_question + "</i>",
+		"<b>- </b>" + "<i>" + general_questions[0] + "</i>",
+		"<b>- </b>" + "<i>" + general_questions[1] + "</i>",
+		"<b>- </b>" + "<i>" + _("Любой свой Вопрос❓") + "</i>" + "\n",
+		"Напиши мне его прям под этим сообщением:"
+		)
 	
 	if not user.get_property("Generation"):
+		user.set_expected_type("question")
 		Bot.send_message(
-			Call.message.chat.id,
-			_("Дорогой мой друг, задай мне вопрос, который больше всего тебя сейчас волнует!"))
+			chat_id = Call.message.chat.id,
+			text = "\n".join(text),
+			parse_mode = "HTML",
+			reply_markup = InlineKeyboards.for_delete("◀️ Назад"))
+	
 	
 	Bot.answer_callback_query(Call.id)
 

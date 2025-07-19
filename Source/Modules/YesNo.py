@@ -6,7 +6,7 @@ from dublib.Engine.GetText import _
 
 from Source.InlineKeyboards import InlineKeyboards
 from Source.Modules.Subscription import Subscription
-from Source.Core.Reader import Reader
+from Source.Core.ExcelTools import Reader
 
 from time import sleep
 from telebot import TeleBot, types
@@ -190,7 +190,7 @@ class YesNo:
 	
 	def Get_Text(self, photo: str, cards: list, values: list) -> str:
 		"""
-		_summary_
+		Получение названия и значения рандомной карты.
 
 		:param photo: путь к изображению карты.
 		:type photo: str

@@ -2,12 +2,12 @@
     "token": "",
     "qr_image": "",
     "start_animation": "",
-    "letters_animation": "",
     "chat_id": null,
     "subscription_chanel": null,
-    "subscription_link": "",
     "password": "",
     "language": "ru",
     "letters": "",
-    "yes_no": ""
+    "yes_no": "",
+    "motto_day": "",
+    "online_layout": ""
 }

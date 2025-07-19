@@ -5,6 +5,8 @@ from dublib.TelebotUtils.Users import UserData
 from Source.Modules.solid_g4f.Connection.API import Requestor, Options
 from Source.Functions import _
 from Source.UI.OnlineLayout import end_layout
+from Source.Modules.AscendTaro import Ascend
+from Source.Modules.AscendTaro.MessagesSender import Sender
 
 from dataclasses import dataclass
 import telebot
@@ -242,8 +244,17 @@ class NeuroRequestor:
 			parse_mode = "HTML",
 			reply_markup = end_layout()
 		)
-		user.set_property("Generation", False)
+
 		logging.info(f"{user.id, "\n".join(Outcome)}")
+
+		user.set_property("Generation", False)
+		user.set_expected_type(None)
+
+		ascend = Ascend(user = user)
+		if ascend.is_today_layout_available: ascend.incremente_today_layouts()
+		else: 
+			ascend.decremente_bonus_layouts()
+			if not ascend.is_bonus_layout_available: Sender(self.__Bot, self.__Cacher).end_bonus_layout(user.id)
 
 	#==========================================================================================#
 	# >>>>> ПУБЛИЧНЫЕ МЕТОДЫ ПОСТРОЕНИЯ ЗАПРОСОВ <<<<< #
@@ -315,12 +326,9 @@ class NeuroRequestor:
 					Request += "Только общая характеристика внутреннего мира или характера вопрошающего. "
 
 				case "Вторая карта": 
-					if alt_variants: Request += f"Аргументируй, почему карта не советует следующий вариант: " + random.choice(alt_variants) + "." + "При необходимости "
-
+					if alt_variants: Request += f"Аргументируй, почему карта не советует следующий вариант: " + random.choice(alt_variants) + "."
 				case "Третья карта":
 					Request += f"Аргументируй, почему карта советует следующий вариант: {answer} "
-
-			# Request += f"Склоняй к такому ответу на вопрос \"{answer}\". "
 
 		if reaction and not answer: Request += f"Склоняйся к {reaction} ответу на вопрос. "
 		Request += "Не более 250 символов в тексте. Сделай свой ответ уникальным и неповторимым."

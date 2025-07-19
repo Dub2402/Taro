@@ -2,6 +2,7 @@ import pandas
 
 from os import PathLike
 from typing import Iterable
+import random
 
 class Reader:
 
@@ -45,6 +46,42 @@ class Reader:
 
 		return self.__YesNoDict["Значения перевернутых карт"]
 	
+	@property
+	def mottos(self) -> tuple[str]:
+		"""Кортеж девизов дня."""
+
+		return self.__MottoDict["Девизы"]
+	
+	@property
+	def general_questions(self) -> tuple[str]:
+		"""Кортеж общих вопросов."""
+
+		return self.__OnlineLayout["Общие вопросы:"]
+	
+	@property
+	def love_questions(self) -> tuple[str]:
+		"""Кортеж вопросов про любовь."""
+
+		return self.__OnlineLayout["Про любовь:"]
+	
+	@property
+	def random_motto(self):
+		"""Рандомный девиз дня."""
+
+		return random.choice(self.mottos)
+	
+	@property
+	def random_love_question(self):
+		"""Рандомный любовный вопрос."""
+
+		return random.choice(self.general_questions)
+	
+	@property
+	def random_general_question(self):
+		"""Кортеж вопросов про любовь."""
+
+		return random.choices(self.general_questions, k = 2)
+
 	def __init__(self, Settings: dict):
 
 		"""
@@ -56,6 +93,8 @@ class Reader:
 
 		self.__LettersDict = self.__ReadExcel(Settings["letters"])
 		self.__YesNoDict = self.__ReadExcel(Settings["yes_no"])
+		self.__MottoDict = self.__ReadExcel(Settings["motto_day"])
+		self.__OnlineLayout = self.__ReadExcel(Settings["online_layout"])
 
 	#==========================================================================================#
 	# >>>>> ПРИВАТНЫЕ МЕТОДЫ <<<<< #

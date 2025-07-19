@@ -87,7 +87,6 @@ class WorkpiecesMessages:
 		
 		user.set_property("start_message_id", AnimationMessageID)
 		user.set_chat_forbidden(False)
-		user.set_property("Question", None)
 		user.set_property("Generation", False)
 		user.set_property("Current_place", None, force = False)
 		user.set_property("Card_name", None, force = False)

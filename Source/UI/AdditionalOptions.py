@@ -7,6 +7,7 @@ from Source.Modules.Subscription import Subscription
 from Source.Modules.EnergyExchange.Options import Options as ExchangeOptions
 from Source.InlineKeyboards import InlineKeyboards
 from Source.UI.WorkpiecesMessages import WorkpiecesMessages
+from Source.Core.ExcelTools import Reader
 
 from telebot import TeleBot, types
 
@@ -27,18 +28,33 @@ class InlineTemplates:
 
 		menu = types.InlineKeyboardMarkup()
 
+		buttons = []
+
 		UserOptions = ExchangeOptions(user)
 		Notifications = " (" + str(len(UserOptions.mails)) + ")" if UserOptions.mails else ""
 
-		determinations = {
+		determinations_first = {
+			_("Девиз сегодня"): "motto_day",
 			_("💟 Обмен энергией") + Notifications: "energy_exchange",
-			_("📣 Поделиться с друзьями"): "share",
-			_("📲 Рассылка Карты дня"): "mailing_card_day",
-			_("🤖 Перезапуск бота"): "restart_bot",
-			_("◀️ Назад"): "main_menu"
+			_("Рассылка Карты дня"): "mailing_card_day",
+			_("Поделиться!"): "share",
 		}
 
-		for string in determinations.keys(): menu.add(types.InlineKeyboardButton(string, callback_data = determinations[string]), row_width = 1)
+		determinations_second = {
+			_("Мой уровень таробота"): "level_tarobot"
+		}
+
+		determinations_third = {
+			_("◀️ Назад"): "main_menu",
+			_("Перезапуск бота"): "restart_bot"
+		}
+
+		for string in determinations_first.keys(): buttons.append(types.InlineKeyboardButton(string, callback_data = determinations_first[string]))
+		menu.add(*buttons, row_width = 2)
+		buttons = []
+		for string in determinations_second.keys(): menu.add(types.InlineKeyboardButton(string, callback_data = determinations_second[string]), row_width = 1)
+		for string in determinations_third.keys(): buttons.append(types.InlineKeyboardButton(string, callback_data = determinations_third[string]))
+		menu.add(*buttons, row_width = 2)
 		return menu
 
 	def restart_bot() -> types.InlineKeyboardMarkup:
@@ -173,6 +189,23 @@ class Decorators:
 			)
 			self.__Options.bot.answer_callback_query(Call.id)
 
+
+		@self.__Options.bot.callback_query_handler(func = lambda Callback: Callback.data == "motto_day")
+		def click_motto_day(Call: types.CallbackQuery):
+			user = self.__Options.users.auth(Call.from_user)
+			if not self.__Options.subscription.IsSubscripted(user):
+				self.__Options.bot.answer_callback_query(Call.id)
+				return
+			
+			motto = self.__Options.reader.random_motto
+			self.__Options.bot.send_message(
+				chat_id = Call.message.chat.id,
+				text = "<b>«</b>" + motto + "<b>»</b>",
+				parse_mode = "HTML",
+				reply_markup = InlineKeyboards.for_delete("Да будет так!")
+			)
+			self.__Options.bot.answer_callback_query(Call.id)
+
 class Options:
 	"""Раздел бота, отвечающий за дополнительный функционал"""
 
@@ -226,7 +259,13 @@ class Options:
 		
 		return self.__inline_templates
 	
-	def __init__(self, masterbot: TeleMaster, users: UsersManager, Settings: dict, sender: WorkpiecesMessages, cacher: TeleCache, subscription: Subscription):
+	@property
+	def reader(self) -> Reader:
+		"""Читатель excel-файлы."""
+		
+		return self.__reader
+	
+	def __init__(self, masterbot: TeleMaster, users: UsersManager, Settings: dict, sender: WorkpiecesMessages, cacher: TeleCache, subscription: Subscription, reader: Reader):
 		"""
 		Инициализация   
 
@@ -250,3 +289,4 @@ class Options:
 		self.__sender = sender
 		self.__cacher = cacher
 		self.__subscription = subscription
+		self.__reader = reader

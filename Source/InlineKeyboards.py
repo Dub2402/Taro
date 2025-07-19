@@ -26,7 +26,7 @@ class InlineKeyboards:
 			if button == "Share":
 				Menu.add(types.InlineKeyboardButton(
 					_("Поделиться!"), 
-					switch_inline_query = _('\n@Taro100_bot\n@Taro100_bot\n\n**Таробот | Расклад онлайн | Карта дня**\nСамый большой бот для Таро-гаданий в Telegram! Ответит на любые твои вопросы ❓❓❓\n\n__Пользуйся и делись с друзьями!__'))
+					switch_inline_query = _('\n@Taro100_bot\n@Taro100_bot\n\n**Таробот | Расклад онлайн | Карта дня**\nСамый популярный бот для Таро-гаданий в Telegram! Ответит на любые твои вопросы ❓❓❓\n\n__Пользуйся и делись с друзьями!__'))
 					)
 			if button == "Back":
 				Menu.add(types.InlineKeyboardButton(
@@ -72,8 +72,8 @@ class InlineKeyboards:
 		
 		CardDay = types.InlineKeyboardButton(_("Карта дня"), callback_data = "card_day")
 		YesNo = types.InlineKeyboardButton(_("Да/Нет"), callback_data = "yes_no")
-		Additional_options = types.InlineKeyboardButton(_("Доп. опции" + Notifications), callback_data = "additional_options")
-		OrderLayout = types.InlineKeyboardButton(_("Расклад у Мастера 🔥"), callback_data = "order_layout")
+		Additional_options = types.InlineKeyboardButton((Notifications + " " + _("Доп. опции") + " " + "+"), callback_data = "additional_options")
+		OrderLayout = types.InlineKeyboardButton(_("Расклад у Мастера🔥"), callback_data = "order_layout")
 		ThinkCard = types.InlineKeyboardButton(_("Загадай карту"), callback_data = "ThinkCard")
 		Online_layout = types.InlineKeyboardButton(_("Онлайн расклад 💫"), callback_data = "Online_Layout")
 		All_Taro = types.InlineKeyboardButton(_("Всё о Таро"), callback_data = "all_taro")

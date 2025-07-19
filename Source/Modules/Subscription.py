@@ -1,11 +1,13 @@
 from Source.UI.WorkpiecesMessages import WorkpiecesMessages
 
 from dublib.TelebotUtils.Cache import TeleCache
-from dublib.TelebotUtils.Users import UserData
+from dublib.TelebotUtils.Users import UserData, UsersManager
 from dublib.TelebotUtils import TeleMaster
 from dublib.Engine.GetText import _
 
 from Source.InlineKeyboards import InlineKeyboards as BasicInlineKeyboards
+from Source.Modules.AscendTaro import Ascend
+from Source.Modules.AscendTaro.MessagesSender import Sender
 
 from telebot import types
 
@@ -50,42 +52,54 @@ class Subscription:
 
 		User.set_property("Subscription", Message.id)
 
-	def __init__(self, masterbot: TeleMaster, chanel: list[int], cacher: TeleCache):
+	def __init__(self, masterbot: TeleMaster, chanel: list[int], cacher: TeleCache, usermanager: UsersManager):
+
 		self.__masterbot = masterbot
 		self.__chanel = chanel
 		self.__cacher = cacher
+		self.__usermanager = usermanager
 
 		self.__Templates = WorkpiecesMessages(self.__masterbot.bot, self.__cacher)
 
-	def IsSubscripted(self, User: UserData):
+	def IsSubscripted(self, User: UserData) -> bool:
+		"""
+		Проверяет подписан ли пользователь на канал/каналы.
+
+		:param User: Данные пользователя.
+		:type User: UserData
+		:return: Статус подписки.
+		:rtype: bool
+		"""
+
 		if User.has_permissions(["developer", "admin"]): return True
 
 		if not self.__chanel: return True
 
 		IsSubscribed = self.__masterbot.check_user_subscriptions(User, self.__chanel)
 
+		Subscribtion_Message = None
 		if User.has_property("Subscription"): Subscribtion_Message = User.get_property("Subscription")
-		else: Subscribtion_Message = None
 
-		if not IsSubscribed and not Subscribtion_Message: 
-			self.__send_requirements(User)
-			return IsSubscribed
-		
-		if not IsSubscribed and Subscribtion_Message: 
-			self.__masterbot.safely_delete_messages(
-				chat_id = User.id, 
-				messages = Subscribtion_Message
-				)
+		if IsSubscribed:
 
+			if User.has_property("invited_by"): 
+				
+				invitee = self.__usermanager.get_user(User.get_property("invited_by"))
+				ascend = Ascend(user = invitee)
+				ascend.add_invited_user(User.id)
+				User.remove_property("invited_by")
+
+				if ascend.count_invited_users == 1: 
+					Sender(self.__masterbot.bot, self.__cacher).worked_referal(invitee.id)
+					ascend.add_bonus_layouts()
+				
+			if Subscribtion_Message:
+				self.__masterbot.safely_delete_messages(User.id, Subscribtion_Message)
+				self.__Templates.send_start_messages(User, title = False)
+				User.set_property("Subscription", None)
+
+		else:
+			if Subscribtion_Message: self.__masterbot.safely_delete_messages(User.id, Subscribtion_Message)
 			self.__send_requirements(User)
-			return IsSubscribed
-		
-		if IsSubscribed and Subscribtion_Message: 
-			self.__masterbot.safely_delete_messages(User.id, Subscribtion_Message)
-			self.__Templates.send_start_messages(User, title = False)
-			User.set_property("Subscription", None)
-			
-			return IsSubscribed
-		
-		if IsSubscribed and not Subscribtion_Message: 
-			return IsSubscribed
+
+		return IsSubscribed

@@ -5,8 +5,9 @@ from dublib.Engine.GetText import _
 from dublib.Methods.Filesystem import WriteJSON, ReadJSON
 
 from Source.Modules.Subscription import Subscription
-from Source.Core.Reader import Reader
+from Source.Core.ExcelTools import Reader
 from Source.InlineKeyboards import InlineKeyboards
+from Source.Modules.AscendTaro.MessagesSender import Sender as AscendSender
 
 from datetime import datetime
 import random
@@ -41,7 +42,6 @@ class WordMonthInlineTemplates:
 	def start_appeals(text: str) -> types.InlineKeyboardMarkup:
 		"""
 		Строит Inline-интерфейс:
-			Поделиться
 			В другой раз!
 
 		:return: inline-keyboard
@@ -50,13 +50,9 @@ class WordMonthInlineTemplates:
 
 		Menu = types.InlineKeyboardMarkup()
 
-		share = types.InlineKeyboardButton(
-			_("Поделиться"), 
-			switch_inline_query = text
-			)
 		for_delete = types.InlineKeyboardButton(_("В другой раз!"), callback_data = "for_delete")
 
-		Menu.add(share, for_delete, row_width= 1) 
+		Menu.add(for_delete, row_width = 1) 
 
 		return Menu
 	
@@ -183,8 +179,8 @@ class Letters:
 		"""
 	
 		today = datetime.now()
-		random_hour = random.randint(9, 10)
-		random_minute = random.randint(0, 59)
+		random_hour = random.randint(9, 20) 
+		random_minute = random.randint(0, 59) 
 
 		date_time = today.replace(hour = random_hour, minute = random_minute, second = 0).strftime("%H:%M:%S")
 
@@ -254,6 +250,8 @@ class Decorators:
 		#---> Генерация динамических атрибутов.
 		#==========================================================================================#
 		self.__Mailer = mailer
+
+		self.__ascend_sender = AscendSender(self.__Mailer.bot, self.__Mailer.cacher)
 		
 	def inline_keyboards(self):
 		"""
@@ -270,13 +268,26 @@ class Decorators:
 				chat_id = Call.message.chat.id,
 				messages = Call.message.id
 			)
-			text = self.__Mailer.word_month.randomize_text(texts = self.__Mailer.reader.appeals)
-			self.__Mailer.bot.send_message(
-				chat_id = Call.message.chat.id,
-				text = text,
-				reply_markup = WordMonthInlineTemplates.start_appeals(text)
-				)
+
+			text = self.__Mailer.word_month.randomize_text(texts = self.__Mailer.reader.appeals) + "\n\n<i>" + "Сообщение уже содержит реферальную ссылку" + "</i>"
+			referal_link = self.__ascend_sender.generate_referal_link(user.id)
 			
+			if "@taro100_bot" in text and referal_link:
+
+				self.__Mailer.bot.send_message(
+					chat_id = Call.message.chat.id,
+					text = text.replace("@taro100_bot", f'<a href="{referal_link}">@taro100_bot</a>'),
+					parse_mode = "HTML",
+					reply_markup = WordMonthInlineTemplates.start_appeals(text)
+					)
+
+			else:
+				self.__Mailer.bot.send_message(
+					chat_id = Call.message.chat.id,
+					text = text,
+					reply_markup = WordMonthInlineTemplates.start_appeals(text)
+					)
+
 			self.__Mailer.bot.answer_callback_query(Call.id)
 
 		@self.__Mailer.bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("card_day"))
@@ -296,8 +307,8 @@ class Decorators:
 			if user.has_property("send_appeal"): send_appeal = user.get_property("send_appeal")
 			else: send_appeal = False
 
-			if appeals and not send_appeal: button = WordMonthInlineTemplates.appeal_or_delete(text = "Благодарю!", appeal = appeals) 
-			else: button = InlineKeyboards.for_delete("Благодарю!")
+			if appeals and not send_appeal: button = WordMonthInlineTemplates.appeal_or_delete(text = "Благодарю и принимаю!", appeal = appeals) 
+			else: button = InlineKeyboards.for_delete("Благодарю и принимаю!")
 
 			self.__Mailer.bot.send_video(
 				chat_id = Call.message.chat.id,
@@ -399,7 +410,7 @@ class Mailer:
 		"""
 
 		try:
-			self.__Message = self.__masterbot.bot.send_video(
+			self.__masterbot.bot.send_video(
 				chat_id = User.id,
 				video = video,
 				reply_markup = InlineKeyboards.for_delete("Да будет так!"),
@@ -410,8 +421,6 @@ class Mailer:
 			User.set_chat_forbidden(False)
 
 		except: User.set_chat_forbidden(True)
-
-		return self.__Message
 	
 	def __send_letters(self, user_id: str, text: str):
 		"""
