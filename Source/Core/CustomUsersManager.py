@@ -1,0 +1,80 @@
+from Source.Modules.AscendTaro import AscendData, Sender as AscendSender
+
+from dublib.TelebotUtils import UsersManager, UserData
+from dublib.TelebotUtils.Cache import TeleCache
+
+from telebot import types, TeleBot
+
+
+
+class CustomUsersManager(UsersManager):
+	"""Модифицированный менеджер пользователей."""
+
+	def __CheckLevelUp(self, user: UserData):
+		"""
+		Проверяет, повысился ли уровень пользователя от взаимодействия, и отправляет уведомление.
+
+		:param user: Данные пользователя.
+		:type user: UserData
+		"""
+
+		ascend_data = AscendData(user = user)
+		if ascend_data.is_new_level_available:
+			incremente_level = ascend_data.level_tarobot + 1
+			AscendSender(self.__Bot, self.__Cacher).level_up(user_id = user.id, level = incremente_level)
+			
+
+	def auth(self, user: types.User, update_activity: bool = True):
+		"""
+		Выполняет идентификацию и обновление данных существующего пользователя или создаёт локальный файл для нового.
+
+		:param user: Cтруктура описания пользователя Telegram.
+		:type user: User
+		:param update_activity: Указывает, нужно ли обновлять активность пользователя. По умолчанию `True`.
+		:type update_activity: bool
+		"""
+
+		UserCurrent = super().auth(user, update_activity)
+		UserCurrent.set_property("name", user.full_name)
+
+		if not UserCurrent.has_property("index"): UserCurrent.set_property("index", self.get_new_index())
+
+		try: self.__CheckLevelUp(UserCurrent)
+		except Exception as ExceptionData: print(ExceptionData)
+
+		return UserCurrent
+	
+	def get_new_index(self) -> int:
+		"""
+		Генериурет новый порядковый номер для аккаунта.
+
+		:return: Порядковый номер.
+		:rtype: int
+		"""
+
+		Indexes = list()
+
+		for CurrentUser in self.users:
+			if CurrentUser.has_property("index"): Indexes.append(CurrentUser.get_property("index"))
+
+		return max(Indexes) + 1 if Indexes else 1
+
+	def set_bot(self, bot: TeleBot):
+		"""
+		Задаёт бота Telegram.
+
+		:param bot: Бот Telegram.
+		:type bot: TeleBot
+		"""
+
+		self.__Bot = bot
+
+	def set_cacher(self, Cacher: TeleCache):
+		"""
+		Задаёт менеджера кэша.
+
+		:param bot: Менеджер кэша.
+		:type bot: TeleCache
+		"""
+
+		self.__Cacher = Cacher

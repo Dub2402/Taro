@@ -6,8 +6,8 @@ from dublib.TelebotUtils import TeleMaster
 from dublib.Engine.GetText import _
 
 from Source.InlineKeyboards import InlineKeyboards as BasicInlineKeyboards
-from Source.Modules.AscendTaro import Ascend
-from Source.Modules.AscendTaro.MessagesSender import Sender
+from Source.Modules.AscendTaro import AscendData
+from Source.Modules.AscendTaro import Sender
 
 from telebot import types
 
@@ -85,7 +85,7 @@ class Subscription:
 			if User.has_property("invited_by"): 
 				
 				invitee = self.__usermanager.get_user(User.get_property("invited_by"))
-				ascend = Ascend(user = invitee)
+				ascend = AscendData(user = invitee)
 				ascend.add_invited_user(User.id)
 				User.remove_property("invited_by")
 

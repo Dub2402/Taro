@@ -4,6 +4,7 @@ from .Options import Options
 from Source.UI.AdditionalOptions import InlineTemplates
 from Source.Modules.Subscription import Subscription
 from Source.InlineKeyboards import InlineKeyboards
+from Source.UI.AdditionalOptions import InlineTemplates as AdditionalInlineKeyboards
 
 from dublib.Methods.Filesystem import MakeRootDirectories, ReadJSON, WriteJSON, ListDir
 from dublib.TelebotUtils.Users import UserData, UsersManager
@@ -226,7 +227,7 @@ class ExchangerInlineTemplates:
 
 		Menu = types.InlineKeyboardMarkup()
 		More = types.InlineKeyboardButton(_("Написать ещё" + " +"), callback_data = "ee_message")
-		ThankYou = types.InlineKeyboardButton(_("Спасибо, чуть позже!"), callback_data = "ee_main_menu")
+		ThankYou = types.InlineKeyboardButton(_("Спасибо, чуть позже!"), callback_data = "ee_close")
 		Menu.add(More, ThankYou, row_width = 1)
 
 		return Menu
@@ -471,18 +472,6 @@ class Decorators:
 			UserOptions.delete_removable_messages(bot)
 			self.__Exchanger.close(User)
 
-		@bot.callback_query_handler(func = lambda Callback: Callback.data == "ee_main_menu")
-		def FullClose (Call: types.CallbackQuery):
-			User = users.auth(Call.from_user)
-			UserOptions = Options(User)
-
-			if not self.__Exchanger.subscription.IsSubscripted(User): 
-				self.__Exchanger.bot.answer_callback_query(Call.id)
-				return
-			
-			UserOptions.delete_removable_messages(bot)
-			self.__Exchanger.full_close(User)
-
 class Procedures:
 	"""Набор процедур."""
 
@@ -714,28 +703,6 @@ class Exchanger:
 			chat_id = user.id,
 			message_id = Options(user).menu_message_id,
 			reply_markup = InlineTemplates.additional_options(user)
-		)
-
-	def full_close(self, user: UserData):
-		"""
-		Редактирует меню обмена энергии в главное меню бота.
-		
-		:param user: Данные пользователя.
-		:type user: UserData
-		"""
-
-		file = self.cacher.get_real_cached_file(
-			path = "Start.mp4", 
-			autoupload_type = types.InputMediaAnimation
-		)
-		
-		self.bot.edit_message_media(
-			media = types.InputMediaAnimation(
-				media = file.file_id
-			),
-			chat_id = user.id,
-			message_id = Options(user).menu_message_id,
-			reply_markup = InlineKeyboards.main_menu(user)
 		)
 
 	def push_mails(self):

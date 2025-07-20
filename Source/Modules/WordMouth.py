@@ -7,7 +7,7 @@ from dublib.Methods.Filesystem import WriteJSON, ReadJSON
 from Source.Modules.Subscription import Subscription
 from Source.Core.ExcelTools import Reader
 from Source.InlineKeyboards import InlineKeyboards
-from Source.Modules.AscendTaro.MessagesSender import Sender as AscendSender
+from Source.Modules.AscendTaro import Sender as AscendSender
 
 from datetime import datetime
 import random

@@ -1,16 +1,13 @@
 from Source.Modules.EnergyExchange import Exchanger, Scheduler as ExchangeScheduler
-from Source.Modules.AscendTaro import Ascend
-from Source.Modules.AscendTaro.MessagesSender import Sender as AscendSender
+from Source.Modules.AscendTaro import AscendData, Scheduler as AscendScheduler, Sender as AscendSender
 from Source.Modules.ValuesCards import ValuesCards
 from Source.UI.AdditionalOptions import Options
 from Source.UI.OnlineLayout import Layout
 from Source.Modules.YesNo import YesNo
-
 from Source.TeleBotAdminPanel.Core.Moderation import Moderator
 from Source.TeleBotAdminPanel.Core.Uploading import Uploader
 from Source.Core.AdditionalColumns import *
 from Source.TeleBotAdminPanel import Panel
-
 from Source.Functions import FindNearest, ChoiceMessage, CacherSending, UpdateThinkCardData, UpdateThinkCardData2, GetNumberCard, update_think_card, delete_thinking_messages
 from Source.UI.WorkpiecesMessages import WorkpiecesMessages
 from Source.Modules.InternalСaching import InternalCaching
@@ -20,10 +17,10 @@ from Source.InlineKeyboards import InlineKeyboards
 from Source.Neurowork import NeuroRequestor
 from Source.Modules.WordMouth import Mailer
 from Source.Core.ExcelTools import Reader
+from Source.Core.CustomUsersManager import CustomUsersManager
 
 from dublib.TelebotUtils.Cache import TeleCache
 from dublib.Methods.Filesystem import ReadJSON
-from dublib.TelebotUtils import UsersManager
 from dublib.TelebotUtils import TeleMaster
 from dublib.Engine.GetText import GetText
 from dublib.Methods.System import Clear
@@ -39,41 +36,6 @@ from telebot import types
 
 Clear()
 
-class CustomUsersManager(UsersManager):
-	"""Модифицированный менеджер пользователей."""
-
-	def auth(self, user: types.User, update_activity: bool = True):
-		"""
-		Выполняет идентификацию и обновление данных существующего пользователя или создаёт локальный файл для нового.
-
-		:param user: Cтруктура описания пользователя Telegram.
-		:type user: User
-		:param update_activity: Указывает, нужно ли обновлять активность пользователя. По умолчанию `True`.
-		:type update_activity: bool
-		"""
-
-		UserCurrent = super().auth(user, update_activity)
-		UserCurrent.set_property("name", user.full_name)
-
-		if not UserCurrent.has_property("index"): UserCurrent.set_property("index", self.get_new_index())
-
-		return UserCurrent
-	
-	def get_new_index(self) -> int:
-		"""
-		Генериурет новый порядковый номер для аккаунта.
-
-		:return: Порядковый номер.
-		:rtype: int
-		"""
-
-		Indexes = list()
-
-		for CurrentUser in self.users:
-			if CurrentUser.has_property("index"): Indexes.append(CurrentUser.get_property("index"))
-
-		return max(Indexes) + 1 if Indexes else 1
-
 Settings = ReadJSON("Settings.json")
 
 MasterBot = TeleMaster(Settings["token"])
@@ -81,9 +43,13 @@ Bot = MasterBot.bot
 
 scheduler = BackgroundScheduler()
 
-usermanager = CustomUsersManager("Data/Users")
 Cacher = TeleCache()
 Cacher.set_options(Settings["token"], Settings["chat_id"])
+
+usermanager = CustomUsersManager("Data/Users")
+usermanager.set_bot(Bot)
+usermanager.set_cacher(Cacher)
+
 subscription = Subscription(MasterBot, Settings["subscription_chanel"], Cacher, usermanager)
 reader = Reader(Settings)
 mailer = Mailer(MasterBot, usermanager, reader, Cacher, subscription) 
@@ -98,6 +64,8 @@ AddictionalOptional = Options(MasterBot, usermanager, Settings, sender, Cacher, 
 
 EnergyExchanger = Exchanger(Bot, usermanager, Cacher, subscription)
 ExchangeSchedulerObject = ExchangeScheduler(EnergyExchanger, scheduler)
+
+ascend_scheduler = AscendScheduler(usermanager = usermanager, scheduler = scheduler)
 
 Moderator.initialize(EnergyExchanger.get_unmoderated_mails, EnergyExchanger.moderate_mail)
 Uploader.set_uploadable_files("Data/Exchange/Mails.xlsx")
@@ -133,10 +101,11 @@ scheduler.add_job(mailer.letters.randomize_time, "cron", day = "8, 18, 28", hour
 scheduler.add_job(mailer.letters_mailing, "cron", day = "8, 18, 28", hour = "9-21", minute = "*")
 
 #==========================================================================================#
-# >>>>> ЗАГАДАЙ КАРТУ И ОБМЕН ЭНЕРГИЕЙ <<<<< #
+# >>>>> ЗАГАДАЙ КАРТУ <<<<< #
 #==========================================================================================#
 
 scheduler.add_job(update_think_card, 'cron', day_of_week = "mon, wed, fri", hour = 0, minute = 0, args = [usermanager])
+
 scheduler.start()
 
 Thread(target = InternalCaching(Cacher).caching).start()
@@ -344,7 +313,7 @@ def InlineButtonRemoveReminder(Call: types.CallbackQuery):
 	if not subscription.IsSubscripted(user):
 		Bot.answer_callback_query(Call.id)
 		return
-	if not Ascend(user = user).is_layout_available:
+	if not AscendData(user = user).is_layout_available:
 		AscendSender(bot = Bot, cacher = Cacher).limiter_layouts(chat_id = Call.message.chat.id)
 		Bot.answer_callback_query(Call.id)
 		return

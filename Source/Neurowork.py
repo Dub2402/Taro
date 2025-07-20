@@ -5,8 +5,7 @@ from dublib.TelebotUtils.Users import UserData
 from Source.Modules.solid_g4f.Connection.API import Requestor, Options
 from Source.Functions import _
 from Source.UI.OnlineLayout import end_layout
-from Source.Modules.AscendTaro import Ascend
-from Source.Modules.AscendTaro.MessagesSender import Sender
+from Source.Modules.AscendTaro import AscendData, Sender as AscendSender
 
 from dataclasses import dataclass
 import telebot
@@ -250,11 +249,11 @@ class NeuroRequestor:
 		user.set_property("Generation", False)
 		user.set_expected_type(None)
 
-		ascend = Ascend(user = user)
+		ascend = AscendData(user = user)
 		if ascend.is_today_layout_available: ascend.incremente_today_layouts()
 		else: 
 			ascend.decremente_bonus_layouts()
-			if not ascend.is_bonus_layout_available: Sender(self.__Bot, self.__Cacher).end_bonus_layout(user.id)
+			if not ascend.is_bonus_layout_available: AscendSender(self.__Bot, self.__Cacher).end_bonus_layout(user.id)
 
 	#==========================================================================================#
 	# >>>>> ПУБЛИЧНЫЕ МЕТОДЫ ПОСТРОЕНИЯ ЗАПРОСОВ <<<<< #
