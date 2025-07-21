@@ -5,8 +5,6 @@ from dublib.TelebotUtils.Cache import TeleCache
 
 from telebot import types, TeleBot
 
-
-
 class CustomUsersManager(UsersManager):
 	"""Модифицированный менеджер пользователей."""
 
@@ -21,9 +19,10 @@ class CustomUsersManager(UsersManager):
 		ascend_data = AscendData(user = user)
 		if ascend_data.is_new_level_available:
 			incremente_level = ascend_data.level_tarobot + 1
-			AscendSender(self.__Bot, self.__Cacher).level_up(user_id = user.id, level = incremente_level)
+			AscendSender(self.__Bot, self.__Cacher).level_up(user = user, level = incremente_level)
+			ascend_data.incremente_level_tarobot()
 			
-
+			
 	def auth(self, user: types.User, update_activity: bool = True):
 		"""
 		Выполняет идентификацию и обновление данных существующего пользователя или создаёт локальный файл для нового.

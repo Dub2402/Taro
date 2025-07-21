@@ -502,6 +502,7 @@ class Procedures:
 		LENGTH = len(message.text)
 
 		if LENGTH <= 200:
+			User.set_expected_type(None)
 			User.set_temp_property("ee_new_message", message.text)
 			Text = (
 				_("<b>ВАШ ТЕКСТ:</b>"),
@@ -630,7 +631,7 @@ class Exchanger:
 
 		return self.unmoderated_mails.mails
 	
-	def moderate_mail(self, mail: str, status: bool):
+	def moderate_mail(self, mail: str, status: bool, edited_mail: str | None = None):
 		"""
 		Выполняет обработку модерации послания.
 
@@ -638,10 +639,12 @@ class Exchanger:
 		:type mail: str
 		:param status: Статус модерации.
 		:type status: bool
+		:param edited_mail: Текст послания после редактирования.
+		:type edited_mail: str | None
 		"""
 
 		self.__UnmoderatedBuffer.remove(mail)
-		if status: self.__MailsContainer.append(mail)
+		if status: self.__MailsContainer.append(edited_mail if edited_mail else mail)
 
 	def open(self, user: UserData, message_id: int | None = None):
 		"""

@@ -4,9 +4,12 @@ from Source.Modules.ValuesCards import ValuesCards
 from Source.UI.AdditionalOptions import Options
 from Source.UI.OnlineLayout import Layout
 from Source.Modules.YesNo import YesNo
-from Source.TeleBotAdminPanel.Core.Moderation import Moderator
+
+from Source.TeleBotAdminPanel.Core.Moderation import ModeratorsStorage
 from Source.TeleBotAdminPanel.Core.Uploading import Uploader
-from Source.Core.AdditionalColumns import *
+
+from Source.Core.AdminPanel.Moderators import ExchangeModerator
+from Source.Core.AdminPanel.AdditionalColumns import *
 from Source.TeleBotAdminPanel import Panel
 from Source.Functions import FindNearest, ChoiceMessage, CacherSending, UpdateThinkCardData, UpdateThinkCardData2, GetNumberCard, update_think_card, delete_thinking_messages
 from Source.UI.WorkpiecesMessages import WorkpiecesMessages
@@ -44,7 +47,8 @@ Bot = MasterBot.bot
 scheduler = BackgroundScheduler()
 
 Cacher = TeleCache()
-Cacher.set_options(Settings["token"], Settings["chat_id"])
+Cacher.set_bot(Settings["token"])
+Cacher.set_chat_id(Settings["chat_id"])
 
 usermanager = CustomUsersManager("Data/Users")
 usermanager.set_bot(Bot)
@@ -67,7 +71,7 @@ ExchangeSchedulerObject = ExchangeScheduler(EnergyExchanger, scheduler)
 
 ascend_scheduler = AscendScheduler(usermanager = usermanager, scheduler = scheduler)
 
-Moderator.initialize(EnergyExchanger.get_unmoderated_mails, EnergyExchanger.moderate_mail)
+ModeratorsStorage.add_moderator(ExchangeModerator().connect_exchanger(EnergyExchanger), "Обмен энергией")
 Uploader.set_uploadable_files("Data/Exchange/Mails.xlsx")
 
 logging.basicConfig(level = logging.DEBUG, encoding = "utf-8", filename = "LOGING.log", filemode = "w", force = True,

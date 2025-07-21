@@ -30,6 +30,7 @@ ParametersDetermination = MappingProxyType(
 DEFAULT_COUNT_TODAY_LAYOUTS = 0
 MIN_COUNT_BONUS_LAYOUTS = 0
 DEFAULT_COUNT_DAYS_WITH_BOT = 0
+DEFAULT_LEVEL_TAROBOT = 0
 MAX_COUNT_TODAY_LAYOUTS = 1
 STANDART_ADDING_COUNT_BONUS_LAYOUTS = 5
 
@@ -174,11 +175,21 @@ class AscendData:
 		"""
 		Передаёт параметры для сохранения бонусных данных пользователя.
 
-		:param count: Количество бесплатных онлайн раскладов.
+		:param count: Количество дней с ботом.
 		:type count: int
 		"""
 
 		self.__SetParameter("days_with_bot", count)
+
+	def set_level_tarobot(self, count: int = DEFAULT_LEVEL_TAROBOT):
+		"""
+		Передаёт параметры для сохранения бонусных данных пользователя.
+
+		:param count: Количество бесплатных онлайн раскладов.
+		:type count: int
+		"""
+
+		self.__SetParameter("level_tarobot", count)
 
 	def add_invited_user(self, user_id: int):
 		"""
@@ -217,6 +228,12 @@ class AscendData:
 		self.__Data["days_with_bot"] = self.__Data["days_with_bot"] + 1
 		self.save()
 
+	def incremente_level_tarobot(self):
+		"""Увеличивает уровень таробота."""
+
+		self.__Data["level_tarobot"] = self.__Data["level_tarobot"] + 1
+		self.save()
+
 	def decremente_bonus_layouts(self):
 		"""Уменьшает количество использованных бонусных онлайн раскладов."""
 
@@ -241,11 +258,10 @@ class Scheduler:
 		"""Загружает задачи в фоновое хранилище."""
 
 		self.__sheduler.add_job(self.__zeroing_today_layours, "cron", hour = 0, minute = 0)
-		self.__sheduler.add_job(self.__tracking_activity, "cron", hour = 12, minute = 34)
+		self.__sheduler.add_job(self.__tracking_activity, "cron", hour = 13, minute = 41)
 
 	def __zeroing_today_layours(self):
-		for user in self.__usermanager.users:
-			AscendData(user = user).set_today_layouts()
+		for user in self.__usermanager.users: AscendData(user = user).set_today_layouts()
 
 	def __init__(self, usermanager: UsersManager, scheduler: BackgroundScheduler):
 		"""Обновляет бонусные данные пользователей."""
@@ -260,8 +276,13 @@ class Scheduler:
 		"""Добавляет один день в активность, тем пользователям, кто использовал бота за последние 24 часа."""
 
 		for user in self.__usermanager.users:
+
 			if user in self.__usermanager.active_users: AscendData(user = user).incremente_days_with_bot()
-			else: AscendData(user = user).set_days_with_bot()
+
+			else: 
+				ascend_data = AscendData(user = user)
+				ascend_data.set_days_with_bot()
+				ascend_data.set_level_tarobot()
 		
 class Sender:
 	"""Отправитель сообщений."""
@@ -387,7 +408,7 @@ class Sender:
 
 		self.__message_with_referal(chat_id = user_id, text = "<b>" + _("Присоединяйся к Тароботу, я уже там:") + "</b>\n\n")
 
-	def level_up(self, user_id: int, level: int) -> None:
+	def level_up(self, user: UserData, level: int) -> None:
 		
 		greeting_cards = {
 			1: ["3-х дней", "3", "неделя с Тароботом!"],
@@ -395,7 +416,7 @@ class Sender:
 			3: ["целых 2-х недель", "14", "месяц с Тароботом!"],
 			4: ["аж целого месяца", "30", "пригласи 10 друзей!"]
 		}
-		print(level)
+		
 		if level < 5:
 			card = greeting_cards[level]
 
@@ -405,15 +426,13 @@ class Sender:
 				"<b>" + _("Следующий уровень - $requirements_next_level") + "</b>"
 				)
 			
-			self.__bot.send_message(
-				chat_id = user_id,
-				text = "\n".join(text).replace("$day_with_bot", card[0]).replace("$number", str(level)).replace("$bonus", card[1]).replace("$requirements_next_level", card[2]), 
+			self.__bot.send_animation(
+				chat_id = user.id,
+				animation = self.__cacher.get_real_cached_file(
+					path = "Data/AscendTarobot/Materials/level_up.gif",
+					autoupload_type = types.InputMediaAnimation,
+					).file_id,
+				caption = "\n".join(text).replace("$day_with_bot", card[0]).replace("$number", str(level)).replace("$bonus", card[1]).replace("$requirements_next_level", card[2]), 
 				parse_mode = "HTML",
 				reply_markup = InlineKeyboards.for_delete("Вау! Невероятно!")
 			)
-
-
-
-
-
-
