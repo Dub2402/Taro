@@ -1,5 +1,5 @@
 from Source.Modules.EnergyExchange import Exchanger, Scheduler as ExchangeScheduler
-from Source.Modules.AscendTaro import AscendData, Scheduler as AscendScheduler, Sender as AscendSender
+from Source.Modules.AscendTaro import AscendData, MainAscend
 from Source.Modules.ValuesCards import ValuesCards
 from Source.UI.AdditionalOptions import Options
 from Source.UI.OnlineLayout import Layout
@@ -69,7 +69,7 @@ AddictionalOptional = Options(MasterBot, usermanager, Settings, sender, Cacher, 
 EnergyExchanger = Exchanger(Bot, usermanager, Cacher, subscription)
 ExchangeSchedulerObject = ExchangeScheduler(EnergyExchanger, scheduler)
 
-ascend_scheduler = AscendScheduler(usermanager = usermanager, scheduler = scheduler)
+main_ascend = MainAscend(users = usermanager, scheduler = scheduler, bot = Bot, cacher = Cacher, subscription = subscription)
 
 ModeratorsStorage.add_moderator(ExchangeModerator().connect_exchanger(EnergyExchanger), "Обмен энергией")
 Uploader.set_uploadable_files("Data/Exchange/Mails.xlsx")
@@ -235,6 +235,7 @@ def ProcessText(Message: types.Message):
 
 AdminPanel.decorators.inline_keyboards()
 EnergyExchanger.decorators.inline_keyboards()
+main_ascend.decorators.inline_keyboards()
 
 AddictionalOptional.decorators.inline_keyboards()
 OnlineLayout.decorators.inline_keyboards(Bot, usermanager, Cacher.get_real_cached_file(Settings["start_animation"], types.InputMediaAnimation))
@@ -318,7 +319,7 @@ def InlineButtonRemoveReminder(Call: types.CallbackQuery):
 		Bot.answer_callback_query(Call.id)
 		return
 	if not AscendData(user = user).is_layout_available:
-		AscendSender(bot = Bot, cacher = Cacher).limiter_layouts(chat_id = Call.message.chat.id)
+		main_ascend.__Sender.limiter_layouts(chat_id = Call.message.chat.id)
 		Bot.answer_callback_query(Call.id)
 		return
 
@@ -343,7 +344,6 @@ def InlineButtonRemoveReminder(Call: types.CallbackQuery):
 			text = "\n".join(text),
 			parse_mode = "HTML",
 			reply_markup = InlineKeyboards.for_delete("◀️ Назад"))
-	
 	
 	Bot.answer_callback_query(Call.id)
 

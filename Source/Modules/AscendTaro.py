@@ -1,4 +1,4 @@
-from Source.InlineKeyboards import InlineKeyboards
+from Source.InlineKeyboards import InlineKeyboards as MainInlineKeyboards
 
 from dublib.TelebotUtils import UserData, UsersManager
 from dublib.Methods.Data import ToIterable
@@ -10,10 +10,13 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from telebot import TeleBot, types
 
 import logging
-from typing import Literal, Any, Iterable
+from typing import Literal, Any, Iterable,  TYPE_CHECKING
 from types import MappingProxyType
 import random
 from os import PathLike
+
+if TYPE_CHECKING:
+	from Source.Modules.Subscription import Subscription
 
 ParametersDetermination = MappingProxyType(
 	{
@@ -33,6 +36,7 @@ DEFAULT_COUNT_DAYS_WITH_BOT = 0
 DEFAULT_LEVEL_TAROBOT = 0
 MAX_COUNT_TODAY_LAYOUTS = 1
 STANDART_ADDING_COUNT_BONUS_LAYOUTS = 5
+NECESSARY_INVITED_USERS = 1
 
 class AscendData:
 	"""Контейнер бонусных данных пользователя."""
@@ -62,8 +66,8 @@ class AscendData:
 		return self.__Data["delete_limiter"]
 	
 	@property
-	def is_new_level_available(self) -> bool:
-		"""Состояние: доступен ли новый уровень таробота."""
+	def is_available_time_based_level_up(self) -> bool:
+		"""Состояние: доступен ли новый уровень таробота, основанный на количестве дней подряд, в которые пользователь использовал бота."""
 
 		count_days_for_new_level = (3, 7, 14, 30)
 		bot_level_requirements = {level + 1: day_requirements for level, day_requirements in enumerate(count_days_for_new_level)}
@@ -74,6 +78,12 @@ class AscendData:
 				if count_days == self.days_with_bot: return level == self.level_tarobot + 1			 
 				
 		return False
+	
+	@property
+	def is_available_user_based_level_up(self) -> bool:
+		"""Состояние: доступен ли новый уровень таробота, основанный на количестве пользователей, перешедших по реферальной ссылке пользователя."""
+
+		return len(self.invited_users) == NECESSARY_INVITED_USERS
 
 	@property
 	def is_today_layout_available(self):
@@ -185,7 +195,7 @@ class AscendData:
 		"""
 		Передаёт параметры для сохранения бонусных данных пользователя.
 
-		:param count: Количество бесплатных онлайн раскладов.
+		:param count: Уровень таробота.
 		:type count: int
 		"""
 
@@ -252,59 +262,115 @@ class AscendData:
 		self.save()
 
 class Scheduler:
-	"""Обновляет бонусные данные пользователей."""
+	"""Планировщик изменений бонусных данных пользователей."""
 
 	def __load_tasks(self):
 		"""Загружает задачи в фоновое хранилище."""
 
-		self.__sheduler.add_job(self.__zeroing_today_layours, "cron", hour = 0, minute = 0)
-		self.__sheduler.add_job(self.__tracking_activity, "cron", hour = 13, minute = 41)
+		self.__ascend.scheduler.add_job(self.__zeroing_today_layours, "cron", hour = 0, minute = 0)
+		self.__ascend.scheduler.add_job(self.__tracking_activity, "cron", hour = 11, minute = 51)
 
 	def __zeroing_today_layours(self):
-		for user in self.__usermanager.users: AscendData(user = user).set_today_layouts()
+		"""Приводит значение сегодняшних раскладов к стандартному значению."""
 
-	def __init__(self, usermanager: UsersManager, scheduler: BackgroundScheduler):
-		"""Обновляет бонусные данные пользователей."""
+		for user in self.__ascend.users.users: AscendData(user = user).set_today_layouts()
 
-		self.__usermanager = usermanager
+	def __init__(self, ascend: "MainAscend"):
+		"""Подготавливает планировщик задач к работе."""
 
-		self.__sheduler = scheduler or BackgroundScheduler()
+		self.__ascend = ascend
 
 		self.__load_tasks()
 
 	def __tracking_activity(self):
-		"""Добавляет один день в активность, тем пользователям, кто использовал бота за последние 24 часа."""
+		"""Изменяет значение количества дней подряд проведённых с тароботом, а также обновляет значение уровня таробота, если количество дней сбросилось до нуля."""
 
-		for user in self.__usermanager.users:
+		for user in self.__ascend.users.users:
 
-			if user in self.__usermanager.active_users: AscendData(user = user).incremente_days_with_bot()
+			if user in self.__ascend.users.active_users: AscendData(user = user).incremente_days_with_bot()
 
 			else: 
 				ascend_data = AscendData(user = user)
 				ascend_data.set_days_with_bot()
 				ascend_data.set_level_tarobot()
 		
+class InlineKeyboards:
+	"""Набор Inline Keyboards"""
+
+	def requirements_for_5_level() -> types.InlineKeyboardMarkup:
+		"""
+		Возвращает клавиатуру, при нажатии на кнопку которой отправляются требования для перехода на 5-ый уровень.
+
+		:return: Inline Keyboard.
+		:rtype: types.InlineKeyboardMarkup
+		"""
+
+		return types.InlineKeyboardMarkup([[types.InlineKeyboardButton(text = "Узнать подробнее!", callback_data = "requirements_for_5_level")]])
+	
+	def reaching_5_level()-> types.InlineKeyboardMarkup:
+		"""
+		Возвращает клавиатуру, в зависимости от нажатой кнопки или удаляется сообщение или пользователь переходит в чат с экспертом.
+
+		:return: Inline Keyboard 
+		:rtype: types.InlineKeyboardMarkup
+		"""
+		pass
+
+class Decorators:
+	"""Набор декораторов."""
+
+	def __init__(self, ascend: "MainAscend"):
+		self.__ascend = ascend
+		
+	def inline_keyboards(self):
+		"""
+		Обработка inline_keyboards.
+		"""
+
+		@self.__ascend.bot.callback_query_handler(func = lambda Callback: Callback.data == "requirements_for_5_level")
+		def requirements_for_5_level(Call: types.CallbackQuery):
+			user = self.__ascend.users.auth(Call.from_user)
+			if not self.__ascend.subscription.IsSubscripted(user): 
+				self.__ascend.bot.answer_callback_query(Call.id)
+				return
+			
+			text = (
+				"<b>" + _("Чтобы достичь 5-й уровень" + " "+ "🏆,") + "</b>",
+				_("вам необходимо пригласить 10 друзей присоединится к Тароботу, используя вот эту ссылку:") + "\n",
+				Sender(self.__ascend.bot, self.__ascend.cacher).generate_referal_link(id = Call.message.chat.id) + "\n", 
+				_("Эти ссылки вы можете в любой момент еще раз увидеть, нажав на \"Мой уровень Таробота\", в разделе \"Доп. опции\"") + "\n",
+				"<b><i>" + _("Пользователь вам зачтется тогда, когда начнет использовать функционал бота!") + "</i></b>"
+				)
+
+			self.__ascend.bot.send_message(
+				chat_id = Call.message.chat.id,
+				text = "\n".join(text),
+				parse_mode = "HTML",
+				reply_markup = MainInlineKeyboards.for_delete("Спасибо, я все понял!")
+				)
+			
+			self.__ascend.bot.answer_callback_query(Call.id)
+
 class Sender:
 	"""Отправитель сообщений."""
 
-	def __init__(self, bot: TeleBot, cacher: TeleCache) -> None:
-		"""
-		Отправитель сообщений.
+	@property
+	def bot(self):
+		"""Telegram bot."""
 
-		:param bot: Экземпляр Telegram Bot.
-		:type bot: TeleBot
-		:param cacher: Экземпляр Telegram Bot.
-		:type cacher: TeleCache
-		"""
+		return self.__bot
+	
+	@property
+	def cacher(self):
+		"""Менеджер кэша."""
+
+		return self.__cacher
+
+	def __init__(self, bot: TeleBot, cacher: TeleCache):
+		"""Подготавливает отправителя задач к работе."""
 
 		self.__bot = bot
 		self.__cacher = cacher
-
-	@property
-	def bot(self) -> str:
-		"""Telegram Bot"""
-
-		return self.__bot
 	
 	def __randomize_animation(self, path_to_animations: PathLike) -> str:
 		"""
@@ -325,29 +391,34 @@ class Sender:
 
 		return name_animation
 	
-	def __message_with_referal(self, chat_id: types.Message, text: str) -> None:
+	def __message_with_referal(self, chat_id: types.Message):
+		"""
+		Отправляет сообщение с реферальной ссылкой.
+
+		:param chat_id: ID Telegram чата.
+		:type chat_id: types.Message
+		"""
+
 		name_animation = self.__randomize_animation("Data/AscendTarobot/Materials/Join")
 
-		self.__bot.send_animation(
+		self.bot.send_animation(
 			chat_id = chat_id,
-			animation = self.__cacher.get_real_cached_file(
+			animation = self.cacher.get_real_cached_file(
 				path = f"Data/AscendTarobot/Materials/Join/{name_animation}",
 				autoupload_type = types.InputMediaAnimation,
 				).file_id,
 			caption = "<b>" + _("Присоединяйся к Тароботу, я уже там:") + "</b>\n\n" + self.generate_referal_link(id = chat_id),
 			parse_mode = "HTML",
-			reply_markup = InlineKeyboards.for_delete(_("Спасибо, друзья уже в курсе!"))
+			reply_markup = MainInlineKeyboards.for_delete(_("Спасибо, друзья уже в курсе!"))
 		)
 
 	def generate_referal_link(self, id: int) -> str:
-		"""Реферальная ссылка."""
+		"""Генерирует реферальную ссылку."""
 
-		return "https://t.me/" + self.__bot.get_me().username + "?start=" + str(id)
+		return "https://t.me/" + self.bot.get_me().username + "?start=" + str(id)
 
-	def limiter_layouts(self, chat_id: types.Message) -> None:
-		"""Отправка сообщения об oграничении онлайн раскладов в этот день."""
-
-		logging.info("Вызван limiter_layouts.")
+	def limiter_layouts(self, chat_id: types.Message):
+		"""Отправляет сообщение об oграничении онлайн раскладов в этот день."""
 		
 		text = (
 				"<b>" + _("Дорогой пользователь") + "!</b>\n",
@@ -357,7 +428,7 @@ class Sender:
 		
 		self.__bot.send_animation(
 			chat_id = chat_id,
-			animation = self.__cacher.get_real_cached_file(
+			animation = self.cacher.get_real_cached_file(
 				path = "Data/AscendTarobot/Materials/limiter.gif",
 				autoupload_type = types.InputMediaAnimation,
 				).file_id,
@@ -366,7 +437,14 @@ class Sender:
 		)
 		self.__message_with_referal(chat_id = chat_id, text = "<b>" + _("Присоединяйся к Тароботу, я уже там:") + "</b>\n\n")
 		
-	def worked_referal(self, user_id: int) -> None:
+	def worked_referal(self, user_id: int):
+		"""
+		Отправляет сообщение о том, что по реферальной ссылке перешли и воспользовались функционалом бота.
+
+		:param user_id: ID пользователя.
+		:type user_id: int
+		"""
+
 		text = (
 				"<b>" + _("Поздравляем!!! От вас пришел новый пользователь!") + "</b>\n",
 				"🌟" + _("Вы получили за это бонус:"),
@@ -374,15 +452,15 @@ class Sender:
 				"<b>" + _("Спасибо за совместное развитие Таробота!") + "</b>"
 				)
 		
-		self.__bot.send_animation(
+		self.bot.send_animation(
 			chat_id = user_id,
-			animation = self.__cacher.get_real_cached_file(
+			animation = self.cacher.get_real_cached_file(
 				path = "Data/AscendTarobot/Materials/level_up.gif",
 				autoupload_type = types.InputMediaAnimation,
 				).file_id,
 			caption = "\n".join(text), 
 			parse_mode = "HTML",
-			reply_markup = InlineKeyboards.for_delete(_("Спасибо! Приятно!"))
+			reply_markup = MainInlineKeyboards.for_delete(_("Спасибо! Приятно!"))
 		)
 
 	def end_bonus_layout(self, user_id: int):
@@ -400,7 +478,7 @@ class Sender:
 				"<b>" + _("Вот ваша ссылка приглашение:") + "</b>"
 				)
 		
-		self.__bot.send_message(
+		self.bot.send_message(
 			chat_id = user_id,
 			text = "\n".join(text), 
 			parse_mode = "HTML"
@@ -408,31 +486,142 @@ class Sender:
 
 		self.__message_with_referal(chat_id = user_id, text = "<b>" + _("Присоединяйся к Тароботу, я уже там:") + "</b>\n\n")
 
-	def level_up(self, user: UserData, level: int) -> None:
+	def level_up_time(self, user: UserData, level: int)-> bool:
+		"""
+		Отправляет сообщение о том, что уровень таробота повысился за счёт количества дней подряд проведённых пользователем в тароботе.
+
+		:param user: Данные пользователя.
+		:type user: UserData
+		:param level: Уровень таробота, на который перешёл поьзователь.
+		:type level: int
+		:return: Состояние: отправлено ли сообщение.
+		:rtype: bool
+		"""
 		
 		greeting_cards = {
-			1: ["3-х дней", "3", "неделя с Тароботом!"],
-			2: ["всей недели", "7", "2 недели с Тароботом!"],
-			3: ["целых 2-х недель", "14", "месяц с Тароботом!"],
-			4: ["аж целого месяца", "30", "пригласи 10 друзей!"]
+			1: [_("3-х дней"), "3", _("неделя с Тароботом!")],
+			2: [_("всей недели"), "7", _("2 недели с Тароботом!")],
+			3: [_("целых 2-х недель"), "14", _("месяц с Тароботом!")],
+			4: [_("аж целого месяца"), "30", _("пригласи 10 друзей!")]
 		}
 		
-		if level < 5:
-			card = greeting_cards[level]
+		card = greeting_cards[level]
 
-			text = (
-				"<b>" + _(f"Поздравляем!!! Вы были активны на протяжении $day_with_bot!") + "</b>" + "\n",
-				"🏆" + " " + _("У вас $number-й уровень! Вы получаете бонус: $bonus дополнительных Онлайн расклада!") + "\n",
-				"<b>" + _("Следующий уровень - $requirements_next_level") + "</b>"
-				)
-			
-			self.__bot.send_animation(
-				chat_id = user.id,
-				animation = self.__cacher.get_real_cached_file(
-					path = "Data/AscendTarobot/Materials/level_up.gif",
-					autoupload_type = types.InputMediaAnimation,
-					).file_id,
-				caption = "\n".join(text).replace("$day_with_bot", card[0]).replace("$number", str(level)).replace("$bonus", card[1]).replace("$requirements_next_level", card[2]), 
-				parse_mode = "HTML",
-				reply_markup = InlineKeyboards.for_delete("Вау! Невероятно!")
+		text = (
+			"<b>" + _("Поздравляем!!! Вы были активны на протяжении $day_with_bot!") + "</b>" + "\n",
+			"🏆" + " " + _("У вас $number-й уровень! Вы получаете бонус: $bonus дополнительных Онлайн расклада!") + "\n",
+			"<b>" + _("Следующий уровень - $requirements_next_level") + "</b>"
 			)
+		
+		reply_markup = MainInlineKeyboards.for_delete("Вау! Невероятно!") if level < 4 else InlineKeyboards.requirements_for_5_level()
+
+		self.bot.send_animation(
+			chat_id = user.id,
+			animation = self.cacher.get_real_cached_file(
+				path = "Data/AscendTarobot/Materials/level_up.gif",
+				autoupload_type = types.InputMediaAnimation,
+				).file_id,
+			caption = "\n".join(text).replace("$day_with_bot", card[0]).replace("$number", str(level)).replace("$bonus", card[1]).replace("$requirements_next_level", card[2]), 
+			parse_mode = "HTML",
+			reply_markup = reply_markup
+		)
+		return True
+	
+	def level_up_users(self, user: UserData) -> bool:
+		"""
+		Отправляет сообщение о том, что уровень таробота повысился за счёт приглашённых пользователей.
+
+		:param user: Данные пользователя.
+		:type user: UserData
+		:return: Состояние: отправлено ли сообщение.
+		:rtype: bool
+		"""
+
+		text = (
+				"<b>" + _("Поздравляем!!! Вы успешно пригласили в Таробот 10 своих друзей!") + "</b>" + "\n",
+				"🏆" + " " + _("У вас 5-й уровень! Вы получаете бонус: 55 дополнительных Онлайн раскладов и 1 бесплатный расклад от Таро мастера!") + "\n",
+				_("Ваш промокод:  А4X!  👈 нажмите, чтобы скопировать") + "\n",
+				"<i>" + _("Промокод вы также можете в любой момент посмотреть, нажав на \"Мой уровень Таробота\", в разделе \"Доп. опции\"") + "</i>" + "\n",
+				"<b><i>" + _("Чтобы получить расклад, напишите нашему эксперту и отправьте ей этот промокод!") + "</i></b>"
+				)
+		
+		self.bot.send_animation(
+			chat_id = user.id,
+			animation = self.cacher.get_real_cached_file(
+				path = "Data/AscendTarobot/Materials/level_up.gif",
+				autoupload_type = types.InputMediaAnimation,
+				).file_id,
+			caption = "\n".join(text), 
+			parse_mode = "HTML",
+			reply_markup = MainInlineKeyboards.for_delete("Вау! Невероятно!")
+			)
+		return True
+			
+class MainAscend:
+	"""Основной класс модуля повышения таробота."""
+
+	@property
+	def users(self):
+		"""Данные пользователей."""
+		return self.__users
+	
+	@property
+	def scheduler(self):
+		"""Планировщик задач."""
+
+		return self.__scheduler
+	
+	@property
+	def bot(self):
+		"""Telegram bot."""
+
+		return self.__bot
+
+	@property
+	def cacher(self):
+		"""Менеджер кэша."""
+
+		return self.__cacher
+
+	@property
+	def subscription(self):
+		"""Менеджер подписки."""
+
+		return self.__subscription
+	
+	@property
+	def decorators(self):
+		"""Набор декораторов."""
+
+		return self.__Decorators
+	
+	@property
+	def sender(self):
+		"""Отправитель сообщений."""
+
+		return self.__Sender
+	
+	def __init__(self, users: UsersManager, scheduler: BackgroundScheduler, bot: TeleBot, cacher: TeleCache, subscription: "Subscription"):
+		"""
+		Основной класс модуля повышения таробота.
+
+		:param users: Данные пользователей.
+		:type users: UsersManager
+		:param scheduler: Планировщик задач.
+		:type scheduler: BackgroundScheduler
+		:param bot: Telegram bot.
+		:type bot: TeleBot
+		:param cacher: Менеджер кэша.
+		:type cacher: TeleCache
+		"""
+
+		self.__users = users
+		self.__scheduler = scheduler or BackgroundScheduler()
+		self.__bot = bot
+		self.__cacher = cacher
+		self.__subscription = subscription
+
+		self.__Scheduler = Scheduler(self)
+		self.__Decorators = Decorators(self)
+
+		self.__Sender = Sender(self.__bot, self.__cacher)
