@@ -85,13 +85,13 @@ class Subscription:
 			if User.has_property("invited_by"): 
 				
 				invitee = self.__usermanager.get_user(User.get_property("invited_by"))
-				ascend = AscendData(user = invitee)
-				ascend.add_invited_user(User.id)
+				ascend_data = AscendData(user = invitee)
+				ascend_data.add_invited_user(User.id)
 				User.remove_property("invited_by")
 
-				if ascend.count_invited_users == 1: 
+				if ascend_data.count_invited_users == 1: 
 					Sender(self.__masterbot.bot, self.__cacher).worked_referal(invitee.id)
-					ascend.add_bonus_layouts()
+					ascend_data.add_bonus_layouts()
 				
 			if Subscribtion_Message:
 				self.__masterbot.safely_delete_messages(User.id, Subscribtion_Message)

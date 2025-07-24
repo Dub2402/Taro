@@ -124,7 +124,9 @@ AdminPanel.decorators.commands()
 def ProcessCommandStart(Message: types.Message):
 	if not usermanager.is_user_exists(Message.from_user.id):  
 		user = usermanager.auth(Message.from_user)
-		if Message.text != "/start": user.set_property("invited_by", int(Message.text.split(" ")[-1]))
+
+		if Message.text != "/start" and int(Message.text.split(" ")[-1]) != user.id: user.set_property("invited_by", int(Message.text.split(" ")[-1]))
+		
 		EnergyExchanger.push_mail(user)
 	else: user = usermanager.auth(Message.from_user)
 	

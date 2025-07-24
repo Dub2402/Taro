@@ -1,8 +1,14 @@
 import pandas
 
-from os import PathLike
 from typing import Iterable
+from os import PathLike
 import random
+import os
+
+PATH_TO_PROMOCODES = "Data/AscendTarobot/Промокоды.xlsx"
+
+if not os.path.exists(PATH_TO_PROMOCODES):
+	raise Exception("Файл промокодов не найден.")
 
 class Reader:
 
@@ -65,6 +71,12 @@ class Reader:
 		return self.__OnlineLayout["Про любовь:"]
 	
 	@property
+	def promocodes(self) -> tuple[str]:
+		"""Кортеж всех промокодов."""
+
+		return self.__Promocodes
+	
+	@property
 	def random_motto(self):
 		"""Рандомный девиз дня."""
 
@@ -81,7 +93,7 @@ class Reader:
 		"""Кортеж вопросов про любовь."""
 
 		return random.choices(self.general_questions, k = 2)
-
+	
 	def __init__(self, Settings: dict):
 
 		"""
@@ -95,12 +107,13 @@ class Reader:
 		self.__YesNoDict = self.__ReadExcel(Settings["yes_no"])
 		self.__MottoDict = self.__ReadExcel(Settings["motto_day"])
 		self.__OnlineLayout = self.__ReadExcel(Settings["online_layout"])
+		self.__Promocodes = self.__ReadExcel(PATH_TO_PROMOCODES)
 
 	#==========================================================================================#
 	# >>>>> ПРИВАТНЫЕ МЕТОДЫ <<<<< #
 	#==========================================================================================#
 	
-	def __ReadExcel(self, path: PathLike) -> dict:
+	def __ReadExcel(self, path: PathLike) -> tuple:
 		"""
 		Считывает файл Excel и интерпретирует его в словарь.
 

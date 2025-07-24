@@ -3,10 +3,11 @@ from dublib.TelebotUtils.Cache import TeleCache
 from dublib.TelebotUtils import TeleMaster
 from dublib.Engine.GetText import _
 
-from Source.Modules.Subscription import Subscription
 from Source.Modules.EnergyExchange.Options import Options as ExchangeOptions
-from Source.InlineKeyboards import InlineKeyboards
+from Source.Modules.AscendTaro import AscendData, Sender as AscendSender
 from Source.UI.WorkpiecesMessages import WorkpiecesMessages
+from Source.Modules.Subscription import Subscription
+from Source.InlineKeyboards import InlineKeyboards
 from Source.Core.ExcelTools import Reader
 
 from telebot import TeleBot, types
@@ -205,6 +206,23 @@ class Decorators:
 				reply_markup = InlineKeyboards.for_delete("Да будет так!")
 			)
 			self.__Options.bot.answer_callback_query(Call.id)
+
+
+		@self.__Options.bot.callback_query_handler(func = lambda Callback: Callback.data == "level_tarobot")
+		def click_level_tarobot(Call: types.CallbackQuery):	
+			user = self.__Options.users.auth(Call.from_user)
+			if not self.__Options.subscription.IsSubscripted(user):
+				self.__Options.bot.answer_callback_query(Call.id)
+				return
+			
+			ascend_data = AscendData(user = user)
+			level = ascend_data.level_tarobot
+			bonus_layouts = ascend_data.bonus_layouts
+
+			AscendSender(self.__Options.bot, self.__Options.cacher).level_tarobot(user = user, level = level, bonus_layouts = bonus_layouts)
+
+			self.__Options.bot.answer_callback_query(Call.id)
+
 
 class Options:
 	"""Раздел бота, отвечающий за дополнительный функционал"""

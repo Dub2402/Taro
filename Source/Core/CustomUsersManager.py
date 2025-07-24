@@ -8,34 +8,35 @@ from telebot import types, TeleBot
 class CustomUsersManager(UsersManager):
 	"""Модифицированный менеджер пользователей."""
 
-	def __CheckLevelUp(self, user: UserData):
+	def __CheckLevelUp(self, user: UserData) -> int:
 		"""
-		Проверяет, повысился ли уровень пользователя от взаимодействия, и отправляет уведомление.
+		Проверяет, повысился ли уровень пользователя от взаимодействия.
 
 		:param user: Данные пользователя.
 		:type user: UserData
+		:return: Текущий уровень таробота. 
+		:rtype: int
 		"""
 
-		message_level_up = None
+		level = None
 
 		ascend_data = AscendData(user = user)
 		ascend_sender = AscendSender(self.__Bot, self.__Cacher)
 
 		#СЛУЧАЙ, КОГДА У НАС ОДНОВРЕМЕННО ПОЯВИЛОСЬ 30 ДНЕЙ ПОДРЯД И 10 ПРИГЛАШЁННЫХ ПОЛЬЗОВАТЕЛЕЙ, НО УРОВЕНЬ ТАРОБОТА 3.
-		if ascend_data.is_available_time_based_level_up and ascend_data.is_available_user_based_level_up:
-			ascend_sender.level_up_users(user = user)
-			ascend_data.set_level_tarobot(count = 5)
-			return True
+		if ascend_data.is_available_time_based_level_up and ascend_data.is_available_user_based_level_up and ascend_data.level_tarobot == 3: 
+			ascend_sender.level_up(user = user, level = ascend_data.level_tarobot + 1)
+			return ascend_data.set_level_tarobot(count = 5)
+			
+		elif ascend_data.is_available_time_based_level_up: 
+			ascend_sender.level_up(user = user, level = ascend_data.level_tarobot + 1)
+			return ascend_data.incremente_level_tarobot()
+			
+		elif ascend_data.is_available_user_based_level_up and ascend_data.level_tarobot == 4: 
+			ascend_sender.level_up(user = user, level = ascend_data.level_tarobot + 1)
+			return ascend_data.incremente_level_tarobot()
 
-		elif ascend_data.is_available_time_based_level_up:
-			incremente_level = ascend_data.level_tarobot + 1
-			message_level_up = ascend_sender.level_up_time(user = user, level = incremente_level)
-		
-		elif ascend_data.is_available_user_based_level_up: message_level_up = ascend_sender.level_up_users(user = user)
-
-		if message_level_up: ascend_data.incremente_level_tarobot()
-
-		return False
+		return level
 			
 	def auth(self, user: types.User, update_activity: bool = True):
 		"""
@@ -52,9 +53,11 @@ class CustomUsersManager(UsersManager):
 
 		if not UserCurrent.has_property("index"): UserCurrent.set_property("index", self.get_new_index())
 
-		try: self.__CheckLevelUp(UserCurrent)
+		try: 
+			level = self.__CheckLevelUp(UserCurrent)
+			if level: AscendData(user = UserCurrent).set_level_up_rewards(level = level)
 		except Exception as ExceptionData: print(ExceptionData)
-
+		
 		return UserCurrent
 	
 	def get_new_index(self) -> int:

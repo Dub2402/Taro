@@ -1,9 +1,10 @@
 from Source.InlineKeyboards import InlineKeyboards as MainInlineKeyboards
 
 from dublib.TelebotUtils import UserData, UsersManager
-from dublib.Methods.Data import ToIterable
+from dublib.Methods.Filesystem import GetRandomFile
 from dublib.TelebotUtils.Cache import TeleCache
 from dublib.Methods.Filesystem import ListDir
+from dublib.Methods.Data import ToIterable
 from dublib.Engine.GetText import _
 
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -36,10 +37,26 @@ DEFAULT_COUNT_DAYS_WITH_BOT = 0
 DEFAULT_LEVEL_TAROBOT = 0
 MAX_COUNT_TODAY_LAYOUTS = 1
 STANDART_ADDING_COUNT_BONUS_LAYOUTS = 5
-NECESSARY_INVITED_USERS = 1
+NECESSARY_INVITED_USERS = 2
+
+ADDITIONAL_BONUS_LAYOUT_DEPENDING_ON_LEVEL = {
+	1: 3,
+	2: 7,
+	3: 14,
+	4: 30,
+	5: 55
+}
+
+PATH_TO_ANIMATION_LEVEL_UP = "Data/AscendTarobot/Materials/Level_Up"
 
 class AscendData:
 	"""Контейнер бонусных данных пользователя."""
+
+	@property
+	def bonus_layouts(self) -> int:
+		"""Количество бонусных раскладов."""
+
+		return self.__Data["bonus_layouts"]
 
 	@property
 	def invited_users(self) -> list[int]:
@@ -191,15 +208,43 @@ class AscendData:
 
 		self.__SetParameter("days_with_bot", count)
 
-	def set_level_tarobot(self, count: int = DEFAULT_LEVEL_TAROBOT):
+	def set_level_tarobot(self, count: int = DEFAULT_LEVEL_TAROBOT) -> int:
 		"""
 		Передаёт параметры для сохранения бонусных данных пользователя.
 
 		:param count: Уровень таробота.
 		:type count: int
+		:return: Текущий уровень таробота.
+		:rtype: int
 		"""
 
 		self.__SetParameter("level_tarobot", count)
+
+		return self.level_tarobot
+
+	def set_level_up_rewards(self, level: int): 
+		"""
+		Добавляет бонусные расклады пользователю.
+
+		:param count: Текущий уровеь таробота.
+		:type count: int, optional
+		"""
+
+		count_bonus_layouts = self.bonus_layouts + ADDITIONAL_BONUS_LAYOUT_DEPENDING_ON_LEVEL[level]
+
+		self.__SetParameter("bonus_layouts", count_bonus_layouts)
+
+	def add_bonus_layouts(self, count : int = STANDART_ADDING_COUNT_BONUS_LAYOUTS):
+		"""
+		Добавляет бонусные расклады пользователю.
+
+		:param count: Количество добавляемых бонусных раскладов, defaults to STANDART_ADDING_COUNT_BONUS_LAYOUTS
+		:type count: int, optional
+		"""
+
+		count_bonus_layouts = self.bonus_layouts + count
+
+		self.__SetParameter("bonus_layouts", count_bonus_layouts)
 
 	def add_invited_user(self, user_id: int):
 		"""
@@ -238,27 +283,22 @@ class AscendData:
 		self.__Data["days_with_bot"] = self.__Data["days_with_bot"] + 1
 		self.save()
 
-	def incremente_level_tarobot(self):
-		"""Увеличивает уровень таробота."""
+	def incremente_level_tarobot(self) -> int:
+		"""Увеличивает уровень таробота.
+
+		:return: Возвращает текущий уровень таробота.
+		:rtype: int
+		"""
 
 		self.__Data["level_tarobot"] = self.__Data["level_tarobot"] + 1
 		self.save()
+
+		return self.level_tarobot
 
 	def decremente_bonus_layouts(self):
 		"""Уменьшает количество использованных бонусных онлайн раскладов."""
 
 		self.__Data["bonus_layouts"] = self.__Data["bonus_layouts"] - 1
-		self.save()
-
-	def add_bonus_layouts(self, count: int = STANDART_ADDING_COUNT_BONUS_LAYOUTS):
-		"""
-		Увеличивает количество бонусных раскладов.
-
-		:param count: Добавляемое количество бонусных раскладов, defaults to 5
-		:type count: int, optional
-		"""
-
-		self.__Data["bonus_layouts"] = self.__Data["bonus_layouts"] + count
 		self.save()
 
 class Scheduler:
@@ -307,14 +347,28 @@ class InlineKeyboards:
 
 		return types.InlineKeyboardMarkup([[types.InlineKeyboardButton(text = "Узнать подробнее!", callback_data = "requirements_for_5_level")]])
 	
-	def reaching_5_level()-> types.InlineKeyboardMarkup:
+	def reaching_5_level(name_buttons: tuple[str])-> types.InlineKeyboardMarkup:
 		"""
 		Возвращает клавиатуру, в зависимости от нажатой кнопки или удаляется сообщение или пользователь переходит в чат с экспертом.
 
-		:return: Inline Keyboard 
+		:param name_buttons: Названия кнопок. Первый элемент - чат с экспертом. Второй - удаление.
+		:type name_buttons: tuple[str] | None
+		:return: Inline Keyboard.
 		:rtype: types.InlineKeyboardMarkup
 		"""
-		pass
+		
+		menu = types.InlineKeyboardMarkup()
+
+		determinations = {
+			name_buttons[0]: "https://t.me/m/k70ODNf4ZGEy",
+			name_buttons[1]: "for_delete"
+		}
+
+		for string in determinations.keys(): 
+			if determinations[string].startswith("https:"): menu.add(types.InlineKeyboardButton(string, url = determinations[string]), row_width = 1)
+			else: menu.add(types.InlineKeyboardButton(string, callback_data = determinations[string]), row_width = 1)
+
+		return menu
 
 class Decorators:
 	"""Набор декораторов."""
@@ -452,15 +506,17 @@ class Sender:
 				"<b>" + _("Спасибо за совместное развитие Таробота!") + "</b>"
 				)
 		
+		path_animation = GetRandomFile(directory = PATH_TO_ANIMATION_LEVEL_UP)
+		
 		self.bot.send_animation(
 			chat_id = user_id,
 			animation = self.cacher.get_real_cached_file(
-				path = "Data/AscendTarobot/Materials/level_up.gif",
+				path = path_animation,
 				autoupload_type = types.InputMediaAnimation,
 				).file_id,
 			caption = "\n".join(text), 
 			parse_mode = "HTML",
-			reply_markup = MainInlineKeyboards.for_delete(_("Спасибо! Приятно!"))
+			reply_markup = MainInlineKeyboards.for_delete(_("Вау! Это очень приятно!"))
 		)
 
 	def end_bonus_layout(self, user_id: int):
@@ -486,7 +542,7 @@ class Sender:
 
 		self.__message_with_referal(chat_id = user_id, text = "<b>" + _("Присоединяйся к Тароботу, я уже там:") + "</b>\n\n")
 
-	def level_up_time(self, user: UserData, level: int)-> bool:
+	def level_up(self, user: UserData, level: int)-> bool:
 		"""
 		Отправляет сообщение о том, что уровень таробота повысился за счёт количества дней подряд проведённых пользователем в тароботе.
 
@@ -497,66 +553,113 @@ class Sender:
 		:return: Состояние: отправлено ли сообщение.
 		:rtype: bool
 		"""
+		if level != 5: 
+			greeting_cards = {
+				1: (_("3-х дней"), _("неделя с Тароботом!")),
+				2: (_("всей недели"), _("2 недели с Тароботом!")),
+				3: (_("целых 2-х недель"), _("месяц с Тароботом!")),
+				4: (_("аж целого месяца"), _("пригласи 10 друзей!"))
+			}
+			
+			card = greeting_cards[level]
+
+			reply_markup = MainInlineKeyboards.for_delete("Вау! Невероятно!") if level < 4 else InlineKeyboards.requirements_for_5_level()
+
+			text = (
+				"<b>" + _("Поздравляем!!! Вы были активны на протяжении $day_with_bot!") + "</b>\n",
+				"🏆 " + _("У вас $number-й уровень! Вы получаете бонус: $bonus дополнительных Онлайн расклада!") + "\n",
+				"<b>" + _("Следующий уровень - $requirements_next_level") + "</b>"
+				)
 		
-		greeting_cards = {
-			1: [_("3-х дней"), "3", _("неделя с Тароботом!")],
-			2: [_("всей недели"), "7", _("2 недели с Тароботом!")],
-			3: [_("целых 2-х недель"), "14", _("месяц с Тароботом!")],
-			4: [_("аж целого месяца"), "30", _("пригласи 10 друзей!")]
+		else:
+			text = (
+				"<b>" + _("Поздравляем!!! Вы успешно пригласили в Таробот 10 своих друзей!") + "</b>\n",
+				"🏆 " + _("У вас 5-й уровень! Вы получаете бонус: $bonus дополнительных Онлайн раскладов и 1 бесплатный расклад от Таро мастера!") + "\n",
+				_("Ваш промокод: <b><code>А4X</code></b><b>!</b> 👈 нажмите, чтобы скопировать") + "\n",
+				"<i>" + _("Промокод вы также можете в любой момент посмотреть, нажав на \"Мой уровень Таробота\", в разделе \"Доп. опции\"") + "</i>\n",
+				"<b><i>" + _("Чтобы получить расклад, напишите нашему эксперту и отправьте ей этот промокод!") + "</i></b>"
+				)
+		text = "\n".join(text)
+			
+		Replaces = {
+			"$day_with_bot":card[0],
+			"$number": str(level),
+			"$bonus": str(ADDITIONAL_BONUS_LAYOUT_DEPENDING_ON_LEVEL[level]),
+			"$requirements_next_level": card[1]
 		}
-		
-		card = greeting_cards[level]
 
-		text = (
-			"<b>" + _("Поздравляем!!! Вы были активны на протяжении $day_with_bot!") + "</b>" + "\n",
-			"🏆" + " " + _("У вас $number-й уровень! Вы получаете бонус: $bonus дополнительных Онлайн расклада!") + "\n",
-			"<b>" + _("Следующий уровень - $requirements_next_level") + "</b>"
-			)
+		for Substring in Replaces.keys(): text = text.replace(Substring, Replaces[Substring])
 		
-		reply_markup = MainInlineKeyboards.for_delete("Вау! Невероятно!") if level < 4 else InlineKeyboards.requirements_for_5_level()
-
+		path_animation = GetRandomFile(directory = PATH_TO_ANIMATION_LEVEL_UP)
+	
 		self.bot.send_animation(
 			chat_id = user.id,
 			animation = self.cacher.get_real_cached_file(
-				path = "Data/AscendTarobot/Materials/level_up.gif",
+				path = path_animation,
 				autoupload_type = types.InputMediaAnimation,
 				).file_id,
-			caption = "\n".join(text).replace("$day_with_bot", card[0]).replace("$number", str(level)).replace("$bonus", card[1]).replace("$requirements_next_level", card[2]), 
+			caption = text, 
 			parse_mode = "HTML",
 			reply_markup = reply_markup
 		)
+
 		return True
 	
-	def level_up_users(self, user: UserData) -> bool:
-		"""
-		Отправляет сообщение о том, что уровень таробота повысился за счёт приглашённых пользователей.
-
-		:param user: Данные пользователя.
-		:type user: UserData
-		:return: Состояние: отправлено ли сообщение.
-		:rtype: bool
-		"""
-
-		text = (
-				"<b>" + _("Поздравляем!!! Вы успешно пригласили в Таробот 10 своих друзей!") + "</b>" + "\n",
-				"🏆" + " " + _("У вас 5-й уровень! Вы получаете бонус: 55 дополнительных Онлайн раскладов и 1 бесплатный расклад от Таро мастера!") + "\n",
-				_("Ваш промокод:  А4X!  👈 нажмите, чтобы скопировать") + "\n",
-				"<i>" + _("Промокод вы также можете в любой момент посмотреть, нажав на \"Мой уровень Таробота\", в разделе \"Доп. опции\"") + "</i>" + "\n",
-				"<b><i>" + _("Чтобы получить расклад, напишите нашему эксперту и отправьте ей этот промокод!") + "</i></b>"
-				)
+	def level_tarobot(self, user: UserData, level: int, bonus_layouts: int):
 		
-		self.bot.send_animation(
-			chat_id = user.id,
-			animation = self.cacher.get_real_cached_file(
-				path = "Data/AscendTarobot/Materials/level_up.gif",
-				autoupload_type = types.InputMediaAnimation,
-				).file_id,
-			caption = "\n".join(text), 
-			parse_mode = "HTML",
-			reply_markup = MainInlineKeyboards.for_delete("Вау! Невероятно!")
+		requirements_action = ""
+
+		tarobot_status = {
+			0: _("3-х дней подряд!"),
+			1: _("1 недели!"),
+			2: _("2-х недель!"),
+			3: _("1 месяца!"),
+			4: _("пригласить в Таробот 10 своих друзей! Вот ваша пригласительная ссылка:\n\n$referal_link")
+		}
+
+		if level < 4: requirements_action = "заходить в Таробот на протяжении" 
+
+		if level != 0: name_level = "У вас $level-й уровень!"
+		else: name_level = _("Ваш уровень - новичок!")
+
+		common_text = "<b>🌟 " + _("Бонусных Онлайн раскладов: $bonus_layouts") + "</b>\n\n"
+	
+		low_level_text = (
+			_("Чтобы достичь $next_level-го уровня, вы должны $requirements_action $requirements") + "\n",
+			_("Повышайте свой уровень и получайте гарантированно призы!!") + " 🎁"
 			)
-		return True
-			
+		
+		high_level_text = (
+			_("Промокод на подарочный личный расклад от Таро Мастера:") + "\n\n" + "<b><code>$promocode</code></b><b>!</b>\n",
+			"☝️" + _("Нажмите, чтобы скопировать!"),
+			_("Вы его можете использовать только 1 раз!" + "\n"),
+			"<b>" + "Вы достигли финального уровня пользователя Таробота!!" + " </b>🎁"
+			)
+		
+		text = "$name_level" + common_text
+
+		text: str = text + "\n".join(low_level_text) if level != 5 else text + "\n".join(high_level_text)
+
+		Replaces = {
+			"$name_level": "<b>🏆" + name_level + "</b>\n",
+			"$bonus_layouts": str(bonus_layouts),
+			"$level": str(level),
+			"$next_level": str(level + 1),
+			"$requirements_action": requirements_action,
+			"$requirements": tarobot_status[level],
+			"$referal_link": "123", 
+			"$promocode" : "`sdsd`"
+		}
+
+		for Substring in Replaces.keys(): text = text.replace(Substring, Replaces[Substring])
+
+		self.bot.send_message(
+			chat_id = user.id,
+			text = text, 
+			parse_mode = "HTML",
+			reply_markup = MainInlineKeyboards.for_delete("Окей!") if level != 5 else InlineKeyboards.reaching_5_level(("Написать Таро Мастеру!", "Окей! Спасибо большое!"))
+			)
+
 class MainAscend:
 	"""Основной класс модуля повышения таробота."""
 
