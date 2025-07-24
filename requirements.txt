@@ -1,6 +1,6 @@
 -r Source/TeleBotAdminPanel/requirements.txt
 g4f == 0.5.3.0
-dublib == 0.22.1
+dublib == 0.23.0
 apscheduler
 pandas
 openpyxl == 3.1.5
