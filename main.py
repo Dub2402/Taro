@@ -13,7 +13,6 @@ from Source.Core.AdminPanel.AdditionalColumns import *
 from Source.TeleBotAdminPanel import Panel
 from Source.Functions import FindNearest, ChoiceMessage, CacherSending, UpdateThinkCardData, UpdateThinkCardData2, GetNumberCard, update_think_card, delete_thinking_messages
 from Source.UI.WorkpiecesMessages import WorkpiecesMessages
-from Source.Modules.InternalСaching import InternalCaching
 from Source.Core.BlackDictionary import BlackDictionary
 from Source.Modules.Subscription import Subscription
 from Source.InlineKeyboards import InlineKeyboards
@@ -23,7 +22,7 @@ from Source.Core.ExcelTools import Reader
 from Source.Core.CustomUsersManager import CustomUsersManager
 
 from dublib.TelebotUtils.Cache import TeleCache
-from dublib.Methods.Filesystem import ReadJSON
+from dublib.Engine.Configurator import Config
 from dublib.TelebotUtils import TeleMaster
 from dublib.Engine.GetText import GetText
 from dublib.Methods.System import Clear
@@ -39,7 +38,8 @@ from telebot import types
 
 Clear()
 
-Settings = ReadJSON("Settings.json")
+Settings = Config("Settings.json")
+Settings.load()
 
 MasterBot = TeleMaster(Settings["token"])
 Bot = MasterBot.bot
@@ -112,7 +112,11 @@ scheduler.add_job(update_think_card, 'cron', day_of_week = "mon, wed, fri", hour
 
 scheduler.start()
 
-Thread(target = InternalCaching(Cacher).caching).start()
+try:
+	from Source.Modules.InternalСaching import InternalCaching
+	Thread(target = InternalCaching(Cacher).caching).start()
+
+except ImportError: pass
 
 AdminPanel.decorators.commands()
 

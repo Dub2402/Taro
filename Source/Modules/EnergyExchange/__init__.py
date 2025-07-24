@@ -3,46 +3,103 @@ from .Options import Options
 
 from Source.UI.AdditionalOptions import InlineTemplates
 from Source.Modules.Subscription import Subscription
-from Source.InlineKeyboards import InlineKeyboards
-from Source.UI.AdditionalOptions import InlineTemplates as AdditionalInlineKeyboards
 
-from dublib.Methods.Filesystem import MakeRootDirectories, ReadJSON, WriteJSON, ListDir
+from dublib.Methods.Filesystem import MakeRootDirectories, ReadJSON, WriteJSON
 from dublib.TelebotUtils.Users import UserData, UsersManager
+from dublib.Methods.Filesystem import GetRandomFile
 from dublib.TelebotUtils.Master import TeleMaster
 from dublib.TelebotUtils.Cache import TeleCache
 from dublib.Engine.GetText import _
 
+from datetime import datetime
 from time import sleep
-from os import PathLike
 import random
 import os
 
 from telebot import TeleBot, types
+import dateparser
 import xlsxwriter
 import pandas
-
-def randomize_animation(path_to_animations: PathLike) -> str:
-	"""
-	Выбирает рандомную анимацию из необходимой папки.
-
-	:param path_to_animations: Путь к папке с гифками.
-	:type path_to_animations: PathLike
-	:return: Название рандомной гифки.
-	:rtype: str
-	"""
-
-	animation_paths = list()
-
-	for animation_path in ListDir(path_to_animations):
-		animation_paths.append(animation_path)
-
-	name_animation = random.choice(animation_paths)
-
-	return name_animation
 
 #==========================================================================================#
 # >>>>> КОНТЕЙНЕРЫ ПОСЛАНИЙ <<<<< #
 #==========================================================================================#
+
+class Repeater:
+	"""Оператор повтора собственных посланий."""
+
+	def __init__(self):
+		"""Оператор повтора собственных посланий."""
+
+		self.__Path = "Data/Exchange/Repeater.json"
+		self.__Data = {
+			"repeater": {}
+		}
+
+		self.reload()
+
+	def get(self, user_id: int) -> str | None:
+		"""
+		Возвращает запомненное сообщение от пользователя и удаляет его из хранилища.
+
+		:param user_id: ID пользователя.
+		:type user_id: int
+		:return: Сообщение от пользователя или `None`, если такового нет или не прошёл срок возврата.
+		:rtype: str | None
+		"""
+
+		user_id = str(user_id)
+
+		if user_id in self.__Data["repeater"]:
+			Today = datetime.now().date()
+			MailDate = dateparser.parse(self.__Data["repeater"][user_id]["date"]).date()
+			Delta = Today - MailDate
+			DAYS_COUNT = random.randint(2, 4)
+
+			if Delta.total_seconds() / 86400 > DAYS_COUNT:
+				MailText = self.__Data["repeater"][user_id]["mail"]
+				self.remove(user_id)
+				return MailText
+
+	def reload(self):
+		"""Считывает повторяемые сообщения."""
+
+		if os.path.exists(self.__Path): self.__Data = ReadJSON(self.__Path)
+		else: self.save()
+
+	def remember(self, user_id: int, mail: str):
+		"""
+		Запоминает предложенное пользователем сообщение.
+
+		:param user_id: ID пользователя.
+		:type user_id: int
+		:param mail: Текст сообщения.
+		:type mail: str
+		"""
+
+		user_id = str(user_id)
+		if user_id not in self.__Data["repeater"]: self.__Data["repeater"][user_id] = {
+			"mail": mail,
+			"date": str(datetime.now().date())
+		}
+		self.save()
+
+	def remove(self, user_id: int):
+		"""
+		Удаляет послание из памяти.
+
+		:param user_id: ID пользователя.
+		:type user_id: int
+		"""
+
+		user_id = str(user_id)
+		if user_id in self.__Data["repeater"]: del self.__Data["repeater"][user_id]
+		self.save()
+
+	def save(self):
+		"""Сохраняет список посланий."""
+
+		WriteJSON(self.__Path, self.__Data)
 
 class MailsContainer:
 	"""Контейнер одобренных посланий."""
@@ -76,8 +133,6 @@ class MailsContainer:
 	def __init__(self):
 		"""Контейнер одобренных посланий."""
 
-		#---> Генерация динамических свойств.
-		#==========================================================================================#
 		self.__Path = "Data/Exchange/Mails.xlsx"
 		self.__Data = {
 			"Наши сообщения": [],
@@ -152,8 +207,6 @@ class UnmoderatedBuffer:
 
 	def __init__(self):
 
-		#---> Генерация динамических свойств.
-		#==========================================================================================#
 		self.__Path = "Data/Exchange/Unmoderated.json"
 		self.__Data = {
 			"unmoderated": []
@@ -324,7 +377,9 @@ class Decorators:
 				return
 			
 			User.set_expected_type(None)
-			self.__Exchanger.unmoderated_mails.append(User.get_property("ee_new_message"))
+			MessageText = User.get_property("ee_new_message")
+			self.__Exchanger.unmoderated_mails.append(MessageText)
+			self.__Exchanger.repeater.remember(User.id, MessageText)
 			User.clear_temp_properties()
 
 			Text = (
@@ -334,11 +389,10 @@ class Decorators:
 			)
 			TeleMaster(bot).safely_delete_messages(Call.from_user.id, Call.message.id)
 
-			name_animation = randomize_animation("Data/Exchange/Thanks")
 			Message = bot.send_animation(
 				chat_id = Call.from_user.id,
 				animation = self.__Exchanger.cacher.get_real_cached_file(
-					path = f"Data/Exchange/Thanks/{name_animation}",
+					path = GetRandomFile("Data/Exchange/Thanks"),
 					autoupload_type = types.InputMediaAnimation,
 					).file_id,
 				caption = "\n\n".join(Text),
@@ -558,6 +612,12 @@ class Exchanger:
 		return self.__cacher
 	
 	@property
+	def repeater(self) -> Repeater:
+		"""Оператор повтора собственных посланий."""
+
+		return self.__Repeater
+
+	@property
 	def subscription(self) -> Subscription:
 		"""Проверка подписки."""
 
@@ -614,12 +674,13 @@ class Exchanger:
 		self.__cacher = cacher
 		self.__subscription = subscription
 
-		MakeRootDirectories(["Data/Exchange"])
+		MakeRootDirectories("Data/Exchange")
 
 		self.__Decorators = Decorators(self)
 		self.__Procedures = Procedures(self)
 		self.__UnmoderatedBuffer = UnmoderatedBuffer()
 		self.__MailsContainer = MailsContainer()
+		self.__Repeater = Repeater()
 
 	def get_unmoderated_mails(self) -> tuple[str]:
 		"""
@@ -662,11 +723,9 @@ class Exchanger:
 				_("<i>Стань участником программы взаимной поддержки и напиши свое собственное послание. Оно прилетит абсолютно рандомному участнику нашего бота и поднимет ему настроение 🤗</i>"),
 				_("<b><i>А кто-то может написать и тебе!</i></b>")
 			)
-		
-		name_animation = randomize_animation(path_to_animations = "Data/Exchange/Start")
 
 		File = self.cacher.get_real_cached_file(
-			path = f"Data/Exchange/Start/{name_animation}", 
+			path = GetRandomFile("Data/Exchange/Start"), 
 			autoupload_type = types.InputMediaAnimation
 		)
 		
@@ -724,5 +783,6 @@ class Exchanger:
 		"""
 
 		UserOptions = Options(user)
-		Mail = random.choice(self.__MailsContainer.all_mails)
+		Mail = self.__Repeater.get(user.id)
+		if not Mail: Mail = random.choice(self.__MailsContainer.all_mails)
 		if len(UserOptions.mails) < 10 and Mail not in UserOptions.mails: UserOptions.push_mail(Mail)
