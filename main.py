@@ -325,7 +325,8 @@ def InlineButtonRemoveReminder(Call: types.CallbackQuery):
 		Bot.answer_callback_query(Call.id)
 		return
 	if not AscendData(user = user).is_layout_available:
-		main_ascend.__Sender.limiter_layouts(chat_id = Call.message.chat.id)
+
+		main_ascend.sender.limiter_layouts(chat_id = Call.message.chat.id)
 		Bot.answer_callback_query(Call.id)
 		return
 

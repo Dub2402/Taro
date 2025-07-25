@@ -489,7 +489,7 @@ class Sender:
 			caption = "\n".join(text), 
 			parse_mode = "HTML"
 		)
-		self.__message_with_referal(chat_id = chat_id, text = "<b>" + _("Присоединяйся к Тароботу, я уже там:") + "</b>\n\n")
+		self.__message_with_referal(chat_id = chat_id)
 		
 	def worked_referal(self, user_id: int):
 		"""
@@ -659,6 +659,10 @@ class Sender:
 			parse_mode = "HTML",
 			reply_markup = MainInlineKeyboards.for_delete("Окей!") if level != 5 else InlineKeyboards.reaching_5_level(("Написать Таро Мастеру!", "Окей! Спасибо большое!"))
 			)
+
+class PromoСodeManager:
+
+	pass	
 
 class MainAscend:
 	"""Основной класс модуля повышения таробота."""

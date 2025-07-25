@@ -5,7 +5,7 @@ from dublib.TelebotUtils.Users import UserData, UsersManager
 from dublib.TelebotUtils import TeleMaster
 from dublib.Engine.GetText import _
 
-from Source.InlineKeyboards import InlineKeyboards as BasicInlineKeyboards
+from Source.InlineKeyboards import InlineKeyboards as MainInlineKeyboards
 from Source.Modules.AscendTaro import AscendData
 from Source.Modules.AscendTaro import Sender
 
@@ -52,6 +52,27 @@ class Subscription:
 
 		User.set_property("Subscription", Message.id)
 
+	def __send_tarofamily_message(self, User: UserData):
+
+		action = "ВОЗВРАЩЕНИЕМ" if User.get_property("was_channels_member") else "ПРИСОЕДИНЕНИЕМ"
+
+		Text = (
+			("<b>" + "🤗 " + _("С $action в нашу большую семью Таро!") + "</b>"),
+			_("Здесь ты можешь чувствовать себя как дома и задавать любые вопросы. Пусть этот ключ станет твоим проводником в мир загадок и откровений и скрасит твой досуг на каждый день!"),
+			"<b>" + _("С любовью, Галина Таро Мастер!") + "</b>"
+		)
+		
+		self.__masterbot.bot.send_animation(
+			chat_id = User.id, 
+			animation = self.__cacher.get_real_cached_file(
+				path = "Data/AscendTarobot/Materials/taro_family.gif",
+				autoupload_type = types.InputMediaAnimation,
+				).file_id,
+			caption = "\n\n".join(Text).replace("$action", action),
+			parse_mode = "HTML",
+			reply_markup = MainInlineKeyboards.for_delete("Спасибо! Сейчас приступим!")
+		)
+
 	def __init__(self, masterbot: TeleMaster, chanel: list[int], cacher: TeleCache, usermanager: UsersManager):
 
 		self.__masterbot = masterbot
@@ -70,6 +91,8 @@ class Subscription:
 		:return: Статус подписки.
 		:rtype: bool
 		"""
+
+		if not User.has_property("was_channels_member"): User.set_property("was_channels_member", False) 
 
 		if User.has_permissions(["developer", "admin"]): return True
 
@@ -96,7 +119,11 @@ class Subscription:
 			if Subscribtion_Message:
 				self.__masterbot.safely_delete_messages(User.id, Subscribtion_Message)
 				self.__Templates.send_start_messages(User, title = False)
+				self.__send_tarofamily_message(User)
+				
 				User.set_property("Subscription", None)
+
+			if not User.get_property("was_channels_member"): User.set_property("was_channels_member", True)
 
 		else:
 			if Subscribtion_Message: self.__masterbot.safely_delete_messages(User.id, Subscribtion_Message)

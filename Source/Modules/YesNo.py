@@ -76,7 +76,7 @@ class Decorators:
 
 			stiker_message = self.__YesNo.bot.send_message(
 				chat_id = Call.message.chat.id, 
-				text = "🔮"
+				text = "❤️"
 				)
 			sleep(2.5)
 
