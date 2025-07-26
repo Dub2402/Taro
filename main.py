@@ -1,5 +1,5 @@
 from Source.Modules.EnergyExchange import Exchanger, Scheduler as ExchangeScheduler
-from Source.Modules.AscendTaro import AscendData, MainAscend
+from Source.Modules.AscendTaro import AscendData, MainAscend, ManagerPromoCodes
 from Source.Modules.ValuesCards import ValuesCards
 from Source.UI.AdditionalOptions import Options
 from Source.UI.OnlineLayout import Layout
@@ -51,9 +51,13 @@ Cacher = TeleCache()
 Cacher.set_bot(Settings["token"])
 Cacher.set_chat_id(Settings["chat_id"])
 
+manager_promocodes = ManagerPromoCodes()
+
 usermanager = CustomUsersManager("Data/Users")
 usermanager.set_bot(Bot)
 usermanager.set_cacher(Cacher)
+usermanager.set_manager_promocodes(manager_promocodes)
+
 
 subscription = Subscription(MasterBot, Settings["subscription_chanel"], Cacher, usermanager)
 reader = Reader(Settings)

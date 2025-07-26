@@ -1,4 +1,4 @@
-from Source.Modules.AscendTaro import AscendData, Sender as AscendSender
+from Source.Modules.AscendTaro import AscendData, Sender as AscendSender, ManagerPromoCodes
 
 from dublib.TelebotUtils import UsersManager, UserData
 from dublib.TelebotUtils.Cache import TeleCache
@@ -21,21 +21,14 @@ class CustomUsersManager(UsersManager):
 		level = None
 
 		ascend_data = AscendData(user = user)
-		ascend_sender = AscendSender(self.__Bot, self.__Cacher)
 
 		#СЛУЧАЙ, КОГДА У НАС ОДНОВРЕМЕННО ПОЯВИЛОСЬ 30 ДНЕЙ ПОДРЯД И 10 ПРИГЛАШЁННЫХ ПОЛЬЗОВАТЕЛЕЙ, НО УРОВЕНЬ ТАРОБОТА 3.
-		if ascend_data.is_available_time_based_level_up and ascend_data.is_available_user_based_level_up and ascend_data.level_tarobot == 3: 
-			ascend_sender.level_up(user = user, level = ascend_data.level_tarobot + 1)
-			return ascend_data.set_level_tarobot(count = 5)
+		if ascend_data.is_available_time_based_level_up and ascend_data.is_available_user_based_level_up and ascend_data.level_tarobot == 3: return 5
 			
-		elif ascend_data.is_available_time_based_level_up: 
-			ascend_sender.level_up(user = user, level = ascend_data.level_tarobot + 1)
-			return ascend_data.incremente_level_tarobot()
+		elif ascend_data.is_available_time_based_level_up: return ascend_data.level_tarobot + 1 
+		
+		elif ascend_data.is_available_user_based_level_up and ascend_data.level_tarobot == 4: return ascend_data.level_tarobot + 1 
 			
-		elif ascend_data.is_available_user_based_level_up and ascend_data.level_tarobot == 4: 
-			ascend_sender.level_up(user = user, level = ascend_data.level_tarobot + 1)
-			return ascend_data.incremente_level_tarobot()
-
 		return level
 			
 	def auth(self, user: types.User, update_activity: bool = True):
@@ -55,7 +48,15 @@ class CustomUsersManager(UsersManager):
 
 		try: 
 			level = self.__CheckLevelUp(UserCurrent)
-			if level: AscendData(user = UserCurrent).set_level_up_rewards(level = level)
+			
+			if level: 
+
+				ascend_data = AscendData(user = UserCurrent)
+				ascend_data.set_level_tarobot(level)
+				ascend_data.set_level_up_rewards(level = level, manager_promocode = self.__promocode_manager)
+
+				AscendSender(self.__Bot, self.__Cacher).level_up(user = UserCurrent, level = ascend_data.level_tarobot)
+				
 		except Exception as ExceptionData: print(ExceptionData)
 		
 		return UserCurrent
@@ -94,3 +95,13 @@ class CustomUsersManager(UsersManager):
 		"""
 
 		self.__Cacher = Cacher
+
+	def set_manager_promocodes(self, promocode_manager: ManagerPromoCodes):
+		"""
+		Задаёт менеджера промокодов.
+
+		:param bot: Менеджер промокодов.
+		:type bot: ManagerPromoCodes
+		"""
+
+		self.__promocode_manager = promocode_manager

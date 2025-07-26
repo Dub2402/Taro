@@ -3,6 +3,7 @@ from Source.InlineKeyboards import InlineKeyboards as MainInlineKeyboards
 from dublib.TelebotUtils import UserData, UsersManager
 from dublib.Methods.Filesystem import GetRandomFile
 from dublib.TelebotUtils.Cache import TeleCache
+from dublib.Methods.Filesystem import ReadJSON, WriteJSON
 from dublib.Methods.Filesystem import ListDir
 from dublib.Methods.Data import ToIterable
 from dublib.Engine.GetText import _
@@ -10,16 +11,17 @@ from dublib.Engine.GetText import _
 from apscheduler.schedulers.background import BackgroundScheduler
 from telebot import TeleBot, types
 
-import logging
 from typing import Literal, Any, Iterable,  TYPE_CHECKING
 from types import MappingProxyType
-import random
 from os import PathLike
+import logging
+import random
+import os
 
 if TYPE_CHECKING:
 	from Source.Modules.Subscription import Subscription
 
-ParametersDetermination = MappingProxyType(
+AscendParameters = MappingProxyType(
 	{
 	"today_layouts": 0,
 	"bonus_layouts": 0,
@@ -37,7 +39,7 @@ DEFAULT_COUNT_DAYS_WITH_BOT = 0
 DEFAULT_LEVEL_TAROBOT = 0
 MAX_COUNT_TODAY_LAYOUTS = 1
 STANDART_ADDING_COUNT_BONUS_LAYOUTS = 5
-NECESSARY_INVITED_USERS = 2
+NECESSARY_INVITED_USERS = 1
 
 ADDITIONAL_BONUS_LAYOUT_DEPENDING_ON_LEVEL = {
 	1: 3,
@@ -48,6 +50,79 @@ ADDITIONAL_BONUS_LAYOUT_DEPENDING_ON_LEVEL = {
 }
 
 PATH_TO_ANIMATION_LEVEL_UP = "Data/AscendTarobot/Materials/Level_Up"
+PATH_TO_USED_PROMOCODES = "Data/AscendTarobot/Promocodes.json"
+
+class ManagerPromoCodes:
+	"""Менеджер промокодов."""
+	
+	@property
+	def used_promocodes(self) -> set[str]:
+		"""Множество выданных промокодов."""
+
+		return self.__Promocodes.keys()
+	
+	def __generate_promocode(self, length_promo: int = 5) -> str:
+		"""
+		Генерирует промокод, длиной в 5 символов, исключая некоторые буквы(I, O) и цифры(0).
+
+		:param length_promo: Длина промокода, defaults to 5
+		:type length_promo: int, optional
+		:return: Промокод.
+		:rtype: str
+		"""
+
+		promocode = ""
+
+		choices = random.choices(population = ("letter", "number"), k = length_promo)
+
+		for choice in choices:
+			if choice == "letter": promocode += random.choice("ABCDEFGHJKLMNPQRSTUVWXYZ")
+			else: promocode += random.choice("123456789")
+
+		return promocode
+	
+	def __is_unique(self, promocode: str) -> bool:
+		"""
+		Проверяет является ли промокод уникальным.
+
+		:param promocode: Промокод.
+		:type promocode: str
+		:return: Статус: уникален ли промокод.
+		:rtype: bool
+		"""
+
+		for used_promocode in self.used_promocodes: 
+			if promocode == used_promocode: return False
+
+		return True
+	
+	def __init__(self):
+		"""Подготовка к работе менеджера промокодов."""
+
+		self.__Path = "Data/AscendTarobot/Promocodes.json"
+		self.__Promocodes = dict()
+
+		if os.path.exists(self.__Path): self.__Promocodes = ReadJSON(self.__Path)
+
+	def get_new_promo(self) -> str:
+		"""
+		Получаем новый, нигде не задействованный промокод.
+
+		:return: Промокод, который выдадем пользователю.
+		:rtype: str
+		"""
+
+		new_promocode = self.__generate_promocode()
+
+		while True: 
+
+			if not self.__is_unique(promocode = new_promocode): pass
+			else: return new_promocode
+
+	def save(self, promocode: str, user_id: int): 
+
+		self.__Promocodes[promocode] = {"user_id": user_id}
+		WriteJSON(self.__Path, self.__Promocodes)
 
 class AscendData:
 	"""Контейнер бонусных данных пользователя."""
@@ -75,6 +150,12 @@ class AscendData:
 		"""Уровень таробота."""
 
 		return self.__Data["level_tarobot"]
+	
+	@property
+	def promo(self) -> int:
+		"""Промокод пользователя."""
+
+		return self.__Data["promo"]
 	
 	@property
 	def delete_limiter(self) -> list[int]:
@@ -143,8 +224,9 @@ class AscendData:
 		:param value: Значение параметра.
 		:type value: Any
 		"""
-
+		
 		self.__Data[key] = value
+		
 		self.save()
 
 	def __ValidateDate(self) -> dict[str, Any]:
@@ -156,15 +238,15 @@ class AscendData:
 		"""
 		
 		if not self.__User.has_property("ascend"):
-			self.__User.set_property("ascend", ParametersDetermination.copy())
+			self.__User.set_property("ascend", AscendParameters.copy())
 			
 		else:
 			Data: dict = self.__User.get_property("ascend")
 
-			for Key in ParametersDetermination.keys():
+			for Key in AscendParameters.keys():
 
 				if Key not in Data.keys():
-					Data[Key] = ParametersDetermination[Key]
+					Data[Key] = AscendParameters[Key]
 					logging.debug(f"For user #{self.__User.id} key \"{Key}\" set to default.")
 
 			self.__User.set_property("ascend", Data)
@@ -222,15 +304,22 @@ class AscendData:
 
 		return self.level_tarobot
 
-	def set_level_up_rewards(self, level: int): 
+	def set_level_up_rewards(self, level: int, manager_promocode: ManagerPromoCodes): 
 		"""
-		Добавляет бонусные расклады пользователю.
+		Добавляет бонусы за уровень пользователю.
 
-		:param count: Текущий уровеь таробота.
+		:param count: Текущий уровень таробота.
 		:type count: int, optional
 		"""
 
 		count_bonus_layouts = self.bonus_layouts + ADDITIONAL_BONUS_LAYOUT_DEPENDING_ON_LEVEL[level]
+
+		if level == 5: 
+			if not self.promo:
+
+				promocode = manager_promocode.get_new_promo()
+				self.__SetParameter("promo", promocode)
+				manager_promocode.save(promocode = promocode, user_id = self.__User.id)
 
 		self.__SetParameter("bonus_layouts", count_bonus_layouts)
 
@@ -283,24 +372,12 @@ class AscendData:
 		self.__Data["days_with_bot"] = self.__Data["days_with_bot"] + 1
 		self.save()
 
-	def incremente_level_tarobot(self) -> int:
-		"""Увеличивает уровень таробота.
-
-		:return: Возвращает текущий уровень таробота.
-		:rtype: int
-		"""
-
-		self.__Data["level_tarobot"] = self.__Data["level_tarobot"] + 1
-		self.save()
-
-		return self.level_tarobot
-
 	def decremente_bonus_layouts(self):
 		"""Уменьшает количество использованных бонусных онлайн раскладов."""
 
 		self.__Data["bonus_layouts"] = self.__Data["bonus_layouts"] - 1
 		self.save()
-
+	
 class Scheduler:
 	"""Планировщик изменений бонусных данных пользователей."""
 
@@ -553,15 +630,18 @@ class Sender:
 		:return: Состояние: отправлено ли сообщение.
 		:rtype: bool
 		"""
-		if level != 5: 
-			greeting_cards = {
+
+		greeting_cards = {
 				1: (_("3-х дней"), _("неделя с Тароботом!")),
 				2: (_("всей недели"), _("2 недели с Тароботом!")),
 				3: (_("целых 2-х недель"), _("месяц с Тароботом!")),
-				4: (_("аж целого месяца"), _("пригласи 10 друзей!"))
+				4: (_("аж целого месяца"), _("пригласи 10 друзей!")),
+				5: ("", "")
 			}
-			
-			card = greeting_cards[level]
+
+		card = greeting_cards[level]
+
+		if level != 5: 
 
 			reply_markup = MainInlineKeyboards.for_delete("Вау! Невероятно!") if level < 4 else InlineKeyboards.requirements_for_5_level()
 
@@ -572,20 +652,24 @@ class Sender:
 				)
 		
 		else:
+
+			reply_markup = InlineKeyboards.reaching_5_level(("Написать Таро Мастеру!", "Окей! Спасибо большое!"))
 			text = (
 				"<b>" + _("Поздравляем!!! Вы успешно пригласили в Таробот 10 своих друзей!") + "</b>\n",
 				"🏆 " + _("У вас 5-й уровень! Вы получаете бонус: $bonus дополнительных Онлайн раскладов и 1 бесплатный расклад от Таро мастера!") + "\n",
-				_("Ваш промокод: <b><code>А4X</code></b><b>!</b> 👈 нажмите, чтобы скопировать") + "\n",
+				_("Ваш промокод: <b><code>$promocode</code></b><b>!</b> 👈 нажмите, чтобы скопировать") + "\n",
 				"<i>" + _("Промокод вы также можете в любой момент посмотреть, нажав на \"Мой уровень Таробота\", в разделе \"Доп. опции\"") + "</i>\n",
 				"<b><i>" + _("Чтобы получить расклад, напишите нашему эксперту и отправьте ей этот промокод!") + "</i></b>"
 				)
-		text = "\n".join(text)
 			
+		text = "\n".join(text)
+
 		Replaces = {
-			"$day_with_bot":card[0],
+			"$day_with_bot": card[0],
 			"$number": str(level),
 			"$bonus": str(ADDITIONAL_BONUS_LAYOUT_DEPENDING_ON_LEVEL[level]),
-			"$requirements_next_level": card[1]
+			"$requirements_next_level": card[1],
+			"$promocode": str(AscendData(user = user).promo)
 		}
 
 		for Substring in Replaces.keys(): text = text.replace(Substring, Replaces[Substring])
@@ -614,10 +698,11 @@ class Sender:
 			1: _("1 недели!"),
 			2: _("2-х недель!"),
 			3: _("1 месяца!"),
-			4: _("пригласить в Таробот 10 своих друзей! Вот ваша пригласительная ссылка:\n\n$referal_link")
+			4: _("пригласить в Таробот 10 своих друзей! Вот ваша пригласительная ссылка:\n\n$referal_link"),
+			5: ""
 		}
 
-		if level < 4: requirements_action = "заходить в Таробот на протяжении" 
+		requirements_action = "заходить в Таробот на протяжении" if level < 4 else ""
 
 		if level != 0: name_level = "У вас $level-й уровень!"
 		else: name_level = _("Ваш уровень - новичок!")
@@ -637,9 +722,9 @@ class Sender:
 			)
 		
 		text = "$name_level" + common_text
-
+		
 		text: str = text + "\n".join(low_level_text) if level != 5 else text + "\n".join(high_level_text)
-
+		
 		Replaces = {
 			"$name_level": "<b>🏆" + name_level + "</b>\n",
 			"$bonus_layouts": str(bonus_layouts),
@@ -647,8 +732,8 @@ class Sender:
 			"$next_level": str(level + 1),
 			"$requirements_action": requirements_action,
 			"$requirements": tarobot_status[level],
-			"$referal_link": "123", 
-			"$promocode" : "`sdsd`"
+			"$referal_link": self.generate_referal_link(user.id), 
+			"$promocode" : str(AscendData(user = user).promo)
 		}
 
 		for Substring in Replaces.keys(): text = text.replace(Substring, Replaces[Substring])
@@ -659,10 +744,6 @@ class Sender:
 			parse_mode = "HTML",
 			reply_markup = MainInlineKeyboards.for_delete("Окей!") if level != 5 else InlineKeyboards.reaching_5_level(("Написать Таро Мастеру!", "Окей! Спасибо большое!"))
 			)
-
-class PromoСodeManager:
-
-	pass	
 
 class MainAscend:
 	"""Основной класс модуля повышения таробота."""
