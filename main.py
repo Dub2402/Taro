@@ -5,10 +5,10 @@ from Source.UI.AdditionalOptions import Options
 from Source.UI.OnlineLayout import Layout
 from Source.Modules.YesNo import YesNo
 
-from Source.TeleBotAdminPanel.Core.Moderation import ModeratorsStorage
+from Source.TeleBotAdminPanel.Core.Moderation import Moderator, ModeratorsStorage
 from Source.TeleBotAdminPanel.Core.Uploading import Uploader
 
-from Source.Core.AdminPanel.Moderators import ExchangeModerator
+from Source.Modules.LayoutsExamples import LayoutsExamples
 from Source.Core.AdminPanel.AdditionalColumns import *
 from Source.TeleBotAdminPanel import Panel
 from Source.Functions import FindNearest, ChoiceMessage, CacherSending, UpdateThinkCardData, UpdateThinkCardData2, GetNumberCard, update_think_card, delete_thinking_messages
@@ -31,6 +31,7 @@ from datetime import datetime
 from threading import Thread
 import dateparser
 import logging
+import random
 import os
 
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -69,9 +70,12 @@ AddictionalOptional = Options(MasterBot, usermanager, Settings, sender, Cacher, 
 EnergyExchanger = Exchanger(Bot, usermanager, Cacher, subscription)
 ExchangeSchedulerObject = ExchangeScheduler(EnergyExchanger, scheduler)
 
+LayoutsExamplesObject = LayoutsExamples()
+
 main_ascend = MainAscend(users = usermanager, scheduler = scheduler, bot = Bot, cacher = Cacher, subscription = subscription)
 
-ModeratorsStorage.add_moderator(ExchangeModerator().connect_exchanger(EnergyExchanger), "Обмен энергией")
+ModeratorsStorage.add_moderator(Moderator(EnergyExchanger.get_unmoderated_mails, EnergyExchanger.moderate_mail), "Обмен энергией")
+ModeratorsStorage.add_moderator(Moderator(LayoutsExamplesObject.get_unmoderated_common, LayoutsExamplesObject.moderate_common), "Общие вопросы")
 Uploader.set_uploadable_files("Data/Exchange/Mails.xlsx")
 
 logging.basicConfig(level = logging.DEBUG, encoding = "utf-8", filename = "LOGING.log", filemode = "w", force = True,
@@ -119,6 +123,12 @@ try:
 except ImportError: pass
 
 AdminPanel.decorators.commands()
+
+@Bot.message_handler(commands = ["new"])
+def ProcessCommandStart(Message: types.Message):
+	User = usermanager.auth(Message.from_user)
+	Bot.send_message(chat_id = User.id, text = "Отправьте текст вопроса.")
+	User.set_expected_type("new_common_question")
 
 @Bot.message_handler(commands = ["start"])
 def ProcessCommandStart(Message: types.Message):
@@ -239,6 +249,18 @@ def ProcessText(Message: types.Message):
 			logging.error(str(ExceptionData))
 			user.set_property("Generation", False)
 
+	elif user.expected_type == "new_common_question":
+		LayoutsExamplesObject.add_unmoderated_common(Message.text)
+		Text = (
+			"Ваш вопрос сохранён.",
+			"Чтобы приступить к редактированию и модерации, нажмте /admin и перейдите в <b>Модерация</b> ➜ <b>Общие вопросы</b>."
+		)
+		Bot.send_message(
+			chat_id = User.id,
+			text = "\n\n".join(Text),
+			parse_mode = "HTML"
+		)
+
 AdminPanel.decorators.inline_keyboards()
 EnergyExchanger.decorators.inline_keyboards()
 main_ascend.decorators.inline_keyboards()
@@ -332,14 +354,15 @@ def InlineButtonRemoveReminder(Call: types.CallbackQuery):
 
 	Bot.send_chat_action(Call.message.chat.id, action = "typing")
 
-	general_questions = reader.random_general_question
+	CommonQuestions = random.choices(LayoutsExamplesObject.common_questions, k = 2)
+	LoveQuestion = random.choice(LayoutsExamplesObject.love_questions)
 
 	text = (
 		_("Дорогой мой друг, задай мне вопрос, который больше всего тебя сейчас волнует!") + "\n",
 		"<b>" + _("Например:") + "</b>",
-		"<b>- </b>" + "<i>" + reader.random_love_question + "</i>",
-		"<b>- </b>" + "<i>" + general_questions[0] + "</i>",
-		"<b>- </b>" + "<i>" + general_questions[1] + "</i>",
+		"<b>- </b>" + "<i>" + LoveQuestion + "</i>",
+		"<b>- </b>" + "<i>" + CommonQuestions[0] + "</i>",
+		"<b>- </b>" + "<i>" + CommonQuestions[1] + "</i>",
 		"<b>- </b>" + "<i>" + _("Любой свой Вопрос❓") + "</i>" + "\n",
 		"Напиши мне его прям под этим сообщением:"
 		)

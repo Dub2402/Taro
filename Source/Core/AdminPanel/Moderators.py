@@ -1,9 +1,9 @@
-from Source.TeleBotAdminPanel.Core.Moderation import Moderator, ModeratorsStorage
+from Source.TeleBotAdminPanel.Core.Moderation import Moderator
 
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-	from Source.Modules.EnergyExchange import Exchanger
+	from Source.Modules.LayoutsExamples import LayoutsExamples
 
 class ExchangeModerator(Moderator):
 
@@ -33,5 +33,25 @@ class ExchangeModerator(Moderator):
 
 		self.__Exchanger = exchanger
 		self.__ContentGetter = self.__Exchanger.get_unmoderated_mails
+
+		return self
+	
+class LayoutsExamplesModerator:
+
+	def _ProcessModeration(self, value: str, status: bool, edited_value: str | None = None):
+		self.__Exampler.moderate_common(value, status, edited_value)
+
+	def connect_object(self, exampler: "LayoutsExamples") -> "LayoutsExamples":
+		"""
+		Подключает модуль обмена энергией.
+
+		:param exchanger: Модуль обмена энергией.
+		:type exchanger: Exchanger
+		:return: Текущий модератор контента.
+		:rtype: Exchanger
+		"""
+
+		self.__Exampler = exampler
+		self.__ContentGetter = self.__Exampler.get_unmoderated_common
 
 		return self
