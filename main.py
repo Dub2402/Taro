@@ -9,7 +9,7 @@ from Source.TeleBotAdminPanel.Core.Moderation import Moderator, ModeratorsStorag
 from Source.TeleBotAdminPanel.Core.Uploading import Uploader
 
 from Source.Modules.LayoutsExamples import LayoutsExamples
-from Source.Core.AdminPanel.AdditionalColumns import *
+from Source.Core.AdditionalColumns import *
 from Source.TeleBotAdminPanel import Panel
 from Source.Functions import FindNearest, ChoiceMessage, CacherSending, UpdateThinkCardData, UpdateThinkCardData2, GetNumberCard, update_think_card, delete_thinking_messages
 from Source.UI.WorkpiecesMessages import WorkpiecesMessages
@@ -260,6 +260,7 @@ def ProcessText(Message: types.Message):
 			text = "\n\n".join(Text),
 			parse_mode = "HTML"
 		)
+		User.reset_expected_type()
 
 AdminPanel.decorators.inline_keyboards()
 EnergyExchanger.decorators.inline_keyboards()
