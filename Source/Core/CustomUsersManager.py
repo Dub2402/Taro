@@ -23,7 +23,9 @@ class CustomUsersManager(UsersManager):
 		ascend_data = AscendData(user = user)
 
 		#СЛУЧАЙ, КОГДА У НАС ОДНОВРЕМЕННО ПОЯВИЛОСЬ 30 ДНЕЙ ПОДРЯД И 10 ПРИГЛАШЁННЫХ ПОЛЬЗОВАТЕЛЕЙ, НО УРОВЕНЬ ТАРОБОТА 3.
-		if ascend_data.is_available_time_based_level_up and ascend_data.is_available_user_based_level_up and ascend_data.level_tarobot == 3: return 5
+		if ascend_data.is_available_time_based_level_up and ascend_data.is_available_user_based_level_up and ascend_data.level_tarobot == 3: 
+			ascend_data.add_bonus_layouts(count = 30)
+			return 5
 			
 		elif ascend_data.is_available_time_based_level_up: return ascend_data.level_tarobot + 1 
 		

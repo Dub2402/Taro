@@ -54,7 +54,7 @@ class Repeater:
 			Today = datetime.now().date()
 			MailDate = dateparser.parse(self.__Data["repeater"][user_id]["date"]).date()
 			Delta = Today - MailDate
-			DAYS_COUNT = random.randint(2, 4)
+			DAYS_COUNT = random.randint(5, 7)
 
 			if Delta.total_seconds() / 86400 > DAYS_COUNT:
 				MailText = self.__Data["repeater"][user_id]["mail"]

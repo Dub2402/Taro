@@ -364,7 +364,7 @@ def InlineButtonRemoveReminder(Call: types.CallbackQuery):
 
 	text = (
 		_("Дорогой мой друг, задай мне вопрос, который больше всего тебя сейчас волнует!") + "\n",
-		"<b>" + _("Например:") + "</b>",
+		"<b><i>" + _("Например:") + "</i></b>",
 		"<b>- </b>" + "<i>" + LoveQuestion + "</i>",
 		"<b>- </b>" + "<i>" + CommonQuestions[0] + "</i>",
 		"<b>- </b>" + "<i>" + CommonQuestions[1] + "</i>",

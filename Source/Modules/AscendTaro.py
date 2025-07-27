@@ -39,7 +39,7 @@ DEFAULT_COUNT_DAYS_WITH_BOT = 0
 DEFAULT_LEVEL_TAROBOT = 0
 MAX_COUNT_TODAY_LAYOUTS = 1
 STANDART_ADDING_COUNT_BONUS_LAYOUTS = 5
-NECESSARY_INVITED_USERS = 1
+NECESSARY_INVITED_USERS = 10
 
 ADDITIONAL_BONUS_LAYOUT_DEPENDING_ON_LEVEL = {
 	1: 3,
@@ -214,6 +214,20 @@ class AscendData:
 		"""
 
 		return len(self.__Data["invited_users"])
+	
+	@property
+	def users_need_to_invited(self) -> int:
+		"""
+		Количество пользователей, которых надо пригласить для того чтобы получить 5 уровень.
+
+		:return: Количество пользователей, которых надо пригласить.
+		:rtype: int
+		"""
+
+		count_users_need_to_invited = NECESSARY_INVITED_USERS - self.count_invited_users 
+		if count_users_need_to_invited < 0: count_users_need_to_invited = 0
+
+		return count_users_need_to_invited
 
 	def __SetParameter(self, key: Literal["today_layouts", "bonus_layouts", "invited_users", "days_with_bot", "level_tarobot", "promo", "delete_limiter"], value: Any):
 		"""
@@ -332,7 +346,6 @@ class AscendData:
 		"""
 
 		count_bonus_layouts = self.bonus_layouts + count
-
 		self.__SetParameter("bonus_layouts", count_bonus_layouts)
 
 	def add_invited_user(self, user_id: int):
@@ -385,7 +398,7 @@ class Scheduler:
 		"""Загружает задачи в фоновое хранилище."""
 
 		self.__ascend.scheduler.add_job(self.__zeroing_today_layours, "cron", hour = 0, minute = 0)
-		self.__ascend.scheduler.add_job(self.__tracking_activity, "cron", hour = 11, minute = 51)
+		self.__ascend.scheduler.add_job(self.__tracking_activity, "cron", hour = 0, minute = 0)
 
 	def __zeroing_today_layours(self):
 		"""Приводит значение сегодняшних раскладов к стандартному значению."""
@@ -469,7 +482,7 @@ class Decorators:
 				"<b>" + _("Чтобы достичь 5-й уровень" + " "+ "🏆,") + "</b>",
 				_("вам необходимо пригласить 10 друзей присоединится к Тароботу, используя вот эту ссылку:") + "\n",
 				Sender(self.__ascend.bot, self.__ascend.cacher).generate_referal_link(id = Call.message.chat.id) + "\n", 
-				_("Эти ссылки вы можете в любой момент еще раз увидеть, нажав на \"Мой уровень Таробота\", в разделе \"Доп. опции\"") + "\n",
+				_("Эту ссылку вы можете в любой момент еще раз увидеть, нажав на \"Мой уровень Таробота\", в разделе \"Доп. опции\"") + "\n",
 				"<b><i>" + _("Пользователь вам зачтется тогда, когда начнет использовать функционал бота!") + "</i></b>"
 				)
 
@@ -552,9 +565,9 @@ class Sender:
 		"""Отправляет сообщение об oграничении онлайн раскладов в этот день."""
 		
 		text = (
-				"<b>" + _("Дорогой пользователь") + "!</b>\n",
+				"<b><i>" + _("Дорогой пользователь") + "!</i></b>\n",
 				_("Вы можете делать 1 Онлайн расклад в день" + "! 🎁" + " " + "Чтобы получить 5 бонусных раскладов - пригласите, пожалуйста, друга присоединиться к нашему Тароботу" + "!\n"),
-				"<b>" + _("Вот ваша ссылка приглашение, поделитесь ею:") + "</b>"
+				"<b><i>" + _("Вот ваша ссылка приглашение, поделитесь ею:") + "</i></b>"
 				)
 		
 		self.__bot.send_animation(
@@ -580,7 +593,7 @@ class Sender:
 				"<b>" + _("Поздравляем!!! От вас пришел новый пользователь!") + "</b>\n",
 				"🌟" + _("Вы получили за это бонус:"),
 				_("5 дополнительных Онлайн раскладов!") + "\n",
-				"<b>" + _("Спасибо за совместное развитие Таробота!") + "</b>"
+				"<b><i>" + _("Спасибо за совместное развитие Таробота!") + "</i></b>"
 				)
 		
 		path_animation = GetRandomFile(directory = PATH_TO_ANIMATION_LEVEL_UP)
@@ -605,10 +618,10 @@ class Sender:
 		"""
 
 		text = (
-				"<b>" + _("Дорогой пользователь!") + " " + "🤗" + "</b>" + "\n",
+				"<b><i>" + _("Дорогой пользователь!") + " 🤗</i></b>\n",
 				_("Ваш лимит бонусных Онлайн раскладов подошел к концу!") + "\n",
 				_("Пожалуйста, попробуйте ещё раз завтра или пригласите друга!") + "\n",
-				"<b>" + _("Вот ваша ссылка приглашение:") + "</b>"
+				"<b><i>" + _("Вот ваша ссылка приглашение:") + "</i></b>"
 				)
 		
 		self.bot.send_message(
@@ -617,7 +630,7 @@ class Sender:
 			parse_mode = "HTML"
 		)
 
-		self.__message_with_referal(chat_id = user_id, text = "<b>" + _("Присоединяйся к Тароботу, я уже там:") + "</b>\n\n")
+		self.__message_with_referal(chat_id = user_id)
 
 	def level_up(self, user: UserData, level: int)-> bool:
 		"""
@@ -648,12 +661,12 @@ class Sender:
 			text = (
 				"<b>" + _("Поздравляем!!! Вы были активны на протяжении $day_with_bot!") + "</b>\n",
 				"🏆 " + _("У вас $number-й уровень! Вы получаете бонус: $bonus дополнительных Онлайн расклада!") + "\n",
-				"<b>" + _("Следующий уровень - $requirements_next_level") + "</b>"
+				"<b><i>" + _("Следующий уровень - $requirements_next_level") + "</i></b>"
 				)
 		
 		else:
 
-			reply_markup = InlineKeyboards.reaching_5_level(("Написать Таро Мастеру!", "Окей! Спасибо большое!"))
+			reply_markup = InlineKeyboards.reaching_5_level(("Написать эксперту сейчас!", "Спасибо, я напишу позже!"))
 			text = (
 				"<b>" + _("Поздравляем!!! Вы успешно пригласили в Таробот 10 своих друзей!") + "</b>\n",
 				"🏆 " + _("У вас 5-й уровень! Вы получаете бонус: $bonus дополнительных Онлайн раскладов и 1 бесплатный расклад от Таро мастера!") + "\n",
@@ -724,6 +737,8 @@ class Sender:
 		text = "$name_level" + common_text
 		
 		text: str = text + "\n".join(low_level_text) if level != 5 else text + "\n".join(high_level_text)
+
+		if level == 4: text = text + "\n\n🎉 " + _("Пришло пользователей: $invited_users\n😏 Осталось пригласить: $need_users")
 		
 		Replaces = {
 			"$name_level": "<b>🏆" + name_level + "</b>\n",
@@ -733,7 +748,9 @@ class Sender:
 			"$requirements_action": requirements_action,
 			"$requirements": tarobot_status[level],
 			"$referal_link": self.generate_referal_link(user.id), 
-			"$promocode" : str(AscendData(user = user).promo)
+			"$promocode" : str(AscendData(user = user).promo),
+			"$invited_users": str(AscendData(user = user).count_invited_users),
+			"$need_users": str(AscendData(user = user).users_need_to_invited)
 		}
 
 		for Substring in Replaces.keys(): text = text.replace(Substring, Replaces[Substring])
