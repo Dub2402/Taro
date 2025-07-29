@@ -303,10 +303,12 @@ def InlineButtonAccept(Call: types.CallbackQuery):
 	if not subscription.IsSubscripted(user):
 		Bot.answer_callback_query(Call.id)
 		return
+	
 	MasterBot.safely_delete_messages(
 		Call.message.chat.id,
 		Call.message.id
 	)
+
 	Bot.answer_callback_query(Call.id)
 
 @Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("delete_before_mm"))
@@ -315,6 +317,7 @@ def InlineButtonAccept(Call: types.CallbackQuery):
 	if not subscription.IsSubscripted(user):
 		Bot.answer_callback_query(Call.id)
 		return
+	
 	delete_thinking_messages(user, MasterBot, Call)
 	Bot.answer_callback_query(Call.id)
 
@@ -351,9 +354,11 @@ def InlineButtonRemoveReminder(Call: types.CallbackQuery):
 	if not subscription.IsSubscripted(user):
 		Bot.answer_callback_query(Call.id)
 		return
-	if not AscendData(user = user).is_layout_available:
+	ascend_data = AscendData(user = user)
+	if not ascend_data.is_layout_available:
 
-		main_ascend.sender.limiter_layouts(chat_id = Call.message.chat.id)
+		message_limiter = main_ascend.sender.limiter_layouts(chat_id = Call.message.chat.id)
+		ascend_data.add_delete_limiter(message_limiter.id)
 		Bot.answer_callback_query(Call.id)
 		return
 

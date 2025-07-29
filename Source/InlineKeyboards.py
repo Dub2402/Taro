@@ -122,7 +122,7 @@ class InlineKeyboards:
 
 		return types.InlineKeyboardMarkup([[types.InlineKeyboardButton(text = text, callback_data = "for_delete")]])
 	
-	def for_restart( text: str) -> types.InlineKeyboardMarkup:
+	def for_restart(text: str) -> types.InlineKeyboardMarkup:
 		"""
 		Inline-keyboard.
 

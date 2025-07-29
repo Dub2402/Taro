@@ -438,7 +438,7 @@ class Mailer:
 			self.__Message = self.__masterbot.bot.send_animation(
 				chat_id = User.id,
 				animation = self.__cacher.get_real_cached_file(
-					path = "Data/WordMonth/letters.gif", 
+					path = "Data/WordMonth/letters.mp4", 
 					autoupload_type = types.InputMediaAnimation
 					).file_id,
 				caption = "<i>" + _("Наставление от Мастера 🔥 для тебя:") + "</i>" + "\n\n- " + "<b>" + text + "</b>", 

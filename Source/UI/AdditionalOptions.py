@@ -181,7 +181,7 @@ class Decorators:
 			self.__Options.bot.send_animation(
 				chat_id = Call.message.chat.id, 
 				animation = self.__Options.cacher.get_real_cached_file(
-					path = "Data/AdditionalOptions/restart.gif",
+					path = "Data/AdditionalOptions/restart.mp4",
 					autoupload_type = types.InputMediaAnimation
 					).file_id,
 				caption = "\n\n".join(Text),

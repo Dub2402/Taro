@@ -7,6 +7,7 @@ from dublib.Methods.Filesystem import ReadJSON, WriteJSON
 from dublib.Methods.Filesystem import ListDir
 from dublib.Methods.Data import ToIterable
 from dublib.Engine.GetText import _
+from dublib.TelebotUtils.Master import TeleMaster
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from telebot import TeleBot, types
@@ -390,7 +391,12 @@ class AscendData:
 
 		self.__Data["bonus_layouts"] = self.__Data["bonus_layouts"] - 1
 		self.save()
-	
+
+	def zeroing_delete_limiter(self):
+		"""Обнуление ID сообщений, которые удаляют сообщения, лимитирующие онлайн-рассклад."""
+
+		self.__SetParameter("delete_limiter", None)
+
 class Scheduler:
 	"""Планировщик изменений бонусных данных пользователей."""
 
@@ -426,6 +432,18 @@ class Scheduler:
 		
 class InlineKeyboards:
 	"""Набор Inline Keyboards"""
+
+	def delete_message_limiter(text: str) -> types.InlineKeyboardMarkup:
+		"""
+		Inline-keyboard.
+
+		:param text: Текст кнопки.
+		:type text: str
+		:return: Inline-keyboard.
+		:rtype: types.InlineKeyboardMarkup
+		"""
+
+		return types.InlineKeyboardMarkup([[types.InlineKeyboardButton(text = text, callback_data = "delete_message_limiter")]])
 
 	def requirements_for_5_level() -> types.InlineKeyboardMarkup:
 		"""
@@ -495,6 +513,17 @@ class Decorators:
 			
 			self.__ascend.bot.answer_callback_query(Call.id)
 
+		@self.__ascend.bot.callback_query_handler(func = lambda Callback: Callback.data == "delete_message_limiter")
+		def requirements_for_5_level(Call: types.CallbackQuery):
+			user = self.__ascend.users.auth(Call.from_user)
+			if not self.__ascend.subscription.IsSubscripted(user): 
+				self.__ascend.bot.answer_callback_query(Call.id)
+				return
+			
+			TeleMaster(self.__ascend.bot).safely_delete_messages(user.id, AscendData(user = user).delete_limiter)
+			AscendData(user = user).zeroing_delete_limiter()
+			self.__ascend.bot.answer_callback_query(Call.id)
+
 class Sender:
 	"""Отправитель сообщений."""
 
@@ -553,7 +582,7 @@ class Sender:
 				).file_id,
 			caption = "<b>" + _("Присоединяйся к Тароботу, я уже там:") + "</b>\n\n" + self.generate_referal_link(id = chat_id),
 			parse_mode = "HTML",
-			reply_markup = MainInlineKeyboards.for_delete(_("Спасибо, друзья уже в курсе!"))
+			reply_markup = InlineKeyboards.delete_message_limiter(_("Спасибо, друзья уже в курсе!"))
 		)
 
 	def generate_referal_link(self, id: int) -> str:
@@ -561,7 +590,7 @@ class Sender:
 
 		return "https://t.me/" + self.bot.get_me().username + "?start=" + str(id)
 
-	def limiter_layouts(self, chat_id: types.Message):
+	def limiter_layouts(self, chat_id: types.Message) -> types.Message:
 		"""Отправляет сообщение об oграничении онлайн раскладов в этот день."""
 		
 		text = (
@@ -570,16 +599,15 @@ class Sender:
 				"<b><i>" + _("Вот ваша ссылка приглашение, поделитесь ею:") + "</i></b>"
 				)
 		
-		self.__bot.send_animation(
+		message_limiter = self.__bot.send_message(
 			chat_id = chat_id,
-			animation = self.cacher.get_real_cached_file(
-				path = "Data/AscendTarobot/Materials/limiter.gif",
-				autoupload_type = types.InputMediaAnimation,
-				).file_id,
-			caption = "\n".join(text), 
+			text = "\n".join(text), 
 			parse_mode = "HTML"
 		)
+
 		self.__message_with_referal(chat_id = chat_id)
+
+		return message_limiter
 		
 	def worked_referal(self, user_id: int):
 		"""

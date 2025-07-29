@@ -65,7 +65,7 @@ class Subscription:
 		self.__masterbot.bot.send_animation(
 			chat_id = User.id, 
 			animation = self.__cacher.get_real_cached_file(
-				path = "Data/AscendTarobot/Materials/taro_family.gif",
+				path = "Data/AscendTarobot/Materials/taro_family.mp4",
 				autoupload_type = types.InputMediaAnimation,
 				).file_id,
 			caption = "\n\n".join(Text).replace("$action", action),
