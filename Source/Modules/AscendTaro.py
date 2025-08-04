@@ -584,7 +584,7 @@ class Sender:
 				).file_id,
 			caption = "<b>" + _("Присоединяйся к Тароботу, я уже там:") + "</b>\n\n" + self.generate_referal_link(id = chat_id),
 			parse_mode = "HTML",
-			reply_markup = InlineKeyboards.delete_message_limiter(_("Спасибо, друзья уже в курсе!"))
+			reply_markup = InlineKeyboards.delete_message_limiter(_("Спасибо!"))
 		)
 
 		return message_with_referal.id

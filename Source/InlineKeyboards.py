@@ -64,15 +64,12 @@ class InlineKeyboards:
 		:return: Клавиатура главного меню
 		:rtype: types.InlineKeyboardMarkup
 		"""
-
-		UserOptions = ExchangeOptions(user)
-		Notifications = " (" + str(len(UserOptions.mails)) + ")" if UserOptions.mails else ""
-
+		
 		Menu = types.InlineKeyboardMarkup()
 		
 		CardDay = types.InlineKeyboardButton(_("Карта дня"), callback_data = "card_day")
 		YesNo = types.InlineKeyboardButton(_("Да/Нет"), callback_data = "yes_no")
-		Additional_options = types.InlineKeyboardButton((Notifications + " " + _("Доп. опции") + " " + "+"), callback_data = "additional_options")
+		Additional_options = types.InlineKeyboardButton((_("Доп. опции") + " " + "+"), callback_data = "additional_options")
 		OrderLayout = types.InlineKeyboardButton(_("Расклад у Мастера🔥"), callback_data = "order_layout")
 		ThinkCard = types.InlineKeyboardButton(_("Загадай карту"), callback_data = "ThinkCard")
 		Online_layout = types.InlineKeyboardButton(_("Онлайн расклад 💫"), callback_data = "Online_Layout")

@@ -78,7 +78,8 @@ class Decorators:
 				chat_id = Call.message.chat.id, 
 				text = "❤️"
 				)
-			sleep(2.5)
+
+			if stiker_message.id: sleep(3.125)
 
 			self.__YesNo.masterbot.safely_delete_messages(
 				Call.message.chat.id,

@@ -35,7 +35,7 @@ class InlineTemplates:
 		Notifications = " (" + str(len(UserOptions.mails)) + ")" if UserOptions.mails else ""
 
 		determinations_first = {
-			_("Девиз сегодня"): "motto_day",
+			_("Девиз на сегодня"): "motto_day",
 			_("💟 Обмен энергией") + Notifications: "energy_exchange",
 			_("Рассылка Карты дня"): "mailing_card_day",
 			_("Поделиться!"): "share",
@@ -190,7 +190,6 @@ class Decorators:
 			)
 			self.__Options.bot.answer_callback_query(Call.id)
 
-
 		@self.__Options.bot.callback_query_handler(func = lambda Callback: Callback.data == "motto_day")
 		def click_motto_day(Call: types.CallbackQuery):
 			user = self.__Options.users.auth(Call.from_user)
@@ -198,15 +197,17 @@ class Decorators:
 				self.__Options.bot.answer_callback_query(Call.id)
 				return
 			
-			motto = self.__Options.reader.random_motto
+			if user.has_property("motto"): motto = user.get_property("motto")
+
+			if not motto: motto = self.__Options.reader.random_motto
+
 			self.__Options.bot.send_message(
 				chat_id = Call.message.chat.id,
-				text = "<b>«</b>" + motto + "<b>»</b>",
+				text = "<b>«" + motto + "»</b>",
 				parse_mode = "HTML",
 				reply_markup = InlineKeyboards.for_delete("Да будет так!")
 			)
 			self.__Options.bot.answer_callback_query(Call.id)
-
 
 		@self.__Options.bot.callback_query_handler(func = lambda Callback: Callback.data == "level_tarobot")
 		def click_level_tarobot(Call: types.CallbackQuery):	
