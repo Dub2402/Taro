@@ -58,7 +58,6 @@ usermanager.set_bot(Bot)
 usermanager.set_cacher(Cacher)
 usermanager.set_manager_promocodes(manager_promocodes)
 
-
 subscription = Subscription(MasterBot, Settings["subscription_chanel"], Cacher, usermanager)
 reader = Reader(Settings)
 mailer = Mailer(MasterBot, usermanager, reader, Cacher, subscription) 
@@ -357,8 +356,12 @@ def InlineButtonRemoveReminder(Call: types.CallbackQuery):
 	ascend_data = AscendData(user = user)
 	if not ascend_data.is_layout_available:
 
-		message_limiter = main_ascend.sender.limiter_layouts(chat_id = Call.message.chat.id)
-		ascend_data.add_delete_limiter(message_limiter.id)
+		if ascend_data.delete_limiter:
+			MasterBot.safely_delete_messages(user.id, ascend_data.delete_limiter, complex = True)
+			ascend_data.zeroing_delete_limiter()
+
+		messages = main_ascend.sender.limiter_layouts(chat_id = Call.message.chat.id)
+		ascend_data.add_delete_limiter(messages)
 		Bot.answer_callback_query(Call.id)
 		return
 

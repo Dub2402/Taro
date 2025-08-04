@@ -395,7 +395,7 @@ class AscendData:
 	def zeroing_delete_limiter(self):
 		"""Обнуление ID сообщений, которые удаляют сообщения, лимитирующие онлайн-рассклад."""
 
-		self.__SetParameter("delete_limiter", None)
+		self.__SetParameter("delete_limiter", [])
 
 class Scheduler:
 	"""Планировщик изменений бонусных данных пользователей."""
@@ -520,7 +520,7 @@ class Decorators:
 				self.__ascend.bot.answer_callback_query(Call.id)
 				return
 			
-			TeleMaster(self.__ascend.bot).safely_delete_messages(user.id, AscendData(user = user).delete_limiter)
+			TeleMaster(self.__ascend.bot).safely_delete_messages(chat_id = user.id, messages = AscendData(user = user).delete_limiter, complex = True)
 			AscendData(user = user).zeroing_delete_limiter()
 			self.__ascend.bot.answer_callback_query(Call.id)
 
@@ -564,17 +564,19 @@ class Sender:
 
 		return name_animation
 	
-	def __message_with_referal(self, chat_id: types.Message):
+	def __message_with_referal(self, chat_id: types.Message) -> int:
 		"""
 		Отправляет сообщение с реферальной ссылкой.
 
 		:param chat_id: ID Telegram чата.
 		:type chat_id: types.Message
+		:return: ID сообщения Telegram.
+		:rtype: int
 		"""
 
 		name_animation = self.__randomize_animation("Data/AscendTarobot/Materials/Join")
 
-		self.bot.send_animation(
+		message_with_referal = self.bot.send_animation(
 			chat_id = chat_id,
 			animation = self.cacher.get_real_cached_file(
 				path = f"Data/AscendTarobot/Materials/Join/{name_animation}",
@@ -585,6 +587,8 @@ class Sender:
 			reply_markup = InlineKeyboards.delete_message_limiter(_("Спасибо, друзья уже в курсе!"))
 		)
 
+		return message_with_referal.id
+
 	def generate_referal_link(self, id: int) -> str:
 		"""Генерирует реферальную ссылку."""
 
@@ -592,6 +596,8 @@ class Sender:
 
 	def limiter_layouts(self, chat_id: types.Message) -> types.Message:
 		"""Отправляет сообщение об oграничении онлайн раскладов в этот день."""
+
+		messages = list()
 		
 		text = (
 				"<b><i>" + _("Дорогой пользователь") + "!</i></b>\n",
@@ -604,10 +610,13 @@ class Sender:
 			text = "\n".join(text), 
 			parse_mode = "HTML"
 		)
+		messages.append(message_limiter.id)
 
-		self.__message_with_referal(chat_id = chat_id)
+		message_with_referal = self.__message_with_referal(chat_id = chat_id)
 
-		return message_limiter
+		messages.append(message_with_referal)
+
+		return messages
 		
 	def worked_referal(self, user_id: int):
 		"""
