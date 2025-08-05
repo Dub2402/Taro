@@ -11,6 +11,17 @@ from Source.InlineKeyboards import InlineKeyboards
 from Source.Core.ExcelTools import Reader
 
 from telebot import TeleBot, types
+from apscheduler.schedulers.background import BackgroundScheduler
+from types import MappingProxyType
+from typing import Any
+
+AscendParameters = MappingProxyType(
+	data_motto = {
+		"day": None,
+		"text": "",
+		"message_id": None
+		}
+)
 
 #==========================================================================================#
 # >>>>> INLINE_KEYBOARD <<<<< #
@@ -224,6 +235,47 @@ class Decorators:
 
 			self.__Options.bot.answer_callback_query(Call.id)
 
+class Data:
+	"""Работа с данными модуля дополнительных опций."""
+
+	def __ValidateDate(self) -> dict[str, Any]:
+		"""
+		Проверяет валидность данных пользователя в модуле дополнительных опций.
+
+		:return: Данные пользователя.
+		:rtype: dict[str, Any]
+		"""
+		
+		pass
+
+	def __init__(self, user: UserData):
+		"""
+		Контейнер данных пользователя в модуле дополнительных опций.
+
+		:param user: Данные пользователя.
+		:type user: UserData
+		"""
+
+		self.__User = user
+	
+		self.__Data = self.__ValidateDate()
+
+class Scheduler:
+	"""Планировщик изменений модуля дополнительных опций для пользователей."""
+
+	def __zeroing_motto(self):
+		"""Приводит значение сегодняшних раскладов к стандартному значению."""
+
+		pass
+
+	def __init__(self, users: UsersManager, scheduler: BackgroundScheduler):
+		"""Задаёт задачу в планировщик задач."""
+
+		self.__users = users
+	
+		self.__scheduler = scheduler or BackgroundScheduler()
+
+		self.__scheduler.add_job(self.__zeroing_motto, "cron", hour = 0, minute = 0)
 
 class Options:
 	"""Раздел бота, отвечающий за дополнительный функционал"""
