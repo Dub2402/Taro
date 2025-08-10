@@ -13,19 +13,17 @@ from Source.Core.ExcelTools import Reader
 from telebot import TeleBot, types
 from apscheduler.schedulers.background import BackgroundScheduler
 from types import MappingProxyType
-from typing import Any
+from typing import Any, Literal
+from datetime import datetime
+import logging
 
-AscendParameters = MappingProxyType(
-	data_motto = {
+MottoParameters = MappingProxyType(
+	{
 		"day": None,
 		"text": "",
 		"message_id": None
 		}
 )
-
-#==========================================================================================#
-# >>>>> INLINE_KEYBOARD <<<<< #
-#==========================================================================================#
 
 class InlineTemplates:
 	"""Набор Inline-keyboards."""
@@ -47,7 +45,7 @@ class InlineTemplates:
 
 		determinations_first = {
 			_("Девиз на сегодня"): "motto_day",
-			_("💟 Обмен энергией") + Notifications: "energy_exchange",
+			Notifications + _(" Обмен энергией"): "energy_exchange",
 			_("Рассылка Карты дня"): "mailing_card_day",
 			_("Поделиться!"): "share",
 		}
@@ -86,10 +84,6 @@ class InlineTemplates:
 
 		for string in determinations.keys(): menu.add(types.InlineKeyboardButton(string, callback_data = determinations[string]), row_width = 1)
 		return menu
-
-#==========================================================================================#
-# >>>>> ДЕКОРАТОРЫ <<<<< #
-#==========================================================================================#
 
 class Decorators:
 	"""Набор декораторов."""
@@ -208,16 +202,24 @@ class Decorators:
 				self.__Options.bot.answer_callback_query(Call.id)
 				return
 			
-			if user.has_property("motto"): motto = user.get_property("motto")
+			motto_data = Data(user = user)
+			if not motto_data.is_motto_available: 
+				motto = self.__Options.reader.random_motto 
+				motto_data.set_day()
+				motto_data.set_text_motto(motto)
+			else: motto = motto_data.text_motto
 
-			if not motto: motto = self.__Options.reader.random_motto
-
-			self.__Options.bot.send_message(
+			self.__Options.masterbot.safely_delete_messages(chat_id = Call.message.chat.id, messages = motto_data.message_id)
+			
+			motto_message = self.__Options.bot.send_message(
 				chat_id = Call.message.chat.id,
 				text = "<b>«" + motto + "»</b>",
 				parse_mode = "HTML",
 				reply_markup = InlineKeyboards.for_delete("Да будет так!")
 			)
+
+			motto_data.set_message_id(message_id = motto_message.id)
+
 			self.__Options.bot.answer_callback_query(Call.id)
 
 		@self.__Options.bot.callback_query_handler(func = lambda Callback: Callback.data == "level_tarobot")
@@ -238,6 +240,55 @@ class Decorators:
 class Data:
 	"""Работа с данными модуля дополнительных опций."""
 
+	@property
+	def text_motto(self) -> str:
+		"""Текст девиза дня."""
+
+		return self.__Data["text"]
+	
+	@property
+	def message_id(self) -> int:
+		"""Id сообщений."""
+
+		return self.__Data["message_id"]
+	
+	@property
+	def day(self) -> str:
+		"""День отправки девиза дня."""
+
+		return self.__Data["day"]
+	
+	@property
+	def today_date(self) -> str:
+		"""Сегодняшняя дата."""
+
+		return datetime.today().date().strftime("%d.%m.%Y")
+	
+	@property
+	def is_motto_available(self) -> bool:
+		"""Проверяет является ли текст девиза сегодняшним."""
+
+		return self.today_date == self.day
+
+	def __set_parameter(self, key: Literal["day", "text", "message_id"], value: Any):
+		"""
+		Задаёт параметры модуля девизов.
+
+		:param key: Ключ параметра.
+		:type key: Literal["day", "motto", "message_id"]
+		:param value: Значение параметра.
+		:type value: str
+		"""
+
+		self.__Data[key] = value
+		
+		self.__save()
+
+	def __save(self):
+		"""Сохраняет бонусные данные пользователя."""
+
+		self.__User.set_property("motto", self.__Data)
+
 	def __ValidateDate(self) -> dict[str, Any]:
 		"""
 		Проверяет валидность данных пользователя в модуле дополнительных опций.
@@ -246,7 +297,21 @@ class Data:
 		:rtype: dict[str, Any]
 		"""
 		
-		pass
+		if not self.__User.has_property("motto"):
+			self.__User.set_property("motto", MottoParameters.copy())
+			
+		else:
+			Data: dict = self.__User.get_property("motto")
+
+			for Key in MottoParameters.keys():
+
+				if Key not in Data.keys():
+					Data[Key] = MottoParameters[Key]
+					logging.debug(f"For user #{self.__User.id} key \"{Key}\" set to default.")
+
+			self.__User.set_property("motto", Data)
+
+		return self.__User.get_property("motto")
 
 	def __init__(self, user: UserData):
 		"""
@@ -259,23 +324,31 @@ class Data:
 		self.__User = user
 	
 		self.__Data = self.__ValidateDate()
-
-class Scheduler:
-	"""Планировщик изменений модуля дополнительных опций для пользователей."""
-
-	def __zeroing_motto(self):
-		"""Приводит значение сегодняшних раскладов к стандартному значению."""
-
-		pass
-
-	def __init__(self, users: UsersManager, scheduler: BackgroundScheduler):
-		"""Задаёт задачу в планировщик задач."""
-
-		self.__users = users
 	
-		self.__scheduler = scheduler or BackgroundScheduler()
+	def set_day(self):
+		"""Передаёт сегодняшнюю дату в данные пользователя для модуля девиза дня."""
 
-		self.__scheduler.add_job(self.__zeroing_motto, "cron", hour = 0, minute = 0)
+		self.__set_parameter("day", self.today_date)
+
+	def set_text_motto(self, motto_text: str):
+		"""
+		Передаёт текст девиза дня в данные пользователя для модуля девиза дня.
+
+		:param motto_text: Текст девиза дня.
+		:type motto_text: str
+		"""
+
+		self.__set_parameter("text", motto_text)
+
+	def set_message_id(self, message_id: int):
+		"""
+		Передаёт Id сообщения в данные пользователя для модуля девиза дня.
+
+		:param message_id: Id сообщения.
+		:type message_id: int
+		"""
+
+		self.__set_parameter("message_id", message_id)
 
 class Options:
 	"""Раздел бота, отвечающий за дополнительный функционал"""
