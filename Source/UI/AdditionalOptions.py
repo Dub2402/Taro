@@ -45,16 +45,16 @@ class InlineTemplates:
 
 		determinations_first = {
 			_("Девиз на сегодня"): "motto_day",
-			Notifications + _(" Обмен энергией"): "energy_exchange",
-			_("Рассылка Карты дня"): "mailing_card_day",
-			_("Поделиться!"): "share",
+			Notifications + _(" Обмен энергией"): "energy_exchange"
 		}
 
 		determinations_second = {
-			_("Мой уровень таробота"): "level_tarobot"
+			_("Мой уровень Таробота 🏆"): "level_tarobot"
 		}
 
 		determinations_third = {
+			_("Рассылка карты"): "mailing_card_day",
+			_("Поделиться!"): "share",
 			_("◀️ Назад"): "main_menu",
 			_("Перезапуск бота"): "restart_bot"
 		}

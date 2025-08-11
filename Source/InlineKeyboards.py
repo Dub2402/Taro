@@ -72,7 +72,7 @@ class InlineKeyboards:
 		Additional_options = types.InlineKeyboardButton((_("Доп. опции") + " " + "+"), callback_data = "additional_options")
 		OrderLayout = types.InlineKeyboardButton(_("Расклад у Мастера🔥"), callback_data = "order_layout")
 		ThinkCard = types.InlineKeyboardButton(_("Загадай карту"), callback_data = "ThinkCard")
-		Online_layout = types.InlineKeyboardButton(_("Онлайн расклад 💫"), callback_data = "Online_Layout")
+		Online_layout = types.InlineKeyboardButton(_("Онлайн расклад💫"), callback_data = "Online_Layout")
 		All_Taro = types.InlineKeyboardButton(_("Всё о Таро"), callback_data = "all_taro")
 	
 		Menu.add(CardDay, YesNo, row_width = 2) 

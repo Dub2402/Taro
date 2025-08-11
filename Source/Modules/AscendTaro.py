@@ -497,7 +497,7 @@ class Decorators:
 				return
 			
 			text = (
-				"<b>" + _("Чтобы достичь 5-й уровень" + " "+ "🏆,") + "</b>",
+				"<b>" + _("Чтобы достичь 5-й уровень " + "🏆,") + "</b>",
 				_("вам необходимо пригласить 10 друзей присоединится к Тароботу, используя вот эту ссылку:") + "\n",
 				Sender(self.__ascend.bot, self.__ascend.cacher).generate_referal_link(id = Call.message.chat.id) + "\n", 
 				_("Эту ссылку вы можете в любой момент еще раз увидеть, нажав на \"Мой уровень Таробота\", в разделе \"Доп. опции\"") + "\n",
@@ -643,7 +643,7 @@ class Sender:
 				).file_id,
 			caption = "\n".join(text), 
 			parse_mode = "HTML",
-			reply_markup = MainInlineKeyboards.for_delete(_("Вау! Это очень приятно!"))
+			reply_markup = MainInlineKeyboards.for_delete(_("Отлично!"))
 		)
 
 	def end_bonus_layout(self, user_id: int):
@@ -693,7 +693,7 @@ class Sender:
 
 		if level != 5: 
 
-			reply_markup = MainInlineKeyboards.for_delete("Вау! Невероятно!") if level < 4 else InlineKeyboards.requirements_for_5_level()
+			reply_markup = MainInlineKeyboards.for_delete("Супер!") if level < 4 else InlineKeyboards.requirements_for_5_level()
 
 			text = (
 				"<b>" + _("Поздравляем!!! Вы были активны на протяжении $day_with_bot!") + "</b>\n",
@@ -778,7 +778,7 @@ class Sender:
 		if level == 4: text = text + "\n\n🎉 " + _("Пришло пользователей: $invited_users\n😏 Осталось пригласить: $need_users")
 		
 		Replaces = {
-			"$name_level": "<b>🏆" + name_level + "</b>\n",
+			"$name_level": "<b>🏆 " + name_level + "</b>\n",
 			"$bonus_layouts": str(bonus_layouts),
 			"$level": str(level),
 			"$next_level": str(level + 1),

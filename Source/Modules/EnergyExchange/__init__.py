@@ -384,7 +384,7 @@ class Decorators:
 
 			Text = (
 				_("<i>" + "Ваше послание успешно отправлено на проверку!" + "</i>"),
-				_("<b>" + "Спасибо за ваш вклад в Таробот!" + "</b>"),
+				_("<b>" + "Спасибо за ваш вклад в развитие Таробота!" + "</b>"),
 				_("Если вы в хорошем настроении, то напишите ещё что-то. Вам это вернётся <b>в 10 раз больше!</b>" + " 😊")
 			)
 			TeleMaster(bot).safely_delete_messages(Call.from_user.id, Call.message.id)
@@ -408,14 +408,13 @@ class Decorators:
 			if not self.__Exchanger.subscription.IsSubscripted(User): 
 				self.__Exchanger.bot.answer_callback_query(Call.id)
 				return
+			
 			UserOptions = Options(User)
 			UserOptions.remove_mail(Call.message.text)
 			TeleMaster(bot).safely_delete_messages(Call.from_user.id, Call.message.id)
-			self.__Exchanger.open(User)
 
-			if not UserOptions.mails:
-				UserOptions.delete_removable_messages(bot)
-				Start(Call)
+			if len(UserOptions.mails) == 0: UserOptions.delete_removable_messages(bot)
+			self.__Exchanger.open(User)
 
 		@bot.callback_query_handler(func = lambda Callback: Callback.data == "ee_edit")
 		def Edit(Call: types.CallbackQuery):

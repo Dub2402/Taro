@@ -87,8 +87,8 @@ class Options:
 		:param bot: Бот Telegram.
 		:type bot: TeleBot
 		"""
-
-		for MessageID in self.__Data["removable_messages"]: TeleMaster(bot).safely_delete_messages(self.__User.id, MessageID)
+		
+		TeleMaster(bot).safely_delete_messages(chat_id = self.__User.id, messages = self.__Data["removable_messages"], complex = True)
 		self.__Data["removable_messages"] = list()
 		self.save()
 
