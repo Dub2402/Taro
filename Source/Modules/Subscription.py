@@ -109,12 +109,17 @@ class Subscription:
 				
 				invitee = self.__usermanager.get_user(User.get_property("invited_by"))
 				ascend_data = AscendData(user = invitee)
-				ascend_data.add_invited_user(User.id)
-				User.remove_property("invited_by")
 
-				if ascend_data.count_invited_users == 1: 
-					Sender(self.__masterbot.bot, self.__cacher).worked_referal(invitee.id)
+				if ascend_data.level_tarobot == 4: ascend_data.add_invited_user(User.id)
+				
+				if ascend_data.level_tarobot != 4: 
+					if not ascend_data.is_notification_bonus_send: 
+						Sender(self.__masterbot.bot, self.__cacher).worked_referal(invitee.id)
+						ascend_data.set_is_notification_bonus_send()
+
 					ascend_data.add_bonus_layouts()
+
+				User.remove_property("invited_by")
 				
 			if Subscribtion_Message:
 				self.__masterbot.safely_delete_messages(User.id, Subscribtion_Message)

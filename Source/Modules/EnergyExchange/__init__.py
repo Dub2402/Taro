@@ -431,6 +431,7 @@ class Decorators:
 					text = _("Введите, пожалуйста, исправленный текст:")
 				).id
 			)
+			User.set_expected_type("ee_message")
 
 		@bot.callback_query_handler(func = lambda Callback: Callback.data == "ee_mails")
 		def Message(Call: types.CallbackQuery):

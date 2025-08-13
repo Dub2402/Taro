@@ -25,6 +25,7 @@ if TYPE_CHECKING:
 AscendParameters = MappingProxyType(
 	{
 	"today_layouts": 0,
+	"is_notification_bonus_send": False,
 	"bonus_layouts": 0,
 	"invited_users": [],
 	"days_with_bot": 0,
@@ -127,6 +128,12 @@ class ManagerPromoCodes:
 
 class AscendData:
 	"""Контейнер бонусных данных пользователя."""
+
+	@property
+	def is_notification_bonus_send(self) -> bool:
+		"""Присылалось ли уведомление, о том, что пользователь за каждого приглашённого друга получает 5 бонусных раскладов."""
+
+		return self.__Data["is_notification_bonus_send"]
 
 	@property
 	def bonus_layouts(self) -> int:
@@ -295,6 +302,16 @@ class AscendData:
 
 		self.__SetParameter("today_layouts", count)
 
+	def set_is_notification_bonus_send(self, status: bool = True):
+		"""
+		Передаёт параметры для сохранения бонусных данных пользователя.
+
+		:param status: Присылалось ли уведомление, о том, что пользователь за каждого приглашённого друга получает 5 бонусных раскладов.
+		:type status: bool
+		"""
+
+		self.__SetParameter("is_notification_bonus_send", status)
+
 	def set_days_with_bot(self, count: int = DEFAULT_COUNT_DAYS_WITH_BOT):
 		"""
 		Передаёт параметры для сохранения бонусных данных пользователя.
@@ -428,7 +445,6 @@ class Scheduler:
 			else: 
 				ascend_data = AscendData(user = user)
 				ascend_data.set_days_with_bot()
-				ascend_data.set_level_tarobot()
 		
 class InlineKeyboards:
 	"""Набор Inline Keyboards"""
@@ -602,7 +618,7 @@ class Sender:
 		text = (
 				"<b><i>" + _("Дорогой пользователь") + "!</i></b>\n",
 				_("Вы можете делать 1 Онлайн расклад в день" + "! 🎁" + " " + "Чтобы получить 5 бонусных раскладов - пригласите, пожалуйста, друга присоединиться к нашему Тароботу" + "!\n"),
-				"<b><i>" + _("Вот ваша ссылка приглашение, поделитесь ею:") + "</i></b>"
+				"<b><i>" + _("Вот ваша ссылка приглашение, поделитесь ею с друзьями:") + "</i></b>"
 				)
 		
 		message_limiter = self.__bot.send_message(
@@ -628,7 +644,7 @@ class Sender:
 
 		text = (
 				"<b>" + _("Поздравляем!!! От вас пришел новый пользователь!") + "</b>\n",
-				"🌟" + _("Вы получили за это бонус:"),
+				"🌟 " + _("Вы получили за это бонус:"),
 				_("5 дополнительных Онлайн раскладов!") + "\n",
 				"<b><i>" + _("Спасибо за совместное развитие Таробота!") + "</i></b>"
 				)
@@ -744,23 +760,30 @@ class Sender:
 		requirements_action = ""
 
 		tarobot_status = {
-			0: _("3-х дней подряд!"),
-			1: _("1 недели!"),
-			2: _("2-х недель!"),
-			3: _("1 месяца!"),
-			4: _("пригласить в Таробот 10 своих друзей! Вот ваша пригласительная ссылка:\n\n$referal_link"),
+			0: _("3-х дней подряд"),
+			1: _("1 недели"),
+			2: _("2-х недель"),
+			3: _("1 месяца"),
+			4: _("пригласить в Таробот 10 своих друзей"),
 			5: ""
 		}
 
-		requirements_action = "заходить в Таробот на протяжении" if level < 4 else ""
+		requirements_action = " заходить в Таробот на протяжении" if level < 4 else ""
 
-		if level != 0: name_level = "У вас $level-й уровень!"
-		else: name_level = _("Ваш уровень - новичок!")
+		if level != 0: 
+			name_level = "У вас $level-й уровень!"
+			comment = ""
+		else: 
+			name_level = _("Ваш уровень - новичок!")
+			comment = "<i>" + _("Но вы уже удачно пустили сюда свои корни!") + "</i>\n\n"
+
+		if level == 4: referal_link = " Вот ваша пригласительная ссылка:\n\n$referal_link"
+		else: referal_link = ""
 
 		common_text = "<b>🌟 " + _("Бонусных Онлайн раскладов: $bonus_layouts") + "</b>\n\n"
 	
 		low_level_text = (
-			_("Чтобы достичь $next_level-го уровня, вы должны $requirements_action $requirements") + "\n",
+			_("Чтобы достичь $next_level-го уровня, вы должны$requirements_action $requirements") + referal_link + "\n",
 			_("Повышайте свой уровень и получайте гарантированно призы!!") + " 🎁"
 			)
 		
@@ -768,10 +791,10 @@ class Sender:
 			_("Промокод на подарочный личный расклад от Таро Мастера:") + "\n\n" + "<b><code>$promocode</code></b><b>!</b>\n",
 			"☝️" + _("Нажмите, чтобы скопировать!"),
 			_("Вы его можете использовать только 1 раз!" + "\n"),
-			"<b>" + "Вы достигли финального уровня пользователя Таробота!!" + " </b>🎁"
+			"<b>" + "Вы достигли финального уровня пользователя Таробота! Поздравляем!! " + " </b>🎉✨🎈"
 			)
 		
-		text = "$name_level" + common_text
+		text = "$name_level" + comment + common_text
 		
 		text: str = text + "\n".join(low_level_text) if level != 5 else text + "\n".join(high_level_text)
 
@@ -783,7 +806,7 @@ class Sender:
 			"$level": str(level),
 			"$next_level": str(level + 1),
 			"$requirements_action": requirements_action,
-			"$requirements": tarobot_status[level],
+			"$requirements": "<u>"+ tarobot_status[level] + "</u>!",
 			"$referal_link": self.generate_referal_link(user.id), 
 			"$promocode" : str(AscendData(user = user).promo),
 			"$invited_users": str(AscendData(user = user).count_invited_users),
@@ -792,9 +815,13 @@ class Sender:
 
 		for Substring in Replaces.keys(): text = text.replace(Substring, Replaces[Substring])
 
-		self.bot.send_message(
+		self.bot.send_animation(
 			chat_id = user.id,
-			text = text, 
+			animation = self.__cacher.get_real_cached_file(
+				path = f"Data/AscendTarobot/Materials/Levels/{level}.mp4",
+				autoupload_type = types.InputMediaAnimation,
+				).file_id,
+			caption = text, 
 			parse_mode = "HTML",
 			reply_markup = MainInlineKeyboards.for_delete("Окей!") if level != 5 else InlineKeyboards.reaching_5_level(("Написать Таро Мастеру!", "Окей! Спасибо большое!"))
 			)

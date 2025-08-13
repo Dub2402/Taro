@@ -353,6 +353,7 @@ def InlineButtonRemoveReminder(Call: types.CallbackQuery):
 	if not subscription.IsSubscripted(user):
 		Bot.answer_callback_query(Call.id)
 		return
+	
 	ascend_data = AscendData(user = user)
 	if not ascend_data.is_layout_available:
 
@@ -372,7 +373,7 @@ def InlineButtonRemoveReminder(Call: types.CallbackQuery):
 
 	text = (
 		_("Дорогой мой друг, задай мне вопрос, который больше всего тебя сейчас волнует!") + "\n",
-		"<b><i>" + _("Например:") + "</i></b>",
+		"<b><i>" + _("ТРЕНДЫ ЗАПРОСОВ:") + "</i></b>",
 		"<b>- </b>" + "<i>" + LoveQuestion + "</i>",
 		"<b>- </b>" + "<i>" + CommonQuestions[0] + "</i>",
 		"<b>- </b>" + "<i>" + CommonQuestions[1] + "</i>",
