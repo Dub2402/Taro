@@ -50,7 +50,7 @@ class WordMonthInlineTemplates:
 
 		Menu = types.InlineKeyboardMarkup()
 
-		for_delete = types.InlineKeyboardButton(_("Принято!"), callback_data = "for_delete")
+		for_delete = types.InlineKeyboardButton(_("Спасибо, хорошо!"), callback_data = "for_delete")
 
 		Menu.add(for_delete, row_width = 1) 
 
@@ -269,7 +269,7 @@ class Decorators:
 				messages = Call.message.id
 			)
 
-			text = self.__Mailer.word_month.randomize_text(texts = self.__Mailer.reader.appeals) + "\n\n<i>" + "Сообщение уже содержит реферальную ссылку, можно просто переслать его" + "</i>"
+			text = self.__Mailer.word_month.randomize_text(texts = self.__Mailer.reader.appeals) + "\n\n<i>" + "Сообщение уже содержит реферальную ссылку, вы можете просто переслать его)" + "</i>"
 			referal_link = self.__ascend_sender.generate_referal_link(user.id)
 			
 			if "@taro100_bot" in text and referal_link:

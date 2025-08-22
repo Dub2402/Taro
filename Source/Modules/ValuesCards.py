@@ -272,7 +272,7 @@ class Decorators:
 					with open(f"Materials/Values/{type_card}/{name_card}/{determinations[Call.data]}.txt") as file:
 						first_string = file.readline()
 						text = file.read().strip()
-						ending = _("С любовью, @taro100_bot!")
+						ending = _("С любовью, Галина Таро Мастер!")
 						final_text = "<b>" + first_string + "</b>\n" + text + f"\n\n<b><i>{ending}</i></b>"
 						self.__Cards.send_card_and_value(bot = self.__ValuesCards.bot, Call = Call, User = user, inline_keyboard = self.__ValuesCardInlineTemplates, cacher = self.__ValuesCards.cacher, text = final_text)
 
