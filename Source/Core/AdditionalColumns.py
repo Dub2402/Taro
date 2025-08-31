@@ -27,6 +27,15 @@ def get_registration_date(user: UserData) -> CellData:
 	
 	return Data
 
+def get_promocode(user: UserData) -> CellData:
+
+	Data = CellData()
+	if user.has_property("ascend") and user.get_property("ascend"): 
+		ascend_data = user.get_property("ascend")
+		Data.value = ascend_data["promo"]
+	
+	return Data
+
 NewColumns = {
 	"Index": get_index
 }
@@ -35,3 +44,4 @@ NewColumns.update(Extractor.Columns)
 Extractor.Columns = NewColumns
 Extractor.Columns["Name"] = get_name
 Extractor.Columns["Registration"] = get_registration_date
+Extractor.Columns["Promocode"] = get_promocode

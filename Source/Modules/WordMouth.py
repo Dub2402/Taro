@@ -3,6 +3,7 @@ from dublib.TelebotUtils.Cache import TeleCache
 from dublib.TelebotUtils import TeleMaster
 from dublib.Engine.GetText import _
 from dublib.Methods.Filesystem import WriteJSON, ReadJSON
+from dublib.Methods.Filesystem import GetRandomFile
 
 from Source.Modules.Subscription import Subscription
 from Source.Core.ExcelTools import Reader
@@ -435,10 +436,11 @@ class Mailer:
 		User = self.__users.get_user(user_id)
 
 		try:
+			animation = GetRandomFile("Data/WordMonth/lessons_master")
 			self.__Message = self.__masterbot.bot.send_animation(
 				chat_id = User.id,
 				animation = self.__cacher.get_real_cached_file(
-					path = "Data/WordMonth/letters.mp4", 
+					path = animation, 
 					autoupload_type = types.InputMediaAnimation
 					).file_id,
 				caption = "<i>" + _("Наставление от Мастера 🔥 для тебя:") + "</i>" + "\n\n- " + "<b>" + text + "</b>", 

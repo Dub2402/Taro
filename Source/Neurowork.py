@@ -253,7 +253,9 @@ class NeuroRequestor:
 		if ascend.is_today_layout_available: ascend.incremente_today_layouts()
 		else: 
 			if ascend.bonus_layouts > 0: ascend.decremente_bonus_layouts()
-			if not ascend.is_bonus_layout_available: AscendSender(self.__Bot, self.__Cacher).end_bonus_layout(user.id)
+			if not ascend.is_bonus_layout_available: 
+				messages = AscendSender(self.__Bot, self.__Cacher).end_bonus_layout(user.id)
+				ascend.add_delete_limiter(messages)
 
 	#==========================================================================================#
 	# >>>>> ПУБЛИЧНЫЕ МЕТОДЫ ПОСТРОЕНИЯ ЗАПРОСОВ <<<<< #

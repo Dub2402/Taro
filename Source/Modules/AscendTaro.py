@@ -598,7 +598,7 @@ class Sender:
 				path = f"Data/AscendTarobot/Materials/Join/{name_animation}",
 				autoupload_type = types.InputMediaAnimation,
 				).file_id,
-			caption = "<b>" + _("Присоединяйся к Тароботу, я уже там:") + "</b>\n\n" + self.generate_referal_link(id = chat_id),
+			caption = "<b>" + _("Присоединяйся к Тароботу, я уже там") +  " 😉!" + "</b>\n\n" + self.generate_referal_link(id = chat_id),
 			parse_mode = "HTML",
 			reply_markup = InlineKeyboards.delete_message_limiter(_("Спасибо!"))
 		)
@@ -669,21 +669,28 @@ class Sender:
 		:param user_id: ID пользователя.
 		:type user_id: int
 		"""
+		messages = list()
 
 		text = (
 				"<b><i>" + _("Дорогой пользователь!") + " 🤗</i></b>\n",
 				_("Ваш лимит бонусных Онлайн раскладов подошел к концу!") + "\n",
 				_("Пожалуйста, попробуйте ещё раз завтра или пригласите друга!") + "\n",
-				"<b><i>" + _("Вот ваша ссылка приглашение:") + "</i></b>"
+				"<b><i>" + _("Вот ваша ссылка приглашение, просто перешлите пост!)") + "</i></b>"
 				)
 		
-		self.bot.send_message(
+		message_limiter = self.bot.send_message(
 			chat_id = user_id,
 			text = "\n".join(text), 
 			parse_mode = "HTML"
 		)
 
-		self.__message_with_referal(chat_id = user_id)
+		messages.append(message_limiter.id)
+
+		message_with_referal = self.__message_with_referal(chat_id = user_id)
+
+		messages.append(message_with_referal)
+
+		return messages
 
 	def level_up(self, user: UserData, level: int)-> bool:
 		"""
@@ -698,10 +705,10 @@ class Sender:
 		"""
 
 		greeting_cards = {
-				1: (_("3-х дней"), _("неделя с Тароботом!")),
-				2: (_("всей недели"), _("2 недели с Тароботом!")),
-				3: (_("целых 2-х недель"), _("месяц с Тароботом!")),
-				4: (_("аж целого месяца"), _("пригласи 10 друзей!")),
+				1: (_("3-х дней"), _("расклада"), _("неделя с Тароботом!")),
+				2: (_("всей недели"), _("раскладов"), _("2 недели с Тароботом!")),
+				3: (_("целых 2-х недель"), _("раскладов"), _("месяц с Тароботом!")),
+				4: (_("аж целого месяца"), _("раскладов"), _("пригласи 10 друзей!")),
 				5: ("", "")
 			}
 
@@ -713,7 +720,7 @@ class Sender:
 
 			text = (
 				"<b>" + _("Поздравляем!!! Вы были активны на протяжении $day_with_bot!") + "</b>\n",
-				"🏆 " + _("У вас $number-й уровень! Вы получаете бонус: $bonus дополнительных Онлайн расклада!") + "\n",
+				"🏆 " + _("У вас $number-й уровень! Вы получаете бонус: $bonus дополнительных Онлайн $layout!") + "\n",
 				"<b><i>" + _("Следующий уровень - $requirements_next_level") + "</i></b>"
 				)
 		
@@ -734,7 +741,8 @@ class Sender:
 			"$day_with_bot": card[0],
 			"$number": str(level),
 			"$bonus": str(ADDITIONAL_BONUS_LAYOUT_DEPENDING_ON_LEVEL[level]),
-			"$requirements_next_level": card[1],
+			"$layout": card[1],
+			"$requirements_next_level": card[2],
 			"$promocode": str(AscendData(user = user).promo)
 		}
 
@@ -780,11 +788,11 @@ class Sender:
 		if level == 4: referal_link = " Вот ваша пригласительная ссылка:\n\n$referal_link"
 		else: referal_link = ""
 
-		common_text = "<b>🌟 " + _("Бонусных Онлайн раскладов: $bonus_layouts") + "</b>\n\n"
+		common_text = "<b>🌟 " + _("Бонусных Онлайн раскладов: " + "<u>" + "$bonus_layouts" + "</u>") + "</b>\n\n"
 	
 		low_level_text = (
-			_("Чтобы достичь $next_level-го уровня, вы должны$requirements_action $requirements") + referal_link + "\n",
-			_("Повышайте свой уровень и получайте гарантированно призы!!") + " 🎁"
+			"<b>" + _("Задание: ") + "</b>" + _("Чтобы достичь $next_level-го уровня, вы должны$requirements_action $requirements") + referal_link + "\n",
+			"<i>" +_("Повышайте свой уровень и получайте гарантированно призы!!") + " 🎁" + "</i>"
 			)
 		
 		high_level_text = (
@@ -806,7 +814,7 @@ class Sender:
 			"$level": str(level),
 			"$next_level": str(level + 1),
 			"$requirements_action": requirements_action,
-			"$requirements": "<u>"+ tarobot_status[level] + "</u>!",
+			"$requirements": tarobot_status[level] + "!",
 			"$referal_link": self.generate_referal_link(user.id), 
 			"$promocode" : str(AscendData(user = user).promo),
 			"$invited_users": str(AscendData(user = user).count_invited_users),

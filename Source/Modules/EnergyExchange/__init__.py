@@ -1,6 +1,7 @@
 from .Scheduler import Scheduler
 from .Options import Options
 
+from Source.InlineKeyboards import InlineKeyboards
 from Source.UI.AdditionalOptions import InlineTemplates
 from Source.Modules.Subscription import Subscription
 
@@ -307,10 +308,11 @@ class ExchangerInlineTemplates:
 		Notifications = " (" + str(len(UserOptions.mails)) + ")" if UserOptions.mails else ""
 
 		Menu = types.InlineKeyboardMarkup()
-		Mail = types.InlineKeyboardButton(_("Моя почта") + Notifications, callback_data = "ee_mails")
+		Mail = types.InlineKeyboardButton(Notifications + " " + _("Моя почта"), callback_data = "ee_mails")
 		NewMessage = types.InlineKeyboardButton(_("Написать послание" + " " + "+"), callback_data = "ee_message")
+		Whatit = types.InlineKeyboardButton(_("Что это?"), callback_data = "what_it")
 		Back = types.InlineKeyboardButton("◀️ " + _("Назад"), callback_data = "ee_close")
-		Menu.add(Mail, NewMessage, Back, row_width = 1)
+		Menu.add(Mail, NewMessage, Whatit, Back, row_width = 1)
 
 		return Menu	
 	
@@ -471,6 +473,29 @@ class Decorators:
 					reply_markup = ExchangerInlineTemplates.thank_you(_("Спасибо, очень приятно!"))
 				)
 
+		@bot.callback_query_handler(func = lambda Callback: Callback.data == "what_it")
+		def what_is_excange(Call: types.CallbackQuery):
+			User = users.auth(Call.from_user)
+			bot.answer_callback_query(Call.id)
+
+			if not self.__Exchanger.subscription.IsSubscripted(User): 
+				self.__Exchanger.bot.answer_callback_query(Call.id)
+				return
+			
+			Text = (
+				_("Обмен энергией - это уникальная система поддержки, разработанная для наших пользователей с целью обмена позитивной энергией!"),
+				_("Весь мир существует по законам обмена энергией. И наш бот - <b>Таробот</b>, тому не исключение. Только у нас энергия тепла, любви и добра!"),
+				_("<i>Стань участником программы взаимной поддержки и напиши свое собственное послание. Оно прилетит абсолютно рандомному участнику нашего бота и поднимет ему настроение 🤗</i>"),
+				_("<b><i>А кто-то может написать и тебе!)</i></b>")
+			)
+
+			bot.send_message(
+				chat_id = Call.from_user.id,
+				text = "\n\n".join(Text),
+				parse_mode = "HTML",
+				reply_markup = InlineKeyboards.for_delete("◀️ " + _("Назад"))
+			)
+
 		@bot.callback_query_handler(func = lambda Callback: Callback.data == "ee_message")
 		def Message(Call: types.CallbackQuery):
 			User = users.auth(Call.from_user)
@@ -524,6 +549,7 @@ class Decorators:
 				return
 			
 			UserOptions.delete_removable_messages(bot)
+			input(9)
 			self.__Exchanger.close(User)
 
 class Procedures:
@@ -576,7 +602,7 @@ class Procedures:
 			UserOptions.add_removable_messages(
 				bot.send_message(
 					chat_id = User.id,
-					text = _("Ваше посление слишком длинное (%d символов). Попробуйте сократить его до 200!") % LENGTH
+					text = _("Ваше послание слишком длинное (%d символов). Попробуйте сократить его до 200!") % LENGTH
 				).id
 			)
 
