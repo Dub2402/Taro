@@ -45,7 +45,7 @@ class WorkpiecesMessages:
 		"""
 
 		button = InlineKeyboards.for_restart("Спасибо!") if action == "restart" else InlineKeyboards.for_delete("Спасибо!")
-		text = _("Хорошо! Вы в любой момент сможете посмотреть <b>Карту дня</b> из главного меню"+ " ⭐️")
+		text = _("Хорошо! Вы в любой момент сможете посмотреть <b>Карту дня</b> из Главного меню"+ " ⭐️")
 		if choice: text = _("Благодарим! Теперь ваше утро будет начинаться с магии карт Таро!" + " ☀️")
 
 		self.__bot.edit_message_text(

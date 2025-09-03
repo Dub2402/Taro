@@ -82,7 +82,7 @@ class Decorators:
 			bot.send_animation(
 				chat_id = Call.message.chat.id,
 				animation = StartAnimation.file_id,
-				caption = "<b>" + _("РАСКЛАД У МАСТЕРА") + " 🔥</b>\n\n" + _("Возьми расклад у Мастера, и реши одну из своих проблем:"),
+				caption = "<b>" + _("РАСКЛАД У МАСТЕРА") + "🔥</b>\n\n" + _("Возьми расклад у Мастера, и реши одну из своих проблем:"),
 				parse_mode = "HTML",
 				reply_markup = InlineKeyboards.SendOrderLayout()
 				)

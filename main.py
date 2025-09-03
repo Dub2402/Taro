@@ -339,7 +339,7 @@ def InlineButtonRemoveReminder(Call: types.CallbackQuery):
 		Bot.answer_callback_query(Call.id)
 		return
 	Bot.edit_message_caption(
-		caption = "<b>" + _("РАСКЛАД У МАСТЕРА") + " 🔥</b>\n\n" + _("Возьми расклад у Мастера, и реши одну из своих проблем:"),
+		caption = "<b>" + _("РАСКЛАД У МАСТЕРА") + "🔥</b>\n\n" + _("Возьми расклад у Мастера, и реши одну из своих проблем:"),
 		chat_id = Call.message.chat.id,
 		message_id = Call.message.id,
 		reply_markup = InlineKeyboards.SendOrderLayout(),
@@ -372,7 +372,7 @@ def InlineButtonRemoveReminder(Call: types.CallbackQuery):
 	LoveQuestion = random.choice(LayoutsExamplesObject.love_questions)
 
 	text = (
-		_("Дорогой мой друг, задай мне вопрос, который больше всего тебя сейчас волнует!") + "\n",
+		_("Дорогой мой друг, задай мне вопрос, который больше всего тебя волнует!") + "\n",
 		"<b><i>" + _("ТРЕНДЫ ЗАПРОСОВ") + " 📈:" + "</i></b>",
 		"<b>- </b>" + "<i>" + LoveQuestion + "</i>",
 		"<b>- </b>" + "<i>" + CommonQuestions[0] + "</i>",

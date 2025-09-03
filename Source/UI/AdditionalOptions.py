@@ -49,7 +49,7 @@ class InlineTemplates:
 		}
 
 		determinations_second = {
-			_("Мой уровень Таробота 🏆"): "level_tarobot"
+			_("МОЙ УРОВЕНЬ ТАРОБОТА 🏆"): "level_tarobot"
 		}
 
 		determinations_third = {

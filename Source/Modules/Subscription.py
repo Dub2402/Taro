@@ -54,7 +54,7 @@ class Subscription:
 
 	def __send_tarofamily_message(self, User: UserData):
 
-		action = "ВОЗВРАЩЕНИЕМ" if User.get_property("was_channels_member") else "ПРИСОЕДИНЕНИЕМ"
+		action = "ВОЗВРАЩЕНИЕМ" if User.get_property("was_channels_member") else "РАДОСТЬЮ ПРИНИМАЕМ ТЕБЯ"
 
 		Text = (
 			("<b>" + "🤗 " + _("С $action в нашу большую семью Таро!") + "</b>"),
