@@ -133,6 +133,25 @@ def ProcessCommandStart(Message: types.Message):
 	Bot.send_message(chat_id = User.id, text = "Отправьте текст вопроса.")
 	User.set_expected_type("new_common_question")
 
+@Bot.message_handler(commands = ["info"])
+def ProcessInfo(Message: types.Message):
+	User = usermanager.auth(Message.from_user)
+
+	template_text = (
+			_("СВОДКА:" + "\n\n"),
+			"<b>" + _("Карта дня" + "</b>" + "\n"),
+			_("Видео до" + video + "\n"),
+			_("Тексты до" + texts + "\n\n"),
+			"<b>" + _("Загадай карту" + "</b>" + "\n"),
+			_("Фото до" + photo + "\n"),
+			_("Посты до" + posts + "\n\n"),
+			)
+
+	Bot.send_message(
+		chat_id = User.id, 
+		text = (" ").join(template_text),
+		parse_mode = "HTML")
+
 @Bot.message_handler(commands = ["start"])
 def ProcessCommandStart(Message: types.Message):
 	if not usermanager.is_user_exists(Message.from_user.id):  
