@@ -20,6 +20,7 @@ from Source.Neurowork import NeuroRequestor
 from Source.Modules.WordMouth import Mailer
 from Source.Core.ExcelTools import Reader
 from Source.Core.CustomUsersManager import CustomUsersManager
+from Source.Core.AdminCommands import Informator
 
 from dublib.TelebotUtils.Cache import TeleCache
 from dublib.Engine.Configurator import Config
@@ -136,21 +137,22 @@ def ProcessCommandStart(Message: types.Message):
 @Bot.message_handler(commands = ["info"])
 def ProcessInfo(Message: types.Message):
 	User = usermanager.auth(Message.from_user)
+	if User.has_permissions("admin"):
 
-	template_text = (
-			_("СВОДКА:" + "\n\n"),
-			"<b>" + _("Карта дня" + "</b>" + "\n"),
-			_("Видео до" + video + "\n"),
-			_("Тексты до" + texts + "\n\n"),
-			"<b>" + _("Загадай карту" + "</b>" + "\n"),
-			_("Фото до" + photo + "\n"),
-			_("Посты до" + posts + "\n\n"),
-			)
+		template_text = (
+				_("СВОДКА:" + "\n\n"),
+				"<b>" + _("Карта дня" + "</b>" + "\n"),
+				_("Видео до " + Informator().latest_video + "\n"),
+				_("Тексты до " + Informator().latest_text + "\n\n"),
+				"<b>" + _("Загадай карту" + "</b>" + "\n"),
+				_("Фото до " + Informator().latest_photo + "\n"),
+				_("Посты до " + Informator().latest_post + "\n\n"),
+				)
 
-	Bot.send_message(
-		chat_id = User.id, 
-		text = (" ").join(template_text),
-		parse_mode = "HTML")
+		Bot.send_message(
+			chat_id = User.id, 
+			text = (" ").join(template_text),
+			parse_mode = "HTML")
 
 @Bot.message_handler(commands = ["start"])
 def ProcessCommandStart(Message: types.Message):
