@@ -17,7 +17,7 @@ from time import sleep
 import random
 import os
 
-from telebot import TeleBot, types
+from telebot import apihelper, TeleBot, types
 import dateparser
 import xlsxwriter
 import pandas
@@ -416,7 +416,7 @@ class Decorators:
 			TeleMaster(bot).safely_delete_messages(Call.from_user.id, Call.message.id)
 
 			if len(UserOptions.mails) == 0: UserOptions.delete_removable_messages(bot)
-			self.__Exchanger.open(User)
+			self.__Exchanger.open(User, update_animation = False)
 
 		@bot.callback_query_handler(func = lambda Callback: Callback.data == "ee_edit")
 		def Edit(Call: types.CallbackQuery):
@@ -537,7 +537,7 @@ class Decorators:
 			TeleMaster(bot).safely_delete_messages(Call.from_user.id, Call.message.id)
 			UserOptions.delete_removable_messages(bot)
 			# Условие исправляет попытку редактирования меню при пустом почтовом ящике.
-			if UserOptions.mails: self.__Exchanger.open(User)
+			if UserOptions.mails: self.__Exchanger.open(User, update_animation = False)
 
 		@bot.callback_query_handler(func = lambda Callback: Callback.data == "ee_close")
 		def Close(Call: types.CallbackQuery):
@@ -732,7 +732,7 @@ class Exchanger:
 		self.__UnmoderatedBuffer.remove(mail)
 		if status: self.__MailsContainer.append(edited_mail if edited_mail else mail)
 
-	def open(self, user: UserData, message_id: int | None = None):
+	def open(self, user: UserData, message_id: int | None = None, update_animation: bool = True):
 		"""
 		Редактирует сообщение в стартовое сообщение модуля обмена энергии.
 		
@@ -740,6 +740,8 @@ class Exchanger:
 		:type user: UserData
 		:param message_id: ID сообщения.
 		:type message_id: int
+		:param update_animation: Указывает, нужно ли обновить анимацию в сообщении.
+		:type update_animation: bool
 		"""
 
 		UserOptions = Options(user)
@@ -752,16 +754,28 @@ class Exchanger:
 		if not message_id: message_id = UserOptions.menu_message_id
 		else: UserOptions.set_menu_message_id(message_id)
 		
-		message_id = self.bot.edit_message_media(
-			media = types.InputMediaAnimation(
-				media = File.file_id,
-				caption = "<b>" + _("💟 ОБМЕН ЭНЕРГИЕЙ") + "</b>",
-				parse_mode = "HTML"
-			),
-			chat_id = user.id,
-			message_id = message_id,
-			reply_markup = ExchangerInlineTemplates.start(user)
-		).id
+		if update_animation:
+			self.bot.edit_message_media(
+				media = types.InputMediaAnimation(
+					media = File.file_id,
+					caption = "<b>" + _("💟 ОБМЕН ЭНЕРГИЕЙ") + "</b>",
+					parse_mode = "HTML"
+				),
+				chat_id = user.id,
+				message_id = message_id,
+				reply_markup = ExchangerInlineTemplates.start(user)
+			)
+
+		else:
+			try: 
+				self.bot.edit_message_caption(
+					caption = "<b>" + _("💟 ОБМЕН ЭНЕРГИЕЙ") + "</b>",
+					parse_mode = "HTML",
+					chat_id = user.id,
+					message_id = message_id,
+					reply_markup = ExchangerInlineTemplates.start(user)
+				)
+			except apihelper.ApiTelegramException: pass
 
 	def close(self, user: UserData):
 		"""
