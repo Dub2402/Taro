@@ -4,6 +4,7 @@ from Source.Modules.ValuesCards import ValuesCards
 from Source.UI.AdditionalOptions import Options
 from Source.UI.OnlineLayout import Layout
 from Source.Modules.YesNo import YesNo
+from Source.Modules.ThinkCard import Data as ThinkCard_Data, Manager as ThinkCard_Manager, InlineKeyboard as ThinkCard_InlineKeyboard, Main as MainThinkCard, update_think_card
 
 from Source.TeleBotAdminPanel.Core.Moderation import Moderator, ModeratorsStorage
 from Source.TeleBotAdminPanel.Core.Uploading import Uploader
@@ -11,7 +12,6 @@ from Source.TeleBotAdminPanel.Core.Uploading import Uploader
 from Source.Modules.LayoutsExamples import LayoutsExamples
 from Source.Core.AdditionalColumns import *
 from Source.TeleBotAdminPanel import Panel
-from Source.Functions import FindNearest, ChoiceMessage, CacherSending, UpdateThinkCardData, UpdateThinkCardData2, GetNumberCard, update_think_card, delete_thinking_messages
 from Source.UI.WorkpiecesMessages import WorkpiecesMessages
 from Source.Core.BlackDictionary import BlackDictionary
 from Source.Modules.Subscription import Subscription
@@ -33,7 +33,6 @@ from threading import Thread
 import dateparser
 import logging
 import random
-import os
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from telebot import types
@@ -77,6 +76,7 @@ ExchangeSchedulerObject = ExchangeScheduler(EnergyExchanger, scheduler)
 LayoutsExamplesObject = LayoutsExamples()
 
 main_ascend = MainAscend(users = usermanager, scheduler = scheduler, bot = Bot, cacher = Cacher, subscription = subscription)
+main_think = MainThinkCard(users = usermanager, bot = Bot, cacher = Cacher, subscription = subscription )
 
 ModeratorsStorage.add_moderator(Moderator(EnergyExchanger.get_unmoderated_mails, EnergyExchanger.moderate_mail), "Обмен энергией")
 ModeratorsStorage.add_moderator(Moderator(LayoutsExamplesObject.get_unmoderated_common, LayoutsExamplesObject.moderate_common), "Общие вопросы")
@@ -289,6 +289,7 @@ def ProcessText(Message: types.Message):
 AdminPanel.decorators.inline_keyboards()
 EnergyExchanger.decorators.inline_keyboards()
 main_ascend.decorators.inline_keyboards()
+main_think.decorators.inline_keyboards()
 
 AddictionalOptional.decorators.inline_keyboards()
 OnlineLayout.decorators.inline_keyboards(Bot, usermanager, Cacher.get_real_cached_file(Settings["start_animation"], types.InputMediaAnimation))
@@ -329,16 +330,6 @@ def InlineButtonAccept(Call: types.CallbackQuery):
 		Call.message.id
 	)
 
-	Bot.answer_callback_query(Call.id)
-
-@Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("delete_before_mm"))
-def InlineButtonAccept(Call: types.CallbackQuery):
-	user = usermanager.auth(Call.from_user)
-	if not subscription.IsSubscripted(user):
-		Bot.answer_callback_query(Call.id)
-		return
-	
-	delete_thinking_messages(user, MasterBot, Call)
 	Bot.answer_callback_query(Call.id)
 
 @Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("notifications"))
@@ -418,38 +409,32 @@ def InlineButtonRemoveReminder(Call: types.CallbackQuery):
 	if not subscription.IsSubscripted(user):
 		Bot.answer_callback_query(Call.id)
 		return
-	
-	user.set_property("ThinkCard", {"day": None, "messages": [], "number": None}, force = False)
-	today_date = datetime.now().strftime("%d.%m.%Y")
-	path = f"Materials/ChoiceCard/{today_date}"
-	day_of_week = datetime.now().weekday()
-	
-	if not os.path.exists(path):
-		today_date = FindNearest(today_date)
-		path = f"Materials/ChoiceCard/{today_date}"
 
-	if "_" not in Call.data:
-		number_card = GetNumberCard(user, Call, write = False)
-		
-		if number_card == None: 
-			Think_message = CacherSending(Cacher, Bot, path, user, 0, inline = InlineKeyboards.SendThinkCard())
-			UpdateThinkCardData(user, Think_message)
-		else: 
-			delete_thinking_messages(user, MasterBot, Call)
-			Think_message1 = CacherSending(Cacher, Bot, path, user, 0)
-			ThinkCardData = user.get_property("ThinkCard")
-			MasterBot.safely_delete_messages(Call.message.chat.id, user.get_property("ThinkCard")["messages"])
-			ThinkCardData["messages"] = []
-			user.set_property("ThinkCard", ThinkCardData)
+	data = ThinkCard_Data(user = user)
 
-			Think_message2 = CacherSending(Cacher, Bot, path, user, number_card, "\n<b><i>С любовью, Галина Таро Мастер!</i></b>")
-			Think_message3 = ChoiceMessage(day_of_week, Bot, Call)
-			UpdateThinkCardData2(user, [Think_message1.id, Think_message2.id, Think_message3.id], number_card, today_date)
+	if "_" not in Call.data and data.number_card == None:
+		MasterBot.safely_delete_messages(Call.message.chat.id, data.messages)
+		data.zeroing_messages()
+		introdution_message: types.Message = main_think.sender.needed_message(ThinkCard_Manager().needed_folder(), user, 0, inline = InlineKeyboards.SendThinkCard())
+		data.add_messages(message_id = introdution_message.id)
+
 	else:
-		number_card = GetNumberCard(user, Call)
-		Think_message2 = CacherSending(Cacher, Bot, path, user, number_card, "\n<b><i>С любовью, Галина Таро Мастер!</i></b>")
-		Think_message3 = ChoiceMessage(day_of_week, Bot, Call)
-		UpdateThinkCardData2(user, [Think_message2.id, Think_message3.id], number_card, today_date)
+
+		if "_" in Call.data: data.set_number_card(int(Call.data.split("_")[-1]))
+
+		MasterBot.safely_delete_messages(Call.message.chat.id, data.messages)
+		data.zeroing_messages()
+		introdution_message: types.Message = main_think.sender.needed_message(ThinkCard_Manager().needed_folder(), user, 0)
+		data.add_messages(message_id = introdution_message.id)
+		
+		message_with_selected_card = main_think.sender.needed_message(
+			ThinkCard_Manager().needed_folder(), 
+			user, 
+			data.number_card, 
+			"\n<b><i>С любовью, Галина Таро Мастер!</i></b>", 
+			inline = ThinkCard_InlineKeyboard.about())
+		data.add_messages(message_with_selected_card.id)
+		
 
 	Bot.answer_callback_query(Call.id)
 

@@ -3,7 +3,7 @@ from dublib.Methods.Filesystem import ReadJSON, ListDir
 from dublib.TelebotUtils.Users import UserData
 
 from Source.Modules.solid_g4f.Connection.API import Requestor, Options
-from Source.Functions import _
+from dublib.Engine.GetText import _
 from Source.UI.OnlineLayout import end_layout
 from Source.Modules.AscendTaro import AscendData, Sender as AscendSender
 

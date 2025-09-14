@@ -12,7 +12,7 @@ from dublib.TelebotUtils.Master import TeleMaster
 from apscheduler.schedulers.background import BackgroundScheduler
 from telebot import TeleBot, types
 
-from typing import Literal, Any, Iterable,  TYPE_CHECKING
+from typing import Literal, Any, Iterable, TYPE_CHECKING
 from types import MappingProxyType
 from os import PathLike
 import logging

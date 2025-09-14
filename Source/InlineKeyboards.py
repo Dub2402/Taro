@@ -107,7 +107,7 @@ class InlineKeyboards:
 	def delete_before_mm() -> types.InlineKeyboardMarkup:	
 		return types.InlineKeyboardMarkup([[types.InlineKeyboardButton(text = _("Благодарю!"), callback_data = "delete_before_mm")]])
 	
-	def for_delete(text: str) -> types.InlineKeyboardMarkup:
+	def for_delete(text: str = "◀️ Назад") -> types.InlineKeyboardMarkup:
 		"""
 		Inline-keyboard.
 
