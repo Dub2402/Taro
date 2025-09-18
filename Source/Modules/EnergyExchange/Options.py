@@ -31,6 +31,12 @@ class Options:
 
 		return self.__Data["menu_message_id"]
 	
+	@property
+	def date_animation(self) -> str:
+		"""Строковое представление даты обновления обмена энергии."""
+
+		return self.__Data["date_animation"]
+
 	#==========================================================================================#
 	# >>>>> ПРИВАТНЫЕ МЕТОДЫ <<<<< #
 	#==========================================================================================#
@@ -61,7 +67,8 @@ class Options:
 			"removable_messages": [],
 			"additional_menu": None,
 			"exchange_menu": None,
-			"mails": []
+			"mails": [],
+			"date_animation": ""
 		}
 
 		self.__ParseData()
@@ -129,4 +136,15 @@ class Options:
 		"""
 
 		self.__Data["menu_message_id"] = message_id
+		self.save()
+
+	def set_date_animation(self, date: str):
+		"""
+		Сохраняет дату обновления анимации в обмене энергии.
+
+		:param messages: Дата обновления анимации.
+		:type messages: str
+		"""
+
+		self.__Data["date_animation"] = date
 		self.save()
