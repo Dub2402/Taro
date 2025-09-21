@@ -2,9 +2,22 @@ from dublib.TelebotUtils.Users import UserData
 from dublib.TelebotUtils.Master import TeleMaster
 from dublib.Engine.GetText import _
 
-from typing import Iterable
-
 from telebot import TeleBot
+
+from typing import Iterable, Any
+from types import MappingProxyType
+import logging
+
+ExchangeParameters = MappingProxyType(
+	{
+		"removable_messages": [],
+		"additional_menu": None,
+		"exchange_menu": None,
+		"mails": [],
+		"date_animation": "",
+		"animation_path": ""
+	}
+)
 
 class Options:
 	"""Параметры обмена энергией пользователя."""
@@ -36,16 +49,40 @@ class Options:
 		"""Строковое представление даты обновления обмена энергии."""
 
 		return self.__Data["date_animation"]
+	
+	@property
+	def animation_path(self) -> str:
+		"""Имя анимации для обмена энергии."""
+
+		return self.__Data["animation_path"]
 
 	#==========================================================================================#
 	# >>>>> ПРИВАТНЫЕ МЕТОДЫ <<<<< #
 	#==========================================================================================#
-	
-	def __ParseData(self):
-		"""Парсит параметры обмена энергией."""
 
-		if self.__User.has_property("energy_exchange"): self.__Data = self.__User.get_property("energy_exchange")
-		else: self.save()
+	def __ValidateDate(self) -> dict[str, Any]:
+		"""
+		Проверяет валидность бонусных данных пользователя.
+
+		:return: Данные пользователя.
+		:rtype: dict[str, Any]
+		"""
+		
+		if not self.__User.has_property("energy_exchange"):
+			self.__User.set_property("energy_exchange", ExchangeParameters.copy())
+			
+		else:
+			Data: dict = self.__User.get_property("energy_exchange")
+
+			for Key in ExchangeParameters.keys():
+
+				if Key not in Data.keys():
+					Data[Key] = ExchangeParameters[Key]
+					logging.debug(f"For user #{self.__User.id} key \"{Key}\" set to default.")
+
+			self.__User.set_property("energy_exchange", Data)
+
+		return self.__User.get_property("energy_exchange")
 
 	#==========================================================================================#
 	# >>>>> ПУБЛИЧНЫЕ МЕТОДЫ <<<<< #
@@ -61,17 +98,10 @@ class Options:
 
 		#---> Генерация динамических свойств.
 		#==========================================================================================#
+
 		self.__User = user
-
-		self.__Data = {
-			"removable_messages": [],
-			"additional_menu": None,
-			"exchange_menu": None,
-			"mails": [],
-			"date_animation": ""
-		}
-
-		self.__ParseData()
+	
+		self.__Data = self.__ValidateDate()
 
 	def add_removable_messages(self, messages: int | Iterable[int]):
 		"""
@@ -147,4 +177,15 @@ class Options:
 		"""
 
 		self.__Data["date_animation"] = date
+		self.save()
+
+	def set_animation_path(self, name: str):
+		"""
+		Сохраняет имя анимации в обмене энергии.
+
+		:param messages: Имя файла анимации.
+		:type messages: str
+		"""
+
+		self.__Data["animation_path"] = name
 		self.save()

@@ -746,11 +746,24 @@ class Exchanger:
 
 		UserOptions = Options(user)
 
-		File = self.cacher.get_real_cached_file(
-			path = GetRandomFile("Data/Exchange/Start"), 
+		date_animation = datetime.now().today().strftime("%d.%m.%Y")
+
+		if UserOptions.date_animation == date_animation:
+			File = self.cacher.get_real_cached_file(
+			path = UserOptions.animation_path, 
 			autoupload_type = types.InputMediaAnimation
-		)
-		
+			)
+
+		else:
+			animation_path = GetRandomFile("Data/Exchange/Start")
+			File = self.cacher.get_real_cached_file(
+				path = animation_path, 
+				autoupload_type = types.InputMediaAnimation
+			)
+
+			UserOptions.set_date_animation(date_animation)
+			UserOptions.set_animation_path(animation_path)
+
 		if not message_id: message_id = UserOptions.menu_message_id
 		else: UserOptions.set_menu_message_id(message_id)
 		
