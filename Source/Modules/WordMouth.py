@@ -270,7 +270,7 @@ class Decorators:
 				messages = Call.message.id
 			)
 
-			text = self.__Mailer.word_month.randomize_text(texts = self.__Mailer.reader.appeals) + "\n\n<i>" + "Сообщение уже содержит реферальную ссылку, вы можете просто переслать его)" + "</i>"
+			text = self.__Mailer.word_month.randomize_text(texts = self.__Mailer.reader.appeals) + "\n\n<i>" + "Это сообщение уже содержит реферальную ссылку, вы можете просто переслать его)" + "</i>"
 			referal_link = self.__ascend_sender.generate_referal_link(user.id)
 			
 			if "@taro100_bot" in text and referal_link:
