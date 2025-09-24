@@ -14,6 +14,7 @@ from telebot import TeleBot, types
 
 from typing import Literal, Any, Iterable, TYPE_CHECKING
 from types import MappingProxyType
+from datetime import datetime
 from os import PathLike
 import logging
 import random
@@ -28,6 +29,7 @@ AscendParameters = MappingProxyType(
 	"is_notification_bonus_send": False,
 	"bonus_layouts": 0,
 	"invited_users": [],
+	"date_update_days": "",
 	"days_with_bot": 0,
 	"level_tarobot": 0,
 	"promo": None,
@@ -158,6 +160,12 @@ class AscendData:
 		"""Уровень таробота."""
 
 		return self.__Data["level_tarobot"]
+	
+	@property
+	def date_update_days(self) -> str:
+		"""Уровень таробота."""
+
+		return self.__Data["date_update_days"]
 	
 	@property
 	def promo(self) -> int:
@@ -312,6 +320,16 @@ class AscendData:
 
 		self.__SetParameter("is_notification_bonus_send", status)
 
+	def set_date_update_days(self, date: str):
+		"""
+		Передаёт параметры для сохранения бонусных данных пользователя.
+
+		:param date: Дата обновления количества дней с ботом.
+		:type count: int
+		"""
+
+		self.__SetParameter("days_with_bot", date)
+
 	def set_days_with_bot(self, count: int = DEFAULT_COUNT_DAYS_WITH_BOT):
 		"""
 		Передаёт параметры для сохранения бонусных данных пользователя.
@@ -414,6 +432,20 @@ class AscendData:
 
 		self.__SetParameter("delete_limiter", [])
 
+	def is_need_data_update(self) -> bool:
+		"""
+		Необходимо ли обновлять количество дней с ботом.
+
+		:return: Статус: необходимость обновления количества дней с ботом.
+		:rtype: bool
+		"""
+
+		date_animation = datetime.now().today().strftime("%d.%m.%Y")
+
+		if self.date_update_days == date_animation: return False
+		else: return True
+
+
 class Scheduler:
 	"""Планировщик изменений бонусных данных пользователей."""
 
@@ -440,9 +472,7 @@ class Scheduler:
 
 		for user in self.__ascend.users.users:
 
-			if user in self.__ascend.users.active_users: AscendData(user = user).incremente_days_with_bot()
-
-			else: 
+			if not user in self.__ascend.users.active_users:
 				ascend_data = AscendData(user = user)
 				ascend_data.set_days_with_bot()
 		

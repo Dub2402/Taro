@@ -44,6 +44,9 @@ class CustomUsersManager(UsersManager):
 		if not UserCurrent.has_property("index"): UserCurrent.set_property("index", self.get_new_index())
 
 		try: 
+			ascend_data = AscendData(user = UserCurrent)
+			if ascend_data.is_need_data_update(): ascend_data.incremente_days_with_bot()
+
 			level = self.__CheckLevelUp(UserCurrent)
 			
 			if level: 
