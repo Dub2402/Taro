@@ -3,8 +3,7 @@ from Source.Modules.NeuroHub.Connection.API import Requestor, Options
 from Source.UI.OnlineLayout import end_layout
 
 from dublib.Methods.Filesystem import ReadJSON, ListDir
-from dublib.TelebotUtils.Cache import TeleCache
-from dublib.TelebotUtils.Users import UserData
+from dublib.TelebotUtils import TeleMaster, TeleCache, UserData
 from dublib.Engine.GetText import _
 
 from dataclasses import dataclass
@@ -145,6 +144,7 @@ class NeuroRequestor:
 		self.__Cacher = cacher
 
 		self.__Data: dict[str, tuple] = self.__ReadCardsData()
+		self.__MasterBot = TeleMaster(self.__Bot)
 
 		RequestOptions = Options()
 		RequestOptions.select_source("gemini")
@@ -186,6 +186,8 @@ class NeuroRequestor:
 			4: ThirdCardRequest
 		}
 
+		MessagesID = list()
+
 		for Index in range(1, 5):
 			self.__Bot.send_chat_action(user.id, action = "typing")
 			ImageCache = self.__Cacher.get_real_cached_file(f"Materials/Layouts/{Collection}/{Index}.jpg", types.InputMediaPhoto)
@@ -196,12 +198,12 @@ class NeuroRequestor:
 				Text = self.__FormatPreparation(Text)
 
 				if Text and Text != "Ваше сообщение не понятно.": 
-					self.__Bot.send_photo(
+					MessagesID.append(self.__Bot.send_photo(
 						chat_id = user.id,
 						photo = ImageCache.file_id,
 						caption = Text,
 						parse_mode = "HTML"
-					)
+					).id)
 
 					logging.info(f"{user.id, Text}")
 
@@ -221,30 +223,46 @@ class NeuroRequestor:
 				Text: str | None = Response.json["text"]
 				
 				if Text: Text = Text.replace("*", "")
-				else: logging.error(Response.json)
+				else:
+					self.__MasterBot.safely_delete_messages(user.id, MessagesID, complex = True)
+					self.__Bot.send_message(
+						chat_id = user.id,
+						text = "Уууупс, небольшие сервисные неполадки 😳\nВернитесь к Тароботу чуть позже!\n\n<i>Бонусный расклад возвращён.</i>",
+						parse_mode = "HTML" 
+					)
+					logging.error(Response.json)
 
 				Text = self.__FormatCardLayout(Text)
-				self.__Bot.send_photo(
+				MessagesID.append(self.__Bot.send_photo(
 					chat_id = user.id,
 					photo = ImageCache.file_id,
 					caption = Text,
 					parse_mode = "HTML" 
-				)
+				).id)
 				logging.info(f"{user.id, Text}")
 
 		Text: str = self.__Generator.generate(OutcomeRequest).json["text"]
+		
 		if Text: Text = Text.replace("*", "")
+		else:
+			self.__MasterBot.safely_delete_messages(user.id, MessagesID, complex = True)
+			self.__Bot.send_message(
+				chat_id = user.id,
+				text = "Уууупс, небольшие сервисные неполадки 😳\nВернитесь к Тароботу чуть позже!\n\n<i>Бонусный расклад возвращён.</i>",
+				parse_mode = "HTML" 
+			)
+
 		Outcome = (
 			"<b><i>" + _("ЗАКЛЮЧЕНИЕ:") + "</b></i>",
 		  	Text + "\n",
 		  	"<i>" + _("Если желаете рассмотреть ваши вопросы более детально, то рекомендуем вам взять расклад у нашего <b>Таро Мастера</b>. Это живой и опытный эксперт, который даст вам самые действенные подсказки и советы!") + "</i>"
 		)
-		self.__Bot.send_message(
+		MessagesID.append(self.__Bot.send_message(
 			chat_id = user.id,
 			text = "\n".join(Outcome),
 			parse_mode = "HTML",
 			reply_markup = end_layout()
-		)
+		).id)
 
 		logging.info(f"{user.id, "\n".join(Outcome)}")
 
