@@ -5,6 +5,8 @@ from dublib.TelebotUtils.Cache import TeleCache
 
 from telebot import types, TeleBot
 
+from datetime import datetime
+
 class CustomUsersManager(UsersManager):
 	"""Модифицированный менеджер пользователей."""
 
@@ -45,7 +47,9 @@ class CustomUsersManager(UsersManager):
 
 		try: 
 			ascend_data = AscendData(user = UserCurrent)
-			if ascend_data.is_need_data_update(): ascend_data.incremente_days_with_bot()
+			if ascend_data.is_need_data_update(): 
+				ascend_data.incremente_days_with_bot()
+				ascend_data.set_date_update_days(datetime.now().strftime("%d.%m.%Y"))
 
 			level = self.__CheckLevelUp(UserCurrent)
 			

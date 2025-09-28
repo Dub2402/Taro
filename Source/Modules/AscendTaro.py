@@ -328,7 +328,7 @@ class AscendData:
 		:type count: int
 		"""
 
-		self.__SetParameter("days_with_bot", date)
+		self.__SetParameter("date_update_days", date)
 
 	def set_days_with_bot(self, count: int = DEFAULT_COUNT_DAYS_WITH_BOT):
 		"""
@@ -445,7 +445,6 @@ class AscendData:
 		if self.date_update_days == date_animation: return False
 		else: return True
 
-
 class Scheduler:
 	"""Планировщик изменений бонусных данных пользователей."""
 
@@ -499,7 +498,16 @@ class InlineKeyboards:
 		:rtype: types.InlineKeyboardMarkup
 		"""
 
-		return types.InlineKeyboardMarkup([[types.InlineKeyboardButton(text = "Узнать подробнее!", callback_data = "requirements_for_5_level")]])
+		menu = types.InlineKeyboardMarkup()
+
+		determinations = {
+			"Узнать подробнее!": "requirements_for_5_level",
+			"Спасибо": "for_delete"
+		}
+
+		for String in determinations.keys(): menu.add(types.InlineKeyboardButton(text = String, callback_data = determinations[String]), row_width = 1)
+
+		return menu
 	
 	def reaching_5_level(name_buttons: tuple[str])-> types.InlineKeyboardMarkup:
 		"""
@@ -546,8 +554,8 @@ class Decorators:
 				"<b>" + _("Чтобы достичь 5-й уровень " + "🏆,") + "</b>",
 				_("вам необходимо пригласить 10 друзей присоединится к Тароботу, используя вот эту ссылку:") + "\n",
 				Sender(self.__ascend.bot, self.__ascend.cacher).generate_referal_link(id = Call.message.chat.id) + "\n", 
-				_("Эту ссылку вы можете в любой момент еще раз увидеть, нажав на \"Мой уровень Таробота\", в разделе \"Доп. опции\"") + "\n",
-				"<b><i>" + _("Пользователь вам зачтется тогда, когда начнет использовать функционал бота!") + "</i></b>"
+				_("Эту ссылку вы можете в любой момент увидеть, нажав на \"Мой уровень Таробота\", в разделе \"Доп. опции\"") + "\n",
+				"<b><i>" + _("Пользователь вам зачтется тогда, когда начнет использовать функционал нашего бота! Удачи!))") + "</i></b>"
 				)
 
 			self.__ascend.bot.send_message(
