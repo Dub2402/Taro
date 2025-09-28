@@ -1,17 +1,18 @@
-from dublib.TelebotUtils.Cache import TeleCache
-from dublib.Methods.Filesystem import ReadJSON, ListDir
-from dublib.TelebotUtils.Users import UserData
-
-from Source.Modules.solid_g4f.Connection.API import Requestor, Options
-from dublib.Engine.GetText import _
-from Source.UI.OnlineLayout import end_layout
 from Source.Modules.AscendTaro import AscendData, Sender as AscendSender
+from Source.Modules.NeuroHub.Connection.API import Requestor, Options
+from Source.UI.OnlineLayout import end_layout
+
+from dublib.Methods.Filesystem import ReadJSON, ListDir
+from dublib.TelebotUtils.Cache import TeleCache
+from dublib.TelebotUtils.Users import UserData
+from dublib.Engine.GetText import _
 
 from dataclasses import dataclass
-import telebot
 import random
 import logging
+
 from telebot import types
+import telebot
 
 @dataclass(frozen = True)
 class SpecificQuestion:
@@ -146,10 +147,11 @@ class NeuroRequestor:
 		self.__Data: dict[str, tuple] = self.__ReadCardsData()
 
 		RequestOptions = Options()
-		RequestOptions.set_max_length(300)
-		RequestOptions.set_timeout(60)
-		RequestOptions.set_tries(10)
-		RequestOptions.set_model("gpt-4")
+		RequestOptions.select_source("gemini")
+		RequestOptions.set_model("gemini-2.5-flash")
+		RequestOptions.set_max_length(350)
+		RequestOptions.set_timeout(30)
+		RequestOptions.set_force_proxy(True)
 
 		self.__Generator = Requestor(RequestOptions)
 
