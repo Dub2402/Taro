@@ -110,9 +110,9 @@ class Subscription:
 				invitee = self.__usermanager.get_user(User.get_property("invited_by"))
 				ascend_data = AscendData(user = invitee)
 
-				if ascend_data.level_tarobot == 4: ascend_data.add_invited_user(User.id)
+				if ascend_data.level_tarobot == 4 and ascend_data.necessary_invited_users > len(ascend_data.invited_users): ascend_data.add_invited_user(User.id)
 				
-				if ascend_data.level_tarobot != 4: 
+				if ascend_data.level_tarobot != 4 or ascend_data.necessary_invited_users <= len(ascend_data.invited_users): 
 					if not ascend_data.is_notification_bonus_send: 
 						Sender(self.__masterbot.bot, self.__cacher).worked_referal(invitee.id)
 						ascend_data.set_is_notification_bonus_send()

@@ -55,7 +55,6 @@ class CustomUsersManager(UsersManager):
 			
 			if level: 
 
-				ascend_data = AscendData(user = UserCurrent)
 				ascend_data.set_level_tarobot(level)
 				ascend_data.set_level_up_rewards(level = level, manager_promocode = self.__promocode_manager)
 

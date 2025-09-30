@@ -43,7 +43,9 @@ DEFAULT_COUNT_DAYS_WITH_BOT = 0
 DEFAULT_LEVEL_TAROBOT = 0
 MAX_COUNT_TODAY_LAYOUTS = 1
 STANDART_ADDING_COUNT_BONUS_LAYOUTS = 5
+MAX_LEVEL_TAROBOT = 5
 NECESSARY_INVITED_USERS = 10
+COUNT_DAYS_FOR_NEW_LEVEL = (3, 7, 14, 30)
 
 ADDITIONAL_BONUS_LAYOUT_DEPENDING_ON_LEVEL = {
 	1: 3,
@@ -132,6 +134,12 @@ class AscendData:
 	"""Контейнер бонусных данных пользователя."""
 
 	@property
+	def necessary_invited_users(self) -> int:
+		"""Необходимое количество пользователей."""
+
+		return NECESSARY_INVITED_USERS
+
+	@property
 	def is_notification_bonus_send(self) -> bool:
 		"""Присылалось ли уведомление, о том, что пользователь за каждого приглашённого друга получает 5 бонусных раскладов."""
 
@@ -183,10 +191,9 @@ class AscendData:
 	def is_available_time_based_level_up(self) -> bool:
 		"""Состояние: доступен ли новый уровень таробота, основанный на количестве дней подряд, в которые пользователь использовал бота."""
 
-		count_days_for_new_level = (3, 7, 14, 30)
-		bot_level_requirements = {level + 1: day_requirements for level, day_requirements in enumerate(count_days_for_new_level)}
+		bot_level_requirements = {level + 1: day_requirements for level, day_requirements in enumerate(COUNT_DAYS_FOR_NEW_LEVEL)}
 	
-		if self.days_with_bot in count_days_for_new_level:
+		if self.days_with_bot in COUNT_DAYS_FOR_NEW_LEVEL:
 			
 			for level, count_days in bot_level_requirements.items():
 				if count_days == self.days_with_bot: return level == self.level_tarobot + 1			 
@@ -197,7 +204,7 @@ class AscendData:
 	def is_available_user_based_level_up(self) -> bool:
 		"""Состояние: доступен ли новый уровень таробота, основанный на количестве пользователей, перешедших по реферальной ссылке пользователя."""
 
-		return len(self.invited_users) == NECESSARY_INVITED_USERS
+		return len(self.invited_users) >= NECESSARY_INVITED_USERS
 
 	@property
 	def is_today_layout_available(self):
@@ -394,6 +401,7 @@ class AscendData:
 
 		UsersID = self.invited_users
 		if user_id in UsersID: return
+		
 		UsersID.append(user_id)
 		self.__SetParameter("invited_users", UsersID)
 
@@ -418,8 +426,10 @@ class AscendData:
 	def incremente_days_with_bot(self):
 		"""Увеличивает количество дней с ботом."""
 
-		self.__Data["days_with_bot"] = self.__Data["days_with_bot"] + 1
-		self.save()
+		if self.days_with_bot < COUNT_DAYS_FOR_NEW_LEVEL[-1]:
+
+			self.__Data["days_with_bot"] = self.__Data["days_with_bot"] + 1
+			self.save()
 
 	def decremente_bonus_layouts(self):
 		"""Уменьшает количество использованных бонусных онлайн раскладов."""
@@ -443,6 +453,8 @@ class AscendData:
 		date_animation = datetime.now().today().strftime("%d.%m.%Y")
 
 		if self.date_update_days == date_animation: return False
+		
+		elif self.days_with_bot == COUNT_DAYS_FOR_NEW_LEVEL[-1] and self.level_tarobot == MAX_LEVEL_TAROBOT: return False
 		else: return True
 
 class Scheduler:
@@ -502,7 +514,7 @@ class InlineKeyboards:
 
 		determinations = {
 			"Узнать подробнее!": "requirements_for_5_level",
-			"Спасибо": "for_delete"
+			"Спасибо!": "for_delete"
 		}
 
 		for String in determinations.keys(): menu.add(types.InlineKeyboardButton(text = String, callback_data = determinations[String]), row_width = 1)
