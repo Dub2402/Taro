@@ -277,7 +277,7 @@ class Decorators:
 
 				self.__Mailer.bot.send_message(
 					chat_id = Call.message.chat.id,
-					text = text.replace("@taro100_bot", f'<a href="{referal_link}">@taro100_bot</a>'),
+					text = text.replace("@taro100_bot", f'<a href="{referal_link}">@TarobotX_bot</a>'),
 					parse_mode = "HTML",
 					reply_markup = WordMonthInlineTemplates.start_appeals(text)
 					)

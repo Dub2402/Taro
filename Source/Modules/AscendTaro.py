@@ -488,7 +488,7 @@ class Scheduler:
 				ascend_data.set_days_with_bot()
 		
 class InlineKeyboards:
-	"""Набор Inline Keyboards"""
+	"""Набор Inline Keyboards."""
 
 	def delete_message_limiter(text: str) -> types.InlineKeyboardMarkup:
 		"""

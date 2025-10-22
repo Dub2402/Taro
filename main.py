@@ -248,7 +248,7 @@ def ProcessShareWithFriends(Message: types.Message):
 	Bot.send_photo(
 		Message.chat.id, 
 		photo = Cacher.get_real_cached_file(Settings["qr_image"], types.InputMediaPhoto).file_id,
-		caption = _('@Taro100_bot\n@Taro100_bot\n@Taro100_bot\n\n<b>Таробот | Расклад онлайн | Карта дня</b>\nСамый популярный бот для Таро-гаданий в Telegram! Ответит на любые твои вопросы ❓❓❓\n\n<b><i>Пользуйся и делись с друзьями!</i></b>'), 
+		caption = _('@TarobotX_bot\n@TarobotX_bot\n@TarobotX_bot\n\n<b>Таробот | Расклад онлайн | Карта дня</b>\nСамый популярный бот для Таро-гаданий в Telegram! Ответит на любые твои вопросы ❓❓❓\n\n<b><i>Пользуйся и делись с друзьями!</i></b>'), 
 		reply_markup = InlineKeyboards.AddShare(["Share"]), 
 		parse_mode = "HTML"
 		)
@@ -419,7 +419,6 @@ def InlineButtonRemoveReminder(Call: types.CallbackQuery):
 		data.add_messages(message_id = introdution_message.id)
 
 	else:
-
 		if "_" in Call.data: data.set_number_card(int(Call.data.split("_")[-1]))
 
 		MasterBot.safely_delete_messages(Call.message.chat.id, data.messages)
@@ -435,7 +434,6 @@ def InlineButtonRemoveReminder(Call: types.CallbackQuery):
 			inline = ThinkCard_InlineKeyboard.about())
 		data.add_messages(message_with_selected_card.id)
 		
-
 	Bot.answer_callback_query(Call.id)
 
 @Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("all_taro"))

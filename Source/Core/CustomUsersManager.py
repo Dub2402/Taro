@@ -57,6 +57,7 @@ class CustomUsersManager(UsersManager):
 
 				ascend_data.set_level_tarobot(level)
 				ascend_data.set_level_up_rewards(level = level, manager_promocode = self.__promocode_manager)
+				ascend_data.set_days_with_bot()
 
 				AscendSender(self.__Bot, self.__Cacher).level_up(user = UserCurrent, level = ascend_data.level_tarobot)
 				

@@ -141,7 +141,7 @@ class Decorators:
 			self.__Options.bot.send_photo(
 				chat_id = Call.message.chat.id, 
 				photo = self.__Options.cacher.get_real_cached_file(path, types.InputMediaPhoto).file_id,
-				caption = _('@Taro100_bot\n@Taro100_bot\n@Taro100_bot\n\n<b>Таробот | Расклад онлайн | Карта дня</b>\nСамый популярный бот для Таро-гаданий в Telegram! Ответит на любые твои вопросы ❓❓❓\n\n<b><i>Пользуйся и делись с друзьями!</i></b>'), 
+				caption = _('@TarobotX_bot\n@TarobotX_bot\n@TarobotX_bot\n\n<b>Таробот | Расклад онлайн | Карта дня</b>\nСамый популярный бот для Таро-гаданий в Telegram! Ответит на любые твои вопросы ❓❓❓\n\n<b><i>Пользуйся и делись с друзьями!</i></b>'), 
 				parse_mode = "HTML",
 				reply_markup = InlineKeyboards.AddShare(buttons = ["Share", "Back"])
 				)

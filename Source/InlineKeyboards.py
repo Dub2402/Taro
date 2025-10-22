@@ -26,7 +26,7 @@ class InlineKeyboards:
 			if button == "Share":
 				Menu.add(types.InlineKeyboardButton(
 					_("Поделиться!"), 
-					switch_inline_query = _('\n@Taro100_bot\n@Taro100_bot\n\n**Таробот | Расклад онлайн | Карта дня**\nСамый популярный бот для Таро-гаданий в Telegram! Ответит на любые твои вопросы ❓❓❓\n\n__Пользуйся и делись с друзьями!__'))
+					switch_inline_query = _('\n@TarobotX_bot\n@TarobotX_bot\n\n**Таробот | Расклад онлайн | Карта дня**\nСамый популярный бот для Таро-гаданий в Telegram! Ответит на любые твои вопросы ❓❓❓\n\n__Пользуйся и делись с друзьями!__'))
 					)
 			if button == "Back":
 				Menu.add(types.InlineKeyboardButton(
