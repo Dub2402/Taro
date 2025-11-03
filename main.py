@@ -5,6 +5,7 @@ from Source.UI.AdditionalOptions import Options
 from Source.UI.OnlineLayout import Layout
 from Source.Modules.YesNo import YesNo
 from Source.Modules.ThinkCard import Data as ThinkCard_Data, Manager as ThinkCard_Manager, InlineKeyboard as ThinkCard_InlineKeyboard, Main as MainThinkCard, update_think_card
+from Source.Modules.Marathon import Marathon
 
 from Source.TeleBotAdminPanel.Core.Moderation import Moderator, ModeratorsStorage
 from Source.TeleBotAdminPanel.Core.Uploading import Uploader
@@ -21,8 +22,8 @@ from Source.Modules.WordMouth import Mailer
 from Source.Core.ExcelTools import Reader
 from Source.Core.CustomUsersManager import CustomUsersManager
 from Source.Core.AdminCommands import Informator
+from Source.Core.Cacher import Cacher
 
-from dublib.TelebotUtils.Cache import TeleCache
 from dublib.Engine.Configurator import Config
 from dublib.TelebotUtils import TeleMaster
 from dublib.Engine.GetText import GetText
@@ -47,10 +48,6 @@ Bot = MasterBot.bot
 
 scheduler = BackgroundScheduler()
 
-Cacher = TeleCache()
-Cacher.set_bot(Settings["token"])
-Cacher.set_chat_id(Settings["chat_id"])
-
 manager_promocodes = ManagerPromoCodes()
 
 usermanager = CustomUsersManager("Data/Users")
@@ -69,6 +66,7 @@ values_cards = ValuesCards(MasterBot, usermanager, Cacher, subscription)
 Neurowork = NeuroRequestor(Bot, Cacher)
 OnlineLayout = Layout(subscription)
 AddictionalOptional = Options(MasterBot, usermanager, Settings, sender, Cacher, subscription, reader)
+marathon = Marathon(usermanager, Bot, subscription)
 
 EnergyExchanger = Exchanger(Bot, usermanager, Cacher, subscription)
 ExchangeSchedulerObject = ExchangeScheduler(EnergyExchanger, scheduler)
@@ -76,7 +74,7 @@ ExchangeSchedulerObject = ExchangeScheduler(EnergyExchanger, scheduler)
 LayoutsExamplesObject = LayoutsExamples()
 
 main_ascend = MainAscend(users = usermanager, scheduler = scheduler, bot = Bot, cacher = Cacher, subscription = subscription)
-main_think = MainThinkCard(users = usermanager, bot = Bot, cacher = Cacher, subscription = subscription )
+main_think = MainThinkCard(users = usermanager, bot = Bot, cacher = Cacher, subscription = subscription)
 
 ModeratorsStorage.add_moderator(Moderator(EnergyExchanger.get_unmoderated_mails, EnergyExchanger.moderate_mail), "Обмен энергией")
 ModeratorsStorage.add_moderator(Moderator(LayoutsExamplesObject.get_unmoderated_common, LayoutsExamplesObject.moderate_common), "Общие вопросы")
@@ -159,9 +157,12 @@ def ProcessCommandStart(Message: types.Message):
 	if not usermanager.is_user_exists(Message.from_user.id):  
 		user = usermanager.auth(Message.from_user)
 
-		if Message.text != "/start" and int(Message.text.split(" ")[-1]) != user.id: user.set_property("invited_by", int(Message.text.split(" ")[-1]))
-		
+		if Message.text != "/start" and int(Message.text.split(" ")[-1]) != user.id: 
+			user.set_property("invited_by", int(Message.text.split(" ")[-1]))
+			AscendData(user = user).set_count_referal()
+
 		EnergyExchanger.push_mail(user)
+		
 	else: user = usermanager.auth(Message.from_user)
 	
 	if not user.has_property("registration_date"): user.set_property("registration_date", datetime.now().strftime("%d.%m.%Y"))
@@ -296,6 +297,7 @@ OnlineLayout.decorators.inline_keyboards(Bot, usermanager, Cacher.get_real_cache
 mailer.decorators.inline_keyboards()
 values_cards.decorators.inline_keyboards()
 yes_no.decorators.inline_keyboards()
+marathon.decorators.inline_keyboards()
 
 @Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("for_restart"))
 def InlineButtonAccept(Call: types.CallbackQuery):

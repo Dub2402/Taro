@@ -49,14 +49,13 @@ class InlineTemplates:
 		}
 
 		determinations_second = {
-			_("МОЙ УРОВЕНЬ ТАРОБОТА 🏆"): "level_tarobot"
+			_("МОЙ УРОВЕНЬ ТАРОБОТА 🏆"): "level_tarobot",
+			_("Марафон недели 🏁"): "marathon"
 		}
 
 		determinations_third = {
-			_("Рассылка карты"): "mailing_card_day",
-			_("Перезапуск бота"): "restart_bot",
 			_("◀️ Назад"): "main_menu",
-			_("Поделиться!"): "share"
+			_("Меню настроек:"): "menu_settings"
 		}
 
 		for string in determinations_first.keys(): buttons.append(types.InlineKeyboardButton(string, callback_data = determinations_first[string]))
@@ -65,6 +64,28 @@ class InlineTemplates:
 		for string in determinations_second.keys(): menu.add(types.InlineKeyboardButton(string, callback_data = determinations_second[string]), row_width = 1)
 		for string in determinations_third.keys(): buttons.append(types.InlineKeyboardButton(string, callback_data = determinations_third[string]))
 		menu.add(*buttons, row_width = 2)
+		return menu
+	
+	def menu_settings(user: UserData) -> types.InlineKeyboardMarkup:
+		"""
+		Inline-клавиатура: меню настроек:
+
+		:return: Inline-keyboard.
+		:rtype: types.InlineKeyboardMarkup
+		"""
+
+		menu = types.InlineKeyboardMarkup()
+
+		determinations = {
+			_("Рассылка карты дня"): "mailing_card_day",
+			_("Перезапуск бота"): "restart_bot",
+			_("Обратная связь"): "feedback",
+			_("Поделиться!"): "share",
+			_("◀️ Назад"): "menu_settings"
+		}
+
+		for string in determinations.keys(): menu.add(types.InlineKeyboardButton(string, callback_data = determinations[string]), row_width = 1)
+	
 		return menu
 
 	def restart_bot() -> types.InlineKeyboardMarkup:
@@ -121,6 +142,30 @@ class Decorators:
 				parse_mode = "HTML",
 				reply_markup = self.__Options.inline_templates.additional_options(user)
 			)
+			self.__Options.bot.answer_callback_query(Call.id)
+		
+		@self.__Options.bot.callback_query_handler(func = lambda Callback: Callback.data == "menu_settings")
+		def click_share(Call: types.CallbackQuery):
+			"""
+			Нажатие на кнопку: "Меню настроек:"
+
+			:param Call: menu_settings
+			:type Call: types.CallbackQuery
+			"""
+
+			user = self.__Options.users.auth(Call.from_user)
+			if not self.__Options.subscription.IsSubscripted(user):
+				self.__Options.bot.answer_callback_query(Call.id)
+				return
+
+			Message = self.__Options.bot.edit_message_caption(
+				caption = "<b>Меню настроек:</b>",
+				chat_id = Call.message.chat.id,
+				message_id = Call.message.id,
+				parse_mode = "HTML",
+				reply_markup = self.__Options.inline_templates.menu_settings(user)
+			)
+			
 			self.__Options.bot.answer_callback_query(Call.id)
 			
 		@self.__Options.bot.callback_query_handler(func = lambda Callback: Callback.data == "share")

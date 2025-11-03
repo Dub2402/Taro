@@ -188,6 +188,12 @@ class AscendData:
 		return self.__Data["delete_limiter"]
 	
 	@property
+	def count_referal(self) -> list[int]:
+		"""Количество пользователей, которые перешли по реферальной ссылке."""
+
+		return self.__count_referal["count_referal"]
+	
+	@property
 	def is_available_time_based_level_up(self) -> bool:
 		"""Состояние: доступен ли новый уровень таробота, основанный на количестве дней подряд, в которые пользователь использовал бота."""
 
@@ -301,6 +307,7 @@ class AscendData:
 		self.__User = user
 	
 		self.__Data = self.__ValidateDate()
+		self.__count_referal = ReadJSON("Data/AscendTarobot/Data.json")
 
 	def save(self):
 		"""Сохраняет бонусные данные пользователя."""
@@ -379,6 +386,11 @@ class AscendData:
 				manager_promocode.save(promocode = promocode, user_id = self.__User.id)
 
 		self.__SetParameter("bonus_layouts", count_bonus_layouts)
+
+	def set_count_referal(self):
+
+		self.__count_referal["count_referal"] = self.__count_referal["count_referal"] + 1
+		WriteJSON("Data/AscendTarobot/Data.json", self.__count_referal)
 
 	def add_bonus_layouts(self, count : int = STANDART_ADDING_COUNT_BONUS_LAYOUTS):
 		"""
@@ -889,6 +901,7 @@ class MainAscend:
 	@property
 	def users(self):
 		"""Данные пользователей."""
+		
 		return self.__users
 	
 	@property
