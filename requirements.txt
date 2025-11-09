@@ -1,5 +1,5 @@
 -r Source/TeleBotAdminPanel/requirements.txt
-dublib == 0.23.2
+dublib == 0.23.5
 apscheduler
 pandas
 openpyxl == 3.1.5

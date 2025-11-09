@@ -50,7 +50,7 @@ class InlineTemplates:
 
 		determinations_second = {
 			_("МОЙ УРОВЕНЬ ТАРОБОТА 🏆"): "level_tarobot",
-			_("Марафон недели 🏁"): "marathon"
+			_("Марафон недели 🏁"): "marathons"
 		}
 
 		determinations_third = {
