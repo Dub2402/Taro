@@ -2,6 +2,7 @@ import pandas
 
 from typing import Iterable
 from os import PathLike
+from datetime import datetime
 import random
 
 class Reader:
@@ -95,6 +96,8 @@ class Reader:
 		self.__YesNoDict = self.__ReadExcel(Settings["yes_no"])
 		self.__MottoDict = self.__ReadExcel(Settings["motto_day"])
 		self.__OnlineLayout = self.__ReadExcel(Settings["online_layout"])
+
+		self.__Marathons = self.__ReadExcel(f"Data/Marathons/{datetime.today().isocalendar().year}/Marathons.xlsx")
 
 	#==========================================================================================#
 	# >>>>> ПРИВАТНЫЕ МЕТОДЫ <<<<< #

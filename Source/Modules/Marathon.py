@@ -1,15 +1,30 @@
+from Source.Core.ExcelTools import Reader
+
 from dublib.TelebotUtils import UsersManager
 from dublib.TelebotUtils.Cache import TeleCache
 
 from telebot import types, TeleBot
 
 from typing import TYPE_CHECKING
+from datetime import datetime
 
 if TYPE_CHECKING:
 	from Source.Modules.Subscription import Subscription
 
 class Decorators:
 	"""Набор декораторов."""
+
+	@property
+	def number_week():
+		"""Возвращает номер текущей недели."""
+
+		return datetime.today().isocalendar().week
+
+	@property
+	def year():
+		"""Возвращает номер текущего года."""
+
+		return datetime.today().isocalendar().year
 
 	def __init__(self, marathon: "Marathon"):
 		"""Инициализация основных параметров."""
@@ -32,10 +47,8 @@ class Decorators:
 			if not self.__Marathon.subscription.IsSubscripted(user):
 				self.__Marathon.bot.answer_callback_query(Call.id)
 				return
-			
-			folder_marathon = "03.11.2025"
 
-			with open(f"Data/Marathons/{folder_marathon}/announcement.txt") as file:
+			with open(f"Data/Marathons/{self.year}/announcement.txt") as file:
 				text_announcement = file.read()
 
 			Message = self.__Marathon.bot.send_animation(
@@ -76,7 +89,7 @@ class Decorators:
 			"""
 			Нажатие на кнопку: "О марафонах недели"
 
-			:param Call: join_marathon
+			:param Call: about_marathons
 			:type Call: types.CallbackQuery
 			"""
 
@@ -85,10 +98,17 @@ class Decorators:
 				self.__Marathon.bot.answer_callback_query(Call.id)
 				return
 			
-			Message = self.__Marathon.bot.edit_message_reply_markup(
+			text_about_marathons = (
+				"<b>" + "Марафоны недели" + "</b>" + "— это увлекательный 7-дневный путь, где вы получаете лучшие советы, проводите практики и выполняете действенные ритуалы. Цель марафонов: изменить вашу жизнь к лучшему, раскрыть ваш потенциал и обрести долгожданное ощущение счастья!\n",
+				"Наши авторы трудятся для вас большой командой, чтобы затронуть наиболее актуальные для современного быта темы. Во главе с нашим экспертом мы стараемся прорабатывать все основные сферы, такие как: личные отношения, работу, социум, самооценку, внутренний мир и тд.\n",
+				"<b>" + "Хотелось бы, чтобы вы развивались и улучшали себя вместе с нами!" + "</b>"
+			)
+			
+			Message = self.__Marathon.bot.send_message(
 				chat_id = Call.message.chat.id,
-				message_id = Call.message.id,
-				reply_markup = self.__Marathon.inline_templates.marathon_with_days()
+				text = "\n".join(text_about_marathons),
+				parse_mode = "HTML",
+				reply_markup = self.__Marathon.inline_templates.menu_marathon("◀️ Назад")
 			)
 			self.__Marathon.bot.answer_callback_query(Call.id)
 
@@ -234,13 +254,25 @@ class Decorators:
 				caption = fifth_text,
 				parse_mode = "HTML"
 			)
-
-			Message = self.__Marathon.bot.send_message(
+			try: 
+				Message = self.__Marathon.bot.send_animation(
 				chat_id = Call.message.chat.id,
-				text = sixth_text,
+				animation = self.__Marathon.cacher.get_real_cached_file(
+					path = "Data/Marathons/03.11.2025/1/2.mp4",
+					autoupload_type = types.InputMediaVideo,
+					).file_id,
+				caption = sixth_text,
 				parse_mode = "HTML",
 				reply_markup = self.__Marathon.inline_templates.menu_marathon("Спасибо большое!")
 			)
+				
+			except:
+				Message = self.__Marathon.bot.send_message(
+					chat_id = Call.message.chat.id,
+					text = sixth_text,
+					parse_mode = "HTML",
+					reply_markup = self.__Marathon.inline_templates.menu_marathon("Спасибо большое!")
+				)
 
 			self.__Marathon.bot.answer_callback_query(Call.id)
 			

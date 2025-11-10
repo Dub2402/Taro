@@ -55,7 +55,7 @@ class InlineTemplates:
 
 		determinations_third = {
 			_("◀️ Назад"): "main_menu",
-			_("Меню настроек:"): "menu_settings"
+			_("Настройки"): "menu_settings"
 		}
 
 		for string in determinations_first.keys(): buttons.append(types.InlineKeyboardButton(string, callback_data = determinations_first[string]))
