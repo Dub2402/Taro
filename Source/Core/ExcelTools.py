@@ -66,6 +66,24 @@ class Reader:
 		return self.__OnlineLayout["Про любовь:"]
 	
 	@property
+	def numbers_week(self) -> tuple[str]:
+		"""Кортеж номеров недель."""
+
+		return self.__Marathons["Номер недели марафона"]
+	
+	@property
+	def names_marathons(self) -> tuple[str]:
+		"""Кортеж названий марафонов."""
+
+		return self.__Marathons["Название марафона"]
+	
+	@property
+	def descriptions_marathons(self) -> tuple[str]:
+		"""Кортеж описаний марафонов."""
+
+		return self.__Marathons["Описание марафона"]
+	
+	@property
 	def random_motto(self):
 		"""Рандомный девиз дня."""
 
@@ -79,7 +97,7 @@ class Reader:
 	
 	@property
 	def random_general_question(self):
-		"""Кортеж вопросов про любовь."""
+		"""Рандомный вопрос про любовь."""
 
 		return random.choices(self.general_questions, k = 2)
 	

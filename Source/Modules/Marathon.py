@@ -15,13 +15,13 @@ class Decorators:
 	"""Набор декораторов."""
 
 	@property
-	def number_week():
+	def number_week(self):
 		"""Возвращает номер текущей недели."""
 
 		return datetime.today().isocalendar().week
 
 	@property
-	def year():
+	def year(self):
 		"""Возвращает номер текущего года."""
 
 		return datetime.today().isocalendar().year
@@ -47,17 +47,24 @@ class Decorators:
 			if not self.__Marathon.subscription.IsSubscripted(user):
 				self.__Marathon.bot.answer_callback_query(Call.id)
 				return
+			
+			numbers_week: tuple = self.__Marathon.reader.numbers_week
 
-			with open(f"Data/Marathons/{self.year}/announcement.txt") as file:
-				text_announcement = file.read()
+			index_excel = numbers_week.index(str(self.number_week))
+
+			text_announcement = (
+				f"<b>МАРАФОН \"{self.__Marathon.reader.names_marathons[index_excel]}\"</b>\n",
+				f"{self.__Marathon.reader.descriptions_marathons[index_excel]}\n",
+				"<b><i>Присоединяйся, нас уже много! ✅</i></b>"
+			)
 
 			Message = self.__Marathon.bot.send_animation(
 				chat_id = Call.message.chat.id,
 				animation = self.__Marathon.cacher.get_real_cached_file(
-					path = "Data/Marathons/03.11.2025/1. Бывший.mp4",
+					path = f"Data/Marathons/{self.year}/{self.number_week}/announcement.mp4",
 					autoupload_type = types.InputMediaVideo,
 					).file_id,
-				caption = text_announcement,
+				caption = "\n".join(text_announcement),
 				parse_mode = "HTML",
 				reply_markup = self.__Marathon.inline_templates.marathon()
 			)
@@ -369,13 +376,20 @@ class Marathon:
 		"""Менеджер кэша."""
 		
 		return self.__cacher
+	
+	@property
+	def reader(self):
+		"""Читатель excel-файлы."""
+		
+		return self.__reader
 
-	def __init__(self, users: UsersManager, bot: TeleBot, subscription: "Subscription", cacher: TeleCache):
+	def __init__(self, users: UsersManager, bot: TeleBot, subscription: "Subscription", cacher: TeleCache, reader: Reader):
 
 		self.__users = users
 		self.__subscription = subscription
 		self.__bot = bot
 		self.__cacher = cacher
+		self.__reader = reader
 
 		self.__decorators = Decorators(self)
 		self.__inline_templates = InlineKeyboards

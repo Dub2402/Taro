@@ -66,7 +66,7 @@ values_cards = ValuesCards(MasterBot, usermanager, Cacher, subscription)
 Neurowork = NeuroRequestor(Bot, Cacher)
 OnlineLayout = Layout(subscription)
 AddictionalOptional = Options(MasterBot, usermanager, Settings, sender, Cacher, subscription, reader)
-marathon = Marathon(usermanager, Bot, subscription, Cacher)
+marathon = Marathon(usermanager, Bot, subscription, Cacher, reader)
 
 EnergyExchanger = Exchanger(Bot, usermanager, Cacher, subscription)
 ExchangeSchedulerObject = ExchangeScheduler(EnergyExchanger, scheduler)
