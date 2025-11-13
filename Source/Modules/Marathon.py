@@ -35,7 +35,7 @@ class Decorators:
 	def __find_date(self, need_number_week: int, need_weekday: int):
 		"""Возвращает дату необходимого нам дня."""
 
-		return datetime.fromisocalendar(self.year, self.number_week, need_weekday)
+		return datetime.fromisocalendar(self.year, need_number_week, need_weekday)
 
 	def __init__(self, marathon: "Marathon"):
 		"""Инициализация основных параметров."""
@@ -152,7 +152,7 @@ class Decorators:
 				"ВНИМАНИЕ!!! МАРАФОН СЛЕДУЮЩЕЙ НЕДЕЛИ:" + "\n\n"
 				f"<b>{self.__Marathon.reader.names_marathons[index_excel + 1]}</b>" + "\n",
 				f"{self.__Marathon.reader.descriptions_marathons[index_excel + 1]}\n",
-				"<b>" + "📆 Даты проведения: " + f"{self.__find_date(1).strftime("%d.%m.%Y")} - {self.__find_date(7).strftime("%d.%m.%Y")}" + "</b>" + "\n",
+				"<b>" + "📆 Даты проведения: " + f"{self.__find_date(need_number_week = self.number_week + 1, need_weekday = 1).strftime("%d.%m.%Y")} - {self.__find_date(need_number_week = self.number_week + 1, need_weekday = 7).strftime("%d.%m.%Y")}" + "</b>" + "\n",
 				"<b><i>" + "Будем ждать тебя и твоих друзей, @tarobotX_bot! 🤗" + "</i></b>"
 			)
 			
@@ -334,6 +334,8 @@ class Decorators:
 					parse_mode = "HTML",
 					reply_markup = self.__Marathon.inline_templates.menu_marathon("◀️ Назад")
 				)
+			
+			self.__Marathon.bot.answer_callback_query(Call.id)
 			
 class InlineKeyboards:
 	"""Набор Inline Keyboards."""
