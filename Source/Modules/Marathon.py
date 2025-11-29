@@ -219,7 +219,7 @@ class Decorators:
 			if Call.data == "2 day" and self.name_day >= 2: send_message = True
 			else: Message = self.__Marathon.bot.send_message(
 					chat_id = Call.message.chat.id,
-					text = f"Информация здесь появиться во вторник {self.__find_date(2).strftime("%d.%m.%Y")}. Пожалуйста, чуточку вашего терпения!)",
+					text = f"Информация здесь появиться во вторник {self.__find_date(self.number_week, 2).strftime("%d.%m.%Y")}. Пожалуйста, чуточку вашего терпения!)",
 					parse_mode = "HTML",
 					reply_markup = self.__Marathon.inline_templates.menu_marathon("◀️ Назад")
 				)

@@ -401,11 +401,13 @@ class Options:
 	@property
 	def decorators(self) -> Decorators:
 		"""Наборы декораторов """
+		
 		return self.__Decorators
 	
 	@property
 	def masterbot(self) -> TeleMaster:
 		"""Masterbot"""
+
 		return self.__masterbot
 	
 	@property
@@ -417,11 +419,13 @@ class Options:
 	@property
 	def users(self) -> UsersManager:
 		"""Данные о пользователях"""
+
 		return self.__users
 	
 	@property
 	def sender(self) -> WorkpiecesMessages:
 		"""Набор Inline-keyboards"""
+
 		return self.__sender
 	
 	@property

@@ -6,6 +6,7 @@ from Source.UI.OnlineLayout import Layout
 from Source.Modules.YesNo import YesNo
 from Source.Modules.ThinkCard import Data as ThinkCard_Data, Manager as ThinkCard_Manager, InlineKeyboard as ThinkCard_InlineKeyboard, Main as MainThinkCard, update_think_card
 from Source.Modules.Marathon import Marathon
+from Source.Modules.Feedback import Feedback
 
 from Source.TeleBotAdminPanel.Core.Moderation import Moderator, ModeratorsStorage
 from Source.TeleBotAdminPanel.Core.Uploading import Uploader
@@ -70,6 +71,7 @@ marathon = Marathon(usermanager, Bot, subscription, Cacher, reader)
 
 EnergyExchanger = Exchanger(Bot, usermanager, Cacher, subscription)
 ExchangeSchedulerObject = ExchangeScheduler(EnergyExchanger, scheduler)
+feedback = Feedback(usermanager, Cacher, subscription, Bot)
 
 LayoutsExamplesObject = LayoutsExamples()
 
@@ -260,6 +262,7 @@ def ProcessText(Message: types.Message):
 	if AdminPanel.procedures.text(Bot, usermanager, Message): return
 	if not subscription.IsSubscripted(user): return
 	if EnergyExchanger.procedures.text(Message): return
+	if feedback.procedures.text(Message): return
 	if user.has_property("Generation") and user.get_property("Generation"): return
 
 	if user.expected_type == "question":
@@ -285,7 +288,7 @@ def ProcessText(Message: types.Message):
 			text = "\n\n".join(Text),
 			parse_mode = "HTML"
 		)
-		User.reset_expected_type()
+		user.reset_expected_type()
 
 AdminPanel.decorators.inline_keyboards()
 EnergyExchanger.decorators.inline_keyboards()
@@ -298,6 +301,7 @@ mailer.decorators.inline_keyboards()
 values_cards.decorators.inline_keyboards()
 yes_no.decorators.inline_keyboards()
 marathon.decorators.inline_keyboards()
+feedback.decorators.inline_keyboards()
 
 @Bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("for_restart"))
 def InlineButtonAccept(Call: types.CallbackQuery):
@@ -327,6 +331,7 @@ def InlineButtonAccept(Call: types.CallbackQuery):
 		Bot.answer_callback_query(Call.id)
 		return
 	
+	user.reset_expected_type()
 	MasterBot.safely_delete_messages(
 		Call.message.chat.id,
 		Call.message.id
