@@ -1,15 +1,94 @@
 from Source.Core.ExcelTools import Reader
+from Source.InlineKeyboards import InlineKeyboards as GeneralInlineKeyboards
 
-from dublib.TelebotUtils import UsersManager
+from dublib.TelebotUtils import UsersManager, UserData
 from dublib.TelebotUtils.Cache import TeleCache
+from dublib.TelebotUtils import TeleMaster
+from dublib.Methods.Data import ToIterable
 
 from telebot import types, TeleBot
 
-from typing import TYPE_CHECKING
+from types import MappingProxyType
+from typing import TYPE_CHECKING, Literal
 from datetime import datetime
+from typing import Iterable
+import logging
 
 if TYPE_CHECKING:
 	from Source.Modules.Subscription import Subscription
+
+class InlineKeyboards:
+	"""Набор Inline Keyboards."""
+
+	def marathon() -> types.InlineKeyboardMarkup:
+		"""
+		Возвращает марафон недели.
+
+		:return: Inline Keyboard. 
+		:rtype: types.InlineKeyboardMarkup
+		"""
+
+		menu = types.InlineKeyboardMarkup()
+
+		determinations = {
+			"Присоединиться!": "join_marathon",
+			"О марафонах недели": "about_marathons",
+			"Следующий марафон": "next_marathon",
+			"◀️ Назад": "for_delete"
+		}
+
+		for String in determinations.keys(): menu.add(types.InlineKeyboardButton(text = String, callback_data = determinations[String]), row_width = 1)
+
+		return menu
+	
+	def marathon_with_days() -> types.InlineKeyboardMarkup:
+		"""
+		Возвращает марафон по дням.
+
+		:return: Inline Keyboard. 
+		:rtype: types.InlineKeyboardMarkup
+		"""
+
+		menu = types.InlineKeyboardMarkup()
+
+		determinations = {
+			"Подробнее о марафоне": "more_detailed_marathon",
+			"1 день (понедельник)": "1 day",
+			"2 день (вторник)": "2 day",
+			"Продолжение🔥": "continue_marathon",
+			"◀️ Назад": "back_marathons"
+		}
+
+		for String in determinations.keys(): menu.add(types.InlineKeyboardButton(text = String, callback_data = determinations[String]), row_width = 1)
+
+		return menu
+	
+	def continue_marathon() -> types.InlineKeyboardMarkup:
+		"""
+		Возвращает ссылку на продолжение марафона.
+
+		:return: Inline Keyboard. 
+		:rtype: types.InlineKeyboardMarkup
+		"""
+
+		menu = types.InlineKeyboardMarkup()
+
+		continue_marathon = types.InlineKeyboardButton(("Продолжить марафон!"), url = "https://t.me/m/TWo0FHB-NjM6")
+		Back = types.InlineKeyboardButton(("◀️ Назад"), callback_data = "for_delete")
+	
+		menu.add(continue_marathon, Back, row_width = 1) 
+
+		return menu
+	
+	def menu_marathon(text: str, call_text: str) -> types.InlineKeyboardMarkup:
+		"""
+		Возвращает нас к меню марафона с днями.
+
+		:return: Inline Keyboard. 
+		:rtype: types.InlineKeyboardMarkup
+		"""
+									
+		return types.InlineKeyboardMarkup([[types.InlineKeyboardButton(text = text, callback_data = call_text)]])
 
 class Decorators:
 	"""Набор декораторов."""
@@ -102,6 +181,27 @@ class Decorators:
 			)
 			self.__Marathon.bot.answer_callback_query(Call.id)
 
+		@self.__Marathon.bot.callback_query_handler(func = lambda Callback: Callback.data == "back_marathons")
+		def click_back_marathons(Call: types.CallbackQuery):
+			"""
+			Нажатие на кнопку: "◀️ Назад"
+
+			:param Call: back_marathons
+			:type Call: types.CallbackQuery
+			"""
+
+			user = self.__Marathon.users.auth(Call.from_user)
+			if not self.__Marathon.subscription.IsSubscripted(user):
+				self.__Marathon.bot.answer_callback_query(Call.id)
+				return
+			
+			Message = self.__Marathon.bot.edit_message_reply_markup(
+				chat_id = Call.message.chat.id,
+				message_id = Call.message.id,
+				reply_markup = self.__Marathon.inline_templates.marathon()
+			)
+			self.__Marathon.bot.answer_callback_query(Call.id)
+
 		@self.__Marathon.bot.callback_query_handler(func = lambda Callback: Callback.data == "about_marathons")
 		def click_about_marathons(Call: types.CallbackQuery):
 			"""
@@ -119,14 +219,14 @@ class Decorators:
 			text_about_marathons = (
 				"<b>" + "Марафоны недели" + "</b>" + "— это увлекательный 7-дневный путь, где вы получаете лучшие советы, проводите практики и выполняете действенные ритуалы. Цель марафонов: изменить вашу жизнь к лучшему, раскрыть ваш потенциал и обрести долгожданное ощущение счастья!\n",
 				"Наши авторы трудятся для вас большой командой, чтобы затронуть наиболее актуальные для современного быта темы. Во главе с нашим экспертом мы стараемся прорабатывать все основные сферы, такие как: личные отношения, работу, социум, самооценку, внутренний мир и тд.\n",
-				"<b>" + "Хотелось бы, чтобы вы развивались и улучшали себя вместе с нами!" + "</b>"
+				"<b><i>" + "Хотелось бы, чтобы вы развивались и улучшали себя вместе с нами!" + "</i></b>" 
 			)
 			
 			Message = self.__Marathon.bot.send_message(
 				chat_id = Call.message.chat.id,
 				text = "\n".join(text_about_marathons),
 				parse_mode = "HTML",
-				reply_markup = self.__Marathon.inline_templates.menu_marathon("◀️ Назад")
+				reply_markup = GeneralInlineKeyboards.for_delete()
 			)
 			self.__Marathon.bot.answer_callback_query(Call.id)
 
@@ -145,7 +245,6 @@ class Decorators:
 				return
 			
 			numbers_week: tuple = self.__Marathon.reader.numbers_week
-
 			index_excel = numbers_week.index(str(self.number_week))
 			
 			next_marathon_template = (
@@ -160,7 +259,7 @@ class Decorators:
 				chat_id = Call.message.chat.id,
 				text = "\n".join(next_marathon_template),
 				parse_mode = "HTML",
-				reply_markup = self.__Marathon.inline_templates.menu_marathon("◀️ Назад")
+				reply_markup = GeneralInlineKeyboards.for_delete()
 			)
 			self.__Marathon.bot.answer_callback_query(Call.id)
 
@@ -186,22 +285,24 @@ class Decorators:
 			with open(f"Data/Marathons/{self.year}/{self.number_week}/second_detailed_marathon.txt") as file:
 				second_detailed_marathon = file.read()
 			
-			Message = self.__Marathon.bot.edit_message_caption(
+			Data(user).add_about_post_messages(self.__Marathon.bot.edit_message_caption(
 				caption = first_detailed_marathon,
 				chat_id = Call.message.chat.id,
 				message_id = Call.message.id,
 				parse_mode = "HTML"
+				).id
 			)
-			Message = self.__Marathon.bot.send_message(
+			Data(user).add_about_post_messages(self.__Marathon.bot.send_message(
 				chat_id = Call.message.chat.id,
 				text = second_detailed_marathon,
 				parse_mode = "HTML",
-				reply_markup = self.__Marathon.inline_templates.menu_marathon("◀️ Назад")
+				reply_markup = self.__Marathon.inline_templates.menu_marathon("◀️ Назад", "end_about_marathon")
+				).id
 			)
 			self.__Marathon.bot.answer_callback_query(Call.id)
 
 		@self.__Marathon.bot.callback_query_handler(func = lambda Callback: Callback.data in ("1 day", "2 day"))
-		def click_1_day(Call: types.CallbackQuery):
+		def click_day(Call: types.CallbackQuery):
 			"""
 			Нажатие на кнопку: "1 день (понедельник)/2 день (вторник)"
 
@@ -217,11 +318,12 @@ class Decorators:
 				return
 			
 			if Call.data == "2 day" and self.name_day >= 2: send_message = True
-			else: Message = self.__Marathon.bot.send_message(
+			if Call.data == "2 day" and self.name_day < 2: 
+				Message = self.__Marathon.bot.send_message(
 					chat_id = Call.message.chat.id,
 					text = f"Информация здесь появиться во вторник {self.__find_date(self.number_week, 2).strftime("%d.%m.%Y")}. Пожалуйста, чуточку вашего терпения!)",
 					parse_mode = "HTML",
-					reply_markup = self.__Marathon.inline_templates.menu_marathon("◀️ Назад")
+					reply_markup = GeneralInlineKeyboards.for_delete()
 				)
 
 			if Call.data == "1 day": send_message = True
@@ -246,13 +348,14 @@ class Decorators:
 				with open(f"Data/Marathons/{self.year}/{self.number_week}/{Call.data}/6.txt") as file:
 					sixth_text = file.read()
 
-				Message = self.__Marathon.bot.send_message(
+				Data(user).add_day_post_messages(self.__Marathon.bot.send_message(
 					chat_id = Call.message.chat.id,
 					text = first_text,
 					parse_mode = "HTML"
+					).id
 				)
 
-				Message = self.__Marathon.bot.send_animation(
+				Data(user).add_day_post_messages(self.__Marathon.bot.send_animation(
 					chat_id = Call.message.chat.id,
 					animation = self.__Marathon.cacher.get_real_cached_file(
 						path = f"Data/Marathons/{self.year}/{self.number_week}/{Call.data}//2.mp4",
@@ -260,21 +363,24 @@ class Decorators:
 						).file_id,
 					caption = second_text,
 					parse_mode = "HTML"
+					).id
 				)
 
-				Message = self.__Marathon.bot.send_message(
+				Data(user).add_day_post_messages(self.__Marathon.bot.send_message(
 					chat_id = Call.message.chat.id,
 					text = third_text,
 					parse_mode = "HTML"
+					).id
 				)
 
-				Message = self.__Marathon.bot.send_message(
+				Data(user).add_day_post_messages(self.__Marathon.bot.send_message(
 					chat_id = Call.message.chat.id,
 					text = fourth_text,
 					parse_mode = "HTML"
+					).id
 				)
 
-				Message = self.__Marathon.bot.send_animation(
+				Data(user).add_day_post_messages(self.__Marathon.bot.send_animation(
 					chat_id = Call.message.chat.id,
 					animation = self.__Marathon.cacher.get_real_cached_file(
 						path = f"Data/Marathons/{self.year}/{self.number_week}/{Call.data}//5.mp4",
@@ -282,9 +388,10 @@ class Decorators:
 						).file_id,
 					caption = fifth_text,
 					parse_mode = "HTML"
+					).id
 				)
 				try: 
-					Message = self.__Marathon.bot.send_animation(
+					Data(user).add_day_post_messages(self.__Marathon.bot.send_animation(
 					chat_id = Call.message.chat.id,
 					animation = self.__Marathon.cacher.get_real_cached_file(
 						path = f"Data/Marathons/{self.year}/{self.number_week}/{Call.data}//2.mp4",
@@ -292,16 +399,18 @@ class Decorators:
 						).file_id,
 					caption = sixth_text,
 					parse_mode = "HTML",
-					reply_markup = self.__Marathon.inline_templates.menu_marathon("Спасибо большое!")
+					reply_markup = self.__Marathon.inline_templates.menu_marathon("Спасибо большое!", "end_day_posts")
+					).id
 				)
 					
 				except:
-					Message = self.__Marathon.bot.send_message(
+					Data(user).add_day_post_messages(self.__Marathon.bot.send_message(
 						chat_id = Call.message.chat.id,
 						text = sixth_text,
 						parse_mode = "HTML",
-						reply_markup = self.__Marathon.inline_templates.menu_marathon("Спасибо большое!")
-					)
+						reply_markup = self.__Marathon.inline_templates.menu_marathon("Спасибо большое!", "end_day_posts")
+					).id
+				)
 
 			self.__Marathon.bot.answer_callback_query(Call.id)
 		
@@ -330,85 +439,173 @@ class Decorators:
 
 			else: Message = self.__Marathon.bot.send_message(
 					chat_id = Call.message.chat.id,
-					text = f"Информация здесь появиться в среду {self.__find_date(3).strftime("%d.%m.%Y")}. Пожалуйста, чуточку вашего терпения!)",
+					text = f"Информация здесь появиться в среду {self.__find_date(self.number_week, 3).strftime("%d.%m.%Y")}. Пожалуйста, чуточку вашего терпения!)",
 					parse_mode = "HTML",
-					reply_markup = self.__Marathon.inline_templates.menu_marathon("◀️ Назад")
+					reply_markup = GeneralInlineKeyboards.for_delete()
 				)
 			
 			self.__Marathon.bot.answer_callback_query(Call.id)
+
+		@self.__Marathon.bot.callback_query_handler(func = lambda Callback: Callback.data in ("end_day_posts"))
+		def click_end_day_posts(Call: types.CallbackQuery):
+			"""
+			Нажатие на кнопку: "Спасибо большое!", после того, как вышли посты 1-ого дня.
+
+			:param Call: menu_marathon
+			:type Call: types.CallbackQuery
+			"""
+
+			user = self.__Marathon.users.auth(Call.from_user)
+			if not self.__Marathon.subscription.IsSubscripted(user):
+				self.__Marathon.bot.answer_callback_query(Call.id)
+				return
+
+			data = Data(user)
+			TeleMaster(self.__Marathon.bot).safely_delete_messages(chat_id = Call.message.chat.id, messages = data.day_post_messages)
+			data.delete_day_post_messages()
+		
+			self.__Marathon.bot.answer_callback_query(Call.id)
+
+		@self.__Marathon.bot.callback_query_handler(func = lambda Callback: Callback.data in ("end_about_marathon"))
+		def click_end_about_marathon(Call: types.CallbackQuery):
+			"""
+			Нажатие на кнопку: "◀️ Назад", после того, как нажали кнопку подробнее о марафоне.
+
+			:param Call: end_about_marathon
+			:type Call: types.CallbackQuery
+			"""
+
+			user = self.__Marathon.users.auth(Call.from_user)
+			if not self.__Marathon.subscription.IsSubscripted(user):
+				self.__Marathon.bot.answer_callback_query(Call.id)
+				return
+
+			data = Data(user)
+			TeleMaster(self.__Marathon.bot).safely_delete_messages(chat_id = Call.message.chat.id, messages = data.about_post_messages, complex = True)
+			data.delete_about_post_messages()
+		
+			self.__Marathon.bot.answer_callback_query(Call.id)
 			
-class InlineKeyboards:
-	"""Набор Inline Keyboards."""
+MarathonParameters = MappingProxyType(
+	{
+	"day_post_messages": [],
+	"about_post_messages": []
+	}
+)
 
-	def marathon() -> types.InlineKeyboardMarkup:
-		"""
-		Возвращает марафон недели.
+class Data:
+	"""Хранитель данных пользователя."""
 
-		:return: Inline Keyboard. 
-		:rtype: types.InlineKeyboardMarkup
-		"""
-
-		menu = types.InlineKeyboardMarkup()
-
-		determinations = {
-			"Присоединиться!": "join_marathon",
-			"О марафонах недели": "about_marathons",
-			"Следующий марафон": "next_marathon",
-			"◀️ Назад": "requirements_for_5_level"
-		}
-
-		for String in determinations.keys(): menu.add(types.InlineKeyboardButton(text = String, callback_data = determinations[String]), row_width = 1)
-
-		return menu
+	@property
+	def day_post_messages(self) -> list[int]:
+		"""Список id сообщений, которые необходимо удалить (посты за первый или второй день)."""
+		
+		return self.__Data["day_post_messages"]
 	
-	def marathon_with_days() -> types.InlineKeyboardMarkup:
+	@property
+	def about_post_messages(self) -> list[int]:
+		"""Список id сообщений, которые необходимо удалить (подробнее о марафоне)."""
+		
+		return self.__Data["about_post_messages"]
+
+	def __init__(self, user: UserData):
 		"""
-		Возвращает марафон по дням.
+		Контейнер данных марафона пользователя.
 
-		:return: Inline Keyboard. 
-		:rtype: types.InlineKeyboardMarkup
+		:param user: Данные пользователя.
+		:type user: UserData
 		"""
 
-		menu = types.InlineKeyboardMarkup()
-
-		determinations = {
-			"Подробнее о марафоне": "more_detailed_marathon",
-			"1 день (понедельник)": "1 day",
-			"2 день (вторник)": "2 day",
-			"Продолжение🔥": "continue_marathon",
-			"◀️ Назад": "requirements_for_5_level"
-		}
-
-		for String in determinations.keys(): menu.add(types.InlineKeyboardButton(text = String, callback_data = determinations[String]), row_width = 1)
-
-		return menu
+		self.__User = user
 	
-	def continue_marathon() -> types.InlineKeyboardMarkup:
+		self.__Data = self.__ValidateDate()
+
+	def __ValidateDate(self) -> dict[str, list]:
 		"""
-		Возвращает ссылку на продолжение марафона.
+		Проверяет валидность данных марафона пользователя.
 
-		:return: Inline Keyboard. 
-		:rtype: types.InlineKeyboardMarkup
+		:return: Данные пользователя.
+		:rtype: dict[str, Any]
 		"""
+		
+		if not self.__User.has_property("marathon"):
+			self.__User.set_property("marathon", MarathonParameters.copy())
+			
+		else:
+			Data: dict = self.__User.get_property("marathon")
 
-		menu = types.InlineKeyboardMarkup()
+			for Key in MarathonParameters.keys():
 
-		continue_marathon = types.InlineKeyboardButton(("Продолжить марафон!"), url = "https://t.me/m/TWo0FHB-NjM6")
-		Back = types.InlineKeyboardButton(("◀️ Назад"), callback_data = "menu_marathon")
+				if Key not in Data.keys():
+					Data[Key] = MarathonParameters[Key]
+					logging.debug(f"For user #{self.__User.id} key \"{Key}\" set to default.")
+
+			self.__User.set_property("marathon", Data)
+
+		return self.__User.get_property("marathon")
 	
-		menu.add(continue_marathon, Back, row_width = 1) 
-
-		return menu
-	
-	def menu_marathon(text: str) -> types.InlineKeyboardMarkup:
+	def __SetParameter(self, key: Literal["day_post_messages", "about_post_messages"], value: Iterable[int]):
 		"""
-		Возвращает нас к меню марафона.
+		Сохраняет параметры данных марафон пользователя.
 
-		:return: Inline Keyboard. 
-		:rtype: types.InlineKeyboardMarkup
+		:param key: Ключ параметра.
+		:type key: Literal["day_post_messages", "about_post_messages"]
+		:param value: Значение параметра.
+		:type value: Iterable[int]
 		"""
-									
-		return types.InlineKeyboardMarkup([[types.InlineKeyboardButton(text = text, callback_data = "menu_marathon")]])
+		
+		self.__Data[key] = value
+		
+		self.save()
+
+	def save(self):
+		"""Сохраняет данные данных марафон пользователя."""
+
+		self.__User.set_property("marathon", self.__Data)
+
+	def add_day_post_messages(self, message_id: Iterable[int] | int):
+		"""
+		Добавляет id сообщений, которые необходимо удалить.
+
+		:param message_id: Сообщения о планах марафона на этот день.
+		:type message_id: Iterable[int] | intj
+		"""
+
+		MessagesID = self.day_post_messages 
+		MessagesID.extend(ToIterable(message_id))
+		self.__SetParameter("day_post_messages", MessagesID)
+
+	def delete_day_post_messages(self):
+		"""
+		Удаляет id сообщений, которые необходимо удалить.
+
+		:param message_id: Сообщения о планах марафона на этот день.
+		:type message_id: Iterable[int] | int
+		"""
+
+		self.__SetParameter("day_post_messages", [])
+
+	def add_about_post_messages(self, message_id: Iterable[int] | int):
+		"""
+		Добавляет id сообщений, которые необходимо удалить.
+
+		:param message_id: Сообщения о текущем марафоне.
+		:type message_id: Iterable[int] | intj
+		"""
+
+		MessagesID = self.about_post_messages 
+		MessagesID.extend(ToIterable(message_id))
+		self.__SetParameter("about_post_messages", MessagesID)
+
+	def delete_about_post_messages(self):
+		"""
+		Удаляет id сообщений, которые необходимо удалить.
+
+		:param message_id: Сообщения о о текущем марафоне.
+		:type message_id: Iterable[int] | int
+		"""
+
+		self.__SetParameter("about_post_messages", [])
 
 class Marathon:
 

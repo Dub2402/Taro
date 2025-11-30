@@ -12,7 +12,7 @@ from telebot import TeleBot, types
 
 from datetime import datetime
 from types import MappingProxyType
-from typing import  Iterable
+from typing import Iterable
 import logging
 import os
 
@@ -177,6 +177,9 @@ class Decorators:
 				reply_markup = inline_keyboards.end_get_feedback()
 			).id
 			)
+
+			FeedbackData().add_feedback(user.id, user.get_property("feedback_message"))
+
 			user.reset_expected_type()
 			user.clear_temp_properties()
 
@@ -266,7 +269,7 @@ class FeedbackData:
 	def __reload(self):
 		"""Загружает сообщения обратной связи от пользователей."""
 
-		if os.path.exists(self.__Path): self.__Data = ReadJSON(self.__Path)
+		if os.path.exists(self.__Path): self.__DataFeedback = ReadJSON(self.__Path)
 		else: self.__save()
 
 	def __save(self):
@@ -277,7 +280,7 @@ class FeedbackData:
 	def __get_free_id(self):
 
 		Increment = list()
-		for key in self.__Data.keys(): Increment.append(int(key))
+		for key in self.__DataFeedback["feedback"].keys(): Increment.append(int(key))
 		Increment.sort()
 		FreeID = 1
 		if Increment: FreeID = max(Increment) + 1
@@ -294,7 +297,7 @@ class FeedbackData:
 		:type message: str
 		"""
 
-		self.__Data["feedback"][self.__get_free_id()] = {
+		self.__DataFeedback["feedback"][self.__get_free_id()] = {
 			"message": message,
 			"date": str(datetime.now()),
 			"user": user_id
@@ -367,9 +370,9 @@ class Data:
 
 	def add_removable_messages(self, message_id: Iterable[int] | int):
 		"""
-		Добавляет id сообщений, которые необходимо удалить и говорящие об ограничении использования онлайн раскладов.
+		Добавляет id сообщений, которые необходимо удалить.
 
-		:param message_id: Сообщения об ограничении использования онлайн раскладов.
+		:param message_id: Сообщения, которые присылаются при наборе текста обратной связи пользователем.
 		:type message_id: Iterable[int] | int
 		"""
 
@@ -379,9 +382,9 @@ class Data:
 
 	def delete_removable_messages(self):
 		"""
-		Добавляет id сообщений, которые необходимо удалить и говорящие об ограничении использования онлайн раскладов.
+		Добавляет id сообщений, которые необходимо удалить.
 
-		:param message_id: Сообщения об ограничении использования онлайн раскладов.
+		:param message_id: Сообщения, которые присылаются при наборе текста обратной связи пользователем.
 		:type message_id: Iterable[int] | int
 		"""
 

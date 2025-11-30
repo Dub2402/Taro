@@ -37,7 +37,6 @@ class InlineTemplates:
 		"""
 
 		menu = types.InlineKeyboardMarkup()
-
 		buttons = []
 
 		UserOptions = ExchangeOptions(user)
@@ -75,18 +74,29 @@ class InlineTemplates:
 		"""
 
 		menu = types.InlineKeyboardMarkup()
+		buttons = []
 
-		determinations = {
+		determinations_first = {
 			_("Рассылка карты дня"): "mailing_card_day",
-			_("Перезапуск бота"): "restart_bot",
-			_("Обратная связь"): "feedback",
-			_("Поделиться!"): "share",
-			_("◀️ Назад"): "menu_settings"
+			_("Перезапуск бота"): "restart_bot"
 		}
 
-		for string in determinations.keys(): menu.add(types.InlineKeyboardButton(string, callback_data = determinations[string]), row_width = 1)
+		determinations_second = {
+			_("Обратная связь"): "feedback",
+			_("Поделиться!"): "share"
+			}
+		
+		determinations_third = {
+			_("◀️ Назад"): "additional_options"
+		}
+
+		for string in determinations_first.keys(): menu.add(types.InlineKeyboardButton(string, callback_data = determinations_first[string]), row_width = 1)
+		for string in determinations_second.keys(): buttons.append(types.InlineKeyboardButton(string, callback_data = determinations_second[string]))
+		menu.add(*buttons, row_width = 2)
+		for string in determinations_third.keys(): menu.add(types.InlineKeyboardButton(string, callback_data = determinations_third[string]), row_width = 1)
+
+		return menu	
 	
-		return menu
 
 	def restart_bot() -> types.InlineKeyboardMarkup:
 		"""
