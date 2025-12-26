@@ -180,8 +180,10 @@ class Decorators:
 				reply_markup = inline_keyboards.end_get_feedback()
 			).id
 			)
+			name = user.username
+			time_sending = datetime.now().strftime("%d.%m.%y %H:%M")
 
-			self.__Feedback.reports_storage.append(user.get_property("feedback_message"))
+			self.__Feedback.reports_storage.append(user.get_property("feedback_message") + "\n\n@" + name + " " + "<i>" + time_sending + "</i>")
 			user.reset_expected_type()
 			user.clear_temp_properties()
 
