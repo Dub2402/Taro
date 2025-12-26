@@ -13,6 +13,7 @@ from telebot import TeleBot, types
 from typing import Iterable, TYPE_CHECKING
 from datetime import datetime
 from types import MappingProxyType
+from typing import Iterable, Literal
 import logging
 import os
 
@@ -238,15 +239,22 @@ class Procedures:
 				message.text,
 				_("<i>Проверьте, пожалуйста, все ли правильно вы написали?</i>")
 			)
-	
-			Data(user).add_removable_messages(self.__Feedback.bot.send_message(
+			try:
+				Data(user).add_removable_messages(self.__Feedback.bot.send_message(
+					chat_id = user.id,
+					text = "\n\n".join(Text),
+					parse_mode = "HTML",
+					reply_markup = self.__Feedback.inline_keyboards.feedback_message()
+				).id
+				)	
+			except:
+				user.set_expected_type("feedback")
+				self.__Feedback.bot.send_message(
 				chat_id = user.id,
-				text = "\n\n".join(Text),
-				parse_mode = "HTML",
-				reply_markup = self.__Feedback.inline_keyboards.feedback_message()
-			).id
-			)	
-	
+				text = "Попробуйте сократить количество символов до 4000.",
+				parse_mode = "HTML"
+			)
+				
 		return True
 
 FeedbackParameters = MappingProxyType(
@@ -300,7 +308,7 @@ class Data:
 
 		return self.__User.get_property("feedback")
 	
-	def __SetParameter(self, key: str ["removable_messages"], value: Iterable[int]):
+	def __SetParameter(self, key: Literal ["removable_messages"], value: Iterable[int]):
 		"""
 		Сохраняет параметры обратной связи пользователя.
 

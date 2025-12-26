@@ -249,7 +249,7 @@ class Decorators:
 			
 			next_marathon_template = (
 				"ВНИМАНИЕ!!! МАРАФОН СЛЕДУЮЩЕЙ НЕДЕЛИ:" + "\n\n"
-				f"<b>{self.__Marathon.reader.names_marathons[index_excel + 1]}</b>" + "\n",
+				f"<b>\"{self.__Marathon.reader.names_marathons[index_excel + 1]}\"</b>" + "\n",
 				f"{self.__Marathon.reader.descriptions_marathons[index_excel + 1]}\n",
 				"<b>" + "📆 Даты проведения: " + f"{self.__find_date(need_number_week = self.number_week + 1, need_weekday = 1).strftime("%d.%m.%Y")} - {self.__find_date(need_number_week = self.number_week + 1, need_weekday = 7).strftime("%d.%m.%Y")}" + "</b>" + "\n",
 				"<b><i>" + "Будем ждать тебя и твоих друзей, @tarobotX_bot! 🤗" + "</i></b>"
@@ -358,7 +358,7 @@ class Decorators:
 				Data(user).add_day_post_messages(self.__Marathon.bot.send_animation(
 					chat_id = Call.message.chat.id,
 					animation = self.__Marathon.cacher.get_real_cached_file(
-						path = f"Data/Marathons/{self.year}/{self.number_week}/{Call.data}//2.mp4",
+						path = f"Data/Marathons/{self.year}/{self.number_week}/{Call.data}/2.mp4",
 						autoupload_type = types.InputMediaVideo,
 						).file_id,
 					caption = second_text,
@@ -383,7 +383,7 @@ class Decorators:
 				Data(user).add_day_post_messages(self.__Marathon.bot.send_animation(
 					chat_id = Call.message.chat.id,
 					animation = self.__Marathon.cacher.get_real_cached_file(
-						path = f"Data/Marathons/{self.year}/{self.number_week}/{Call.data}//5.mp4",
+						path = f"Data/Marathons/{self.year}/{self.number_week}/{Call.data}/5.mp4",
 						autoupload_type = types.InputMediaVideo,
 						).file_id,
 					caption = fifth_text,
@@ -394,7 +394,7 @@ class Decorators:
 					Data(user).add_day_post_messages(self.__Marathon.bot.send_animation(
 					chat_id = Call.message.chat.id,
 					animation = self.__Marathon.cacher.get_real_cached_file(
-						path = f"Data/Marathons/{self.year}/{self.number_week}/{Call.data}//2.mp4",
+						path = f"Data/Marathons/{self.year}/{self.number_week}/{Call.data}/6.mp4",
 						autoupload_type = types.InputMediaVideo,
 						).file_id,
 					caption = sixth_text,
@@ -479,10 +479,30 @@ class Decorators:
 			if not self.__Marathon.subscription.IsSubscripted(user):
 				self.__Marathon.bot.answer_callback_query(Call.id)
 				return
+			
+			numbers_week: tuple = self.__Marathon.reader.numbers_week
+			index_excel = numbers_week.index(str(self.number_week))
+
+			text_announcement = (
+				f"<b>МАРАФОН \"{self.__Marathon.reader.names_marathons[index_excel]}\"</b>\n",
+				f"{self.__Marathon.reader.descriptions_marathons[index_excel]}\n",
+				"<b><i>Присоединяйся, нас уже много! ✅</i></b>"
+			)
 
 			data = Data(user)
 			TeleMaster(self.__Marathon.bot).safely_delete_messages(chat_id = Call.message.chat.id, messages = data.about_post_messages, complex = True)
 			data.delete_about_post_messages()
+			
+			self.__Marathon.bot.send_animation(
+				chat_id = Call.message.chat.id,
+				animation = self.__Marathon.cacher.get_real_cached_file(
+					path = f"Data/Marathons/{self.year}/{self.number_week}/announcement.mp4",
+					autoupload_type = types.InputMediaVideo,
+					).file_id,
+				caption = "\n".join(text_announcement),
+				parse_mode = "HTML", 
+				reply_markup = self.__Marathon.inline_templates.marathon_with_days()
+			)
 		
 			self.__Marathon.bot.answer_callback_query(Call.id)
 			
