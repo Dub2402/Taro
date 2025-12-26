@@ -1,9 +1,14 @@
 from dublib.Methods.Filesystem import ReadJSON, WriteJSON
 
+from typing import TYPE_CHECKING
 import os
 
 import xlsxwriter
 import pandas
+
+if TYPE_CHECKING:
+	from Source.TeleBotAdminPanel.Modules.Moderation.Moderators.Base import ModerationSignal
+	from Source.TeleBotAdminPanel.Modules.Moderation.Storage import Storage
 
 class LayoutsExamples:
 	"""Контейнер шаблонов вопросов."""
@@ -43,8 +48,7 @@ class LayoutsExamples:
 			"Про любовь:": []
 		}
 
-		self.__UnmoderatedPath = "Data/UnmoderatedLayoutsExample.json"
-		self.__Unmoderated = list()
+		self.__Unmoderated: "Storage" = None
 
 		self.reload()
 
@@ -68,7 +72,6 @@ class LayoutsExamples:
 		"""
 
 		self.__Unmoderated.append(question.strip())
-		WriteJSON(self.__UnmoderatedPath, self.__Unmoderated)
 
 	def get_unmoderated_common(self) -> tuple[str]:
 		"""
@@ -78,24 +81,17 @@ class LayoutsExamples:
 		:rtype: tuple[str]
 		"""
 
-		return tuple(self.__Unmoderated)
+		return self.__Unmoderated.elements
 
-	def moderate_common(self, question: str, status: bool, edited_question: str):
+	def moderate_common(self, signal: "ModerationSignal"):
 		"""
-		Модерирует общий вопрос.
+		Выполняет обработку модерации послания.
 
-		:param question: Текст вопроса.
-		:type question: str
-		:param status: _description_
-		:type status: bool
-		:param edited_question: _description_
-		:type edited_question: str
+		:param edited_mail: Сигнал от модератора.
+		:type edited_mail: ModerationSignal
 		"""
 
-		try: self.__Unmoderated.remove(question)
-		except ValueError: pass
-
-		if status: self.add_common(edited_question if edited_question else question)
+		if signal.status: self.add_common(signal.value)
 
 	def reload(self):
 		"""Считывает послания."""
@@ -111,9 +107,6 @@ class LayoutsExamples:
 				for Index in range(0, len(self.__Data[Type])): self.__Data[Type][Index] = self.__Data[Type][Index].strip()
 			
 		else: self.save()
-
-		if os.path.exists(self.__UnmoderatedPath): self.__Unmoderated = ReadJSON(self.__UnmoderatedPath)
-		else: self.__Unmoderated = list()
 
 	def save(self):
 		"""Сохраняет таблицу посланий."""
@@ -135,3 +128,13 @@ class LayoutsExamples:
 
 		WorkSheet.autofit(max_width = 500)
 		WorkBook.close()
+
+	def set_unmoderated_common_storage(self, storage: "Storage"):
+		"""
+		Привязывает контейнер не прошедших модерацию общих вопросов.
+
+		:param storage: Контейнер вопросов.
+		:type storage: Storage
+		"""
+
+		self.__Unmoderated = storage

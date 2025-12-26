@@ -12,6 +12,7 @@ from dublib.TelebotUtils.Master import TeleMaster
 from dublib.TelebotUtils.Cache import TeleCache
 from dublib.Engine.GetText import _
 
+from typing import TYPE_CHECKING
 from datetime import datetime
 from time import sleep
 import random
@@ -21,6 +22,10 @@ from telebot import apihelper, TeleBot, types
 import dateparser
 import xlsxwriter
 import pandas
+
+if TYPE_CHECKING:
+	from Source.TeleBotAdminPanel.Modules.Moderation.Moderators.Base import ModerationSignal
+	from Source.TeleBotAdminPanel.Modules.Moderation.Storage import Storage
 
 #==========================================================================================#
 # >>>>> КОНТЕЙНЕРЫ ПОСЛАНИЙ <<<<< #
@@ -188,68 +193,6 @@ class MailsContainer:
 
 		WorkSheet.autofit(max_width = 500)
 		WorkBook.close()
-
-class UnmoderatedBuffer:
-	"""Буфер ещё не прошедших модерацию посланий."""
-
-	#==========================================================================================#
-	# >>>>> СВОЙСТВА <<<<< #
-	#==========================================================================================#
-
-	@property
-	def mails(self) -> tuple[str]:
-		"""Набор посланий."""
-
-		return tuple(self.__Data["unmoderated"])
-
-	#==========================================================================================#
-	# >>>>> ПУБЛИЧНЫЕ МЕТОДЫ <<<<< #
-	#==========================================================================================#
-
-	def __init__(self):
-
-		self.__Path = "Data/Exchange/Unmoderated.json"
-		self.__Data = {
-			"unmoderated": []
-		}
-
-		self.reload()
-
-	def append(self, mail: str):
-		"""
-		Добавляет новое послание для модерации.
-
-		:param mail: Текст послания.
-		:type mail: str
-		"""
-
-		if mail not in self.__Data["unmoderated"]: self.__Data["unmoderated"].append(mail)
-		self.save()
-
-	def reload(self):
-		"""Считывает не прошедшие модерацию послания."""
-
-		if os.path.exists(self.__Path): self.__Data = ReadJSON(self.__Path)
-		else: self.save()
-
-	def remove(self, mail: str):
-		"""
-		Удаляет послание из буфера.
-
-		:param mail: Текст послания.
-		:type mail: str
-		"""
-
-		try:
-			self.__Data["unmoderated"].remove(mail)
-			self.save()
-
-		except ValueError: pass
-
-	def save(self):
-		"""Сохраняет список посланий."""
-
-		WriteJSON(self.__Path, self.__Data)
 
 #==========================================================================================#
 # >>>>> ШАБЛОНЫ <<<<< #
@@ -659,8 +602,8 @@ class Exchanger:
 		return self.__MailsContainer
 	
 	@property
-	def unmoderated_mails(self) -> UnmoderatedBuffer:
-		"""Буфер не прошедших модерацию сообщений."""
+	def unmoderated_mails(self) -> "Storage":
+		"""Хранилище не прошедших модерацию посланий."""
 
 		return self.__UnmoderatedBuffer
 
@@ -703,7 +646,7 @@ class Exchanger:
 
 		self.__Decorators = Decorators(self)
 		self.__Procedures = Procedures(self)
-		self.__UnmoderatedBuffer = UnmoderatedBuffer()
+		self.__UnmoderatedBuffer: "Storage" = None
 		self.__MailsContainer = MailsContainer()
 		self.__Repeater = Repeater()
 
@@ -715,22 +658,17 @@ class Exchanger:
 		:rtype: tuple[str]
 		"""
 
-		return self.unmoderated_mails.mails
+		return self.__UnmoderatedBuffer.elements
 	
-	def moderate_mail(self, mail: str, status: bool, edited_mail: str | None = None):
+	def moderate_mail(self, signal: "ModerationSignal"):
 		"""
 		Выполняет обработку модерации послания.
 
-		:param mail: Текст послания.
-		:type mail: str
-		:param status: Статус модерации.
-		:type status: bool
-		:param edited_mail: Текст послания после редактирования.
-		:type edited_mail: str | None
+		:param edited_mail: Сигнал от модератора.
+		:type edited_mail: ModerationSignal
 		"""
 
-		self.__UnmoderatedBuffer.remove(mail)
-		if status: self.__MailsContainer.append(edited_mail if edited_mail else mail)
+		if signal.status: self.__MailsContainer.append(signal.value)
 
 	def open(self, user: UserData, message_id: int | None = None, update_animation: bool = True):
 		"""
@@ -833,3 +771,13 @@ class Exchanger:
 		Mail = self.__Repeater.get(user.id)
 		if not Mail: Mail = random.choice(self.__MailsContainer.all_mails)
 		if len(UserOptions.mails) < 10 and Mail not in UserOptions.mails: UserOptions.push_mail(Mail)
+
+	def set_unmoderated_mails_storage(self, storage: "Storage"):
+		"""
+		Привязывает контейнер не прошедших модерацию посланий.
+
+		:param storage: Контейнер посланий.
+		:type storage: Storage
+		"""
+
+		self.__UnmoderatedBuffer = storage

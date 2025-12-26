@@ -8,11 +8,11 @@ from Source.Modules.ThinkCard import Data as ThinkCard_Data, Manager as ThinkCar
 from Source.Modules.Marathon import Marathon
 from Source.Modules.Feedback import Feedback
 
-from Source.TeleBotAdminPanel.Core.Moderation import Moderator, ModeratorsStorage
-from Source.TeleBotAdminPanel.Core.Uploading import Uploader
+from Source.TeleBotAdminPanel.Modules.Moderation import ModeratorsModes
+from Source.TeleBotAdminPanel import Panel, Modules
+from Source.Core import Statistics
 
 from Source.Modules.LayoutsExamples import LayoutsExamples
-from Source.Core.AdditionalColumns import *
 from Source.TeleBotAdminPanel import Panel
 from Source.UI.WorkpiecesMessages import WorkpiecesMessages
 from Source.Core.BlackDictionary import BlackDictionary
@@ -59,7 +59,6 @@ usermanager.set_manager_promocodes(manager_promocodes)
 subscription = Subscription(MasterBot, Settings["subscription_chanel"], Cacher, usermanager)
 reader = Reader(Settings)
 mailer = Mailer(MasterBot, usermanager, reader, Cacher, subscription) 
-AdminPanel = Panel(Bot, usermanager, Settings["password"])
 sender = WorkpiecesMessages(Bot, Cacher)
 
 yes_no = YesNo(MasterBot, Cacher, reader, usermanager, subscription)
@@ -78,9 +77,50 @@ LayoutsExamplesObject = LayoutsExamples()
 main_ascend = MainAscend(users = usermanager, scheduler = scheduler, bot = Bot, cacher = Cacher, subscription = subscription)
 main_think = MainThinkCard(users = usermanager, bot = Bot, cacher = Cacher, subscription = subscription)
 
-ModeratorsStorage.add_moderator(Moderator(EnergyExchanger.get_unmoderated_mails, EnergyExchanger.moderate_mail), "Обмен энергией")
-ModeratorsStorage.add_moderator(Moderator(LayoutsExamplesObject.get_unmoderated_common, LayoutsExamplesObject.moderate_common), "Общие вопросы")
-Uploader.set_uploadable_files("Data/Exchange/Mails.xlsx")
+#==========================================================================================#
+# >>>>> ИНИЦИАЛИЗАЦИЯ ПАНЕЛИ УПРАВЛЕНИЯ <<<<< #
+#==========================================================================================#
+
+AdminPanel = Panel(Bot, usermanager, Settings["password"])
+
+TBAP_TREE = {
+	"📊 Статистика": Statistics.CM_Statistics,
+	"✍🏻 Модерация": Modules.SM_Moderation,
+	"📤 Выгрузка": Modules.SM_Extraction,
+	"❌ Закрыть": Modules.SM_Close
+}
+
+AdminPanel.set_tree(TBAP_TREE)
+
+# Получение объекта модуля статистики.
+SM_Statistics: Modules.SM_Statistics = AdminPanel.get_module_object(Statistics.CM_Statistics.__name__)
+# Определение нового словаря колонок для управления последовательностью колонок.
+Columns = {"Index": Statistics.get_index}
+# Установка методов для заполнения ячеек дополнительных колонки.
+Columns.update(SM_Statistics.columns)
+SM_Statistics.columns = Columns
+SM_Statistics.columns["Name"] = Statistics.get_name
+SM_Statistics.columns["Level"] = Statistics.get_level
+SM_Statistics.columns["Promocode"] = Statistics.get_promocode
+SM_Statistics.columns["Registration Date"] = Statistics.get_registration_date
+
+# Получение объекта модуля выгрузки.
+SM_Extraction: Modules.SM_Extraction = AdminPanel.get_module_object(Modules.SM_Extraction.__name__)
+# Определение пар название-путь файла.
+FILES = {"Послания": "Data/Exchange/Mails.xlsx"}
+# Установка файлов для выгрузки.
+SM_Extraction.set_files(FILES)
+
+# Получение объекта модуля модерации.
+SM_Moderation: Modules.SM_Moderation = AdminPanel.get_module_object(Modules.SM_Moderation.__name__)
+# Инициализация модераторов контента.
+Storage_Mails = SM_Moderation.add_moderator("mails", "Обмен энергией", ModeratorsModes.Editable, EnergyExchanger.moderate_mail)
+Storage_Common = SM_Moderation.add_moderator("common", "Общие вопросы", ModeratorsModes.Editable, LayoutsExamplesObject.moderate_common)
+Storage_Feedback = SM_Moderation.add_moderator("feedback", "Обратная связь", ModeratorsModes.View)
+# Привязка модераторов к обработчикам.
+EnergyExchanger.set_unmoderated_mails_storage(Storage_Mails)
+LayoutsExamplesObject.set_unmoderated_common_storage(Storage_Common)
+feedback.set_reports_storage(Storage_Feedback)
 
 logging.basicConfig(level = logging.DEBUG, encoding = "utf-8", filename = "LOGING.log", filemode = "w", force = True,
 	format = '%(asctime)s - %(levelname)s - %(message)s',
@@ -126,7 +166,10 @@ try:
 
 except ImportError: pass
 
-AdminPanel.decorators.commands()
+@Bot.message_handler(commands = ["admin"])
+def Command(Message: types.Message):
+	User = usermanager.auth(Message.from_user)
+	AdminPanel.open(User, "Панель управления открыта.")
 
 @Bot.message_handler(commands = ["new"])
 def ProcessCommandStart(Message: types.Message):
@@ -259,7 +302,7 @@ def ProcessShareWithFriends(Message: types.Message):
 @Bot.message_handler(content_types = ["text"])
 def ProcessText(Message: types.Message):
 	user = usermanager.auth(Message.from_user)
-	if AdminPanel.procedures.text(Bot, usermanager, Message): return
+	if AdminPanel.procedures.text(Message): return
 	if not subscription.IsSubscripted(user): return
 	if EnergyExchanger.procedures.text(Message): return
 	if feedback.procedures.text(Message): return
@@ -278,6 +321,7 @@ def ProcessText(Message: types.Message):
 			user.set_property("Generation", False)
 
 	elif user.expected_type == "new_common_question":
+		print(Message.text)
 		LayoutsExamplesObject.add_unmoderated_common(Message.text)
 		Text = (
 			"Ваш вопрос сохранён.",
@@ -475,10 +519,5 @@ def InlineButtonAllTaro(Call: types.CallbackQuery):
 	)
 
 	Bot.answer_callback_query(Call.id)
-
-@Bot.message_handler(content_types = ["audio", "document", "video", "voice", "photo"])
-def File(Message: types.Message):
-	User = usermanager.auth(Message.from_user)
-	AdminPanel.procedures.files(Bot, User, Message)
 
 Bot.infinity_polling()

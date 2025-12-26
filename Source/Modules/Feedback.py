@@ -10,12 +10,14 @@ from dublib.Methods.Data import ToIterable
 
 from telebot import TeleBot, types
 
+from typing import Iterable, TYPE_CHECKING
 from datetime import datetime
 from types import MappingProxyType
-from typing import Iterable
 import logging
 import os
 
+if TYPE_CHECKING:
+	from Source.TeleBotAdminPanel.Modules.Moderation.Moderators.Base import Storage
 
 class InlineKeyboards:
 	"""Набор шаблонов InlineKeyboard."""
@@ -178,8 +180,7 @@ class Decorators:
 			).id
 			)
 
-			FeedbackData().add_feedback(user.id, user.get_property("feedback_message"))
-
+			self.__Feedback.reports_storage.append(user.get_property("feedback_message"))
 			user.reset_expected_type()
 			user.clear_temp_properties()
 
@@ -253,56 +254,6 @@ FeedbackParameters = MappingProxyType(
 	"removable_messages": []
 	}
 )
-
-class FeedbackData:
-	"""Данные обратной связи пользователей."""
-
-	def __init__(self):
-
-		self.__Path = "Data/AdditionalOptions/Feedback.json"
-		self.__DataFeedback = {
-			"feedback": {}
-		}
-
-		self.__reload()
-
-	def __reload(self):
-		"""Загружает сообщения обратной связи от пользователей."""
-
-		if os.path.exists(self.__Path): self.__DataFeedback = ReadJSON(self.__Path)
-		else: self.__save()
-
-	def __save(self):
-		"""Сохраняет сообщения обратной связи от пользователей."""
-
-		WriteJSON(self.__Path, self.__DataFeedback)
-
-	def __get_free_id(self):
-
-		Increment = list()
-		for key in self.__DataFeedback["feedback"].keys(): Increment.append(int(key))
-		Increment.sort()
-		FreeID = 1
-		if Increment: FreeID = max(Increment) + 1
-
-		return FreeID
-
-	def add_feedback(self, user_id: int, message: str):
-		"""
-		Запоминает текст обратной связи от пользователя.
-
-		:param user_id: ID пользователя.
-		:type user_id: int
-		:param message: Текст сообщения.
-		:type message: str
-		"""
-
-		self.__DataFeedback["feedback"][self.__get_free_id()] = {
-			"message": message,
-			"date": str(datetime.now()),
-			"user": user_id
-		}
-		self.__save()
 
 class Data:
 	"""Хранитель данных пользователя."""
@@ -394,6 +345,12 @@ class Feedback:
 	"""Раздел таробота, отвечающий за обратную связь от пользователей."""
 
 	@property
+	def reports_storage(self) -> "Storage":
+		"""Хранилище непросмотренных сообщений обратной связи."""
+
+		return self.__ReportsStorage
+
+	@property
 	def decorators(self) -> Decorators:
 		"""Наборы декораторов."""
 		
@@ -448,10 +405,23 @@ class Feedback:
 		:type bot: TeleBot
 		"""
 	
-		self.__Decorators = Decorators(self)
-		self.__Procedures = Procedures(self)
-		self.__inline_keyboards = InlineKeyboards
 		self.__users = users
 		self.__cacher = cacher
 		self.__subscription = subscription
 		self.__bot = bot
+
+		self.__Decorators = Decorators(self)
+		self.__Procedures = Procedures(self)
+		self.__inline_keyboards = InlineKeyboards
+
+		self.__ReportsStorage: "Storage" = None
+
+	def set_reports_storage(self, storage: "Storage"):
+		"""
+		Привязывает хранилище сообщений обратной связи.
+
+		:param storage: Хранилище сообщений.
+		:type storage: Storage
+		"""
+
+		self.__ReportsStorage = storage
