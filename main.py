@@ -92,6 +92,7 @@ TBAP_TREE = {
 }
 
 AdminPanel.set_tree(TBAP_TREE)
+AdminPanel.set_close_callback(sender.send_start_messages)
 
 # Получение объекта модуля статистики.
 SM_Statistics: Modules.SM_Statistics = AdminPanel.get_module_object(Statistics.CM_Statistics.__name__)
