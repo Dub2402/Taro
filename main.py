@@ -7,6 +7,7 @@ from Source.Modules.YesNo import YesNo
 from Source.Modules.ThinkCard import Data as ThinkCard_Data, Manager as ThinkCard_Manager, InlineKeyboard as ThinkCard_InlineKeyboard, Main as MainThinkCard, update_think_card
 from Source.Modules.Marathon import Marathon
 from Source.Modules.Feedback import Feedback
+from Source import Functions
 
 from Source.TeleBotAdminPanel.Modules.Moderation import ModeratorsModes
 from Source.TeleBotAdminPanel import Panel, Modules
@@ -174,12 +175,16 @@ def Command(Message: types.Message):
 @Bot.message_handler(commands = ["new"])
 def ProcessCommandStart(Message: types.Message):
 	User = usermanager.auth(Message.from_user)
+	Functions.CloseAdminPanel(Bot, AdminPanel, User)
+
 	Bot.send_message(chat_id = User.id, text = "Отправьте текст вопроса.")
 	User.set_expected_type("new_common_question")
 
 @Bot.message_handler(commands = ["info"])
 def ProcessInfo(Message: types.Message):
 	User = usermanager.auth(Message.from_user)
+	Functions.CloseAdminPanel(Bot, AdminPanel, User)
+
 	if User.has_permissions("admin"):
 
 		template_text = (
@@ -209,13 +214,15 @@ def ProcessCommandStart(Message: types.Message):
 		EnergyExchanger.push_mail(user)
 		
 	else: user = usermanager.auth(Message.from_user)
-	
+
+	Functions.CloseAdminPanel(Bot, AdminPanel, user)
 	if not user.has_property("registration_date"): user.set_property("registration_date", datetime.now().strftime("%d.%m.%Y"))
 	sender.send_start_messages(user)
 
 @Bot.message_handler(commands = ["dev"])
 def ProcessCommandStart(Message: types.Message):
 	user = usermanager.auth(Message.from_user)
+	Functions.CloseAdminPanel(Bot, AdminPanel, user)
 
 	user.remove_permissions("developer") if user.has_permissions(["developer", "admin"]) else user.add_permissions("developer")
 	text = "Режим разработчика включен." if user.has_permissions(["developer", "admin"]) else "Режим разработчика выключен."
@@ -227,6 +234,7 @@ def ProcessCommandStart(Message: types.Message):
 @Bot.message_handler(commands = ["card"])
 def ProcessCommandCard(Message: types.Message):
 	user = usermanager.auth(Message.from_user)
+	Functions.CloseAdminPanel(Bot, AdminPanel, user)
 	if not subscription.IsSubscripted(user): return
 
 	Message_send = False
@@ -283,12 +291,14 @@ def process_command_mailset(Message: types.Message):
 	"""
 
 	user = usermanager.auth(Message.from_user)
+	Functions.CloseAdminPanel(Bot, AdminPanel, user)
 	if not subscription.IsSubscripted(user): return
 	sender.settings_mailing(Message, action = "restart")
 
 @Bot.message_handler(commands = ["share"])
 def ProcessShareWithFriends(Message: types.Message):
 	user = usermanager.auth(Message.from_user)
+	Functions.CloseAdminPanel(Bot, AdminPanel, user)
 	if not subscription.IsSubscripted(user): return
 
 	Bot.send_photo(
