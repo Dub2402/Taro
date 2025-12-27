@@ -86,9 +86,9 @@ class InlineKeyboards:
 		Menu = types.InlineKeyboardMarkup()
 
 		value_card = types.InlineKeyboardButton(_("Значение карт"), callback_data = "value_card")
-		History = types.InlineKeyboardButton(_("История Таро"), url = "https://tarolog.me/taro/history.html")
-		What_is = types.InlineKeyboardButton(_("Что такое Таро?"),url = "https://tarolog.me/taro/determination.html")
-		Work_with = types.InlineKeyboardButton(_("Работа с картами"), url = "https://tarolog.me/taro/work.html")
+		History = types.InlineKeyboardButton(_("История Таро"), url = "https://raskladtaro.site/taro/history")
+		What_is = types.InlineKeyboardButton(_("Что такое Таро?"),url = "https://raskladtaro.site/taro/determination")
+		Work_with = types.InlineKeyboardButton(_("Работа с картами"), url = "https://raskladtaro.site/taro/work")
 		Back = types.InlineKeyboardButton(_("◀️ Назад"), callback_data = "main_menu")
 	
 		Menu.add(value_card, History, What_is, Work_with, Back, row_width= 1) 
