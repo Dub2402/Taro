@@ -1,3 +1,5 @@
+from dublib.Methods.Filesystem import ListDir
+
 import pandas
 
 from typing import Iterable
@@ -66,24 +68,6 @@ class Reader:
 		return self.__OnlineLayout["Про любовь:"]
 	
 	@property
-	def numbers_week(self) -> tuple[str]:
-		"""Кортеж номеров недель."""
-
-		return self.__Marathons["Номер недели марафона"]
-	
-	@property
-	def names_marathons(self) -> tuple[str]:
-		"""Кортеж названий марафонов."""
-
-		return self.__Marathons["Название марафона"]
-	
-	@property
-	def descriptions_marathons(self) -> tuple[str]:
-		"""Кортеж описаний марафонов."""
-
-		return self.__Marathons["Описание марафона"]
-	
-	@property
 	def random_motto(self):
 		"""Рандомный девиз дня."""
 
@@ -101,6 +85,21 @@ class Reader:
 
 		return random.choices(self.general_questions, k = 2)
 	
+	def numbers_week(self, year: int) -> tuple[str]:
+		"""Кортеж номеров недель."""
+
+		return self.__Marathons[str(year)]["Номер недели марафона"]
+	
+	def names_marathons(self, year: int) -> tuple[str]:
+		"""Кортеж названий марафонов."""
+
+		return self.__Marathons[str(year)]["Название марафона"]
+	
+	def descriptions_marathons(self, year: int) -> tuple[str]:
+		"""Кортеж описаний марафонов."""
+
+		return self.__Marathons[str(year)]["Описание марафона"]
+	
 	def __init__(self, Settings: dict):
 
 		"""
@@ -110,13 +109,16 @@ class Reader:
 		:type Settings: dict
 		"""
 
+		self.__Marathons = dict()
+
 		self.__LettersDict = self.__ReadExcel(Settings["letters"])
 		self.__YesNoDict = self.__ReadExcel(Settings["yes_no"])
 		self.__MottoDict = self.__ReadExcel(Settings["motto_day"])
 		self.__OnlineLayout = self.__ReadExcel(Settings["online_layout"])
 
-		self.__Marathons = self.__ReadExcel(f"Data/Marathons/{datetime.today().isocalendar().year}/Marathons.xlsx")
-
+		for folder in ListDir("Data/Marathons"):
+			self.__Marathons[folder] = self.__ReadExcel(f"Data/Marathons/{folder}/Marathons.xlsx")
+			
 	#==========================================================================================#
 	# >>>>> ПРИВАТНЫЕ МЕТОДЫ <<<<< #
 	#==========================================================================================#

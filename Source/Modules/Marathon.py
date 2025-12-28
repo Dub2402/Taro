@@ -10,7 +10,7 @@ from telebot import types, TeleBot
 
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Literal
-from datetime import datetime
+from datetime import datetime, date
 from typing import Iterable
 import logging
 
@@ -111,10 +111,10 @@ class Decorators:
 
 		return datetime.today().isocalendar().weekday
 	
-	def __find_date(self, need_number_week: int, need_weekday: int):
+	def __find_date(self, need_year: int, need_number_week: int, need_weekday: int):
 		"""Возвращает дату необходимого нам дня."""
 
-		return datetime.fromisocalendar(self.year, need_number_week, need_weekday)
+		return datetime.fromisocalendar(need_year, need_number_week, need_weekday)
 
 	def __init__(self, marathon: "Marathon"):
 		"""Инициализация основных параметров."""
@@ -138,13 +138,13 @@ class Decorators:
 				self.__Marathon.bot.answer_callback_query(Call.id)
 				return
 			
-			numbers_week: tuple = self.__Marathon.reader.numbers_week
+			numbers_week: tuple = self.__Marathon.reader.numbers_week(self.year)
 
 			index_excel = numbers_week.index(str(self.number_week))
 
 			text_announcement = (
-				f"<b>МАРАФОН \"{self.__Marathon.reader.names_marathons[index_excel]}\"</b>\n",
-				f"{self.__Marathon.reader.descriptions_marathons[index_excel]}\n",
+				f"<b>МАРАФОН \"{self.__Marathon.reader.names_marathons(self.year)[index_excel]}\"</b>\n",
+				f"{self.__Marathon.reader.descriptions_marathons(self.year)[index_excel]}\n",
 				"<b><i>Присоединяйся, нас уже много! ✅</i></b>"
 			)
 
@@ -244,20 +244,36 @@ class Decorators:
 				self.__Marathon.bot.answer_callback_query(Call.id)
 				return
 			
-			numbers_week: tuple = self.__Marathon.reader.numbers_week
+			numbers_week: tuple = self.__Marathon.reader.numbers_week(self.year)
 			index_excel = numbers_week.index(str(self.number_week))
+
+			print(index_excel)
+
+			if self.number_week + 1 >= date(int(self.year), 12, 28).isocalendar()[1]:
+				next_week_number = 1 
+				next_year = self.year + 1 
+				index_excel = 0 
+			else: 
+				next_week_number = self.number_week + 1 
+				next_year = self.year
+
+			print(self.__Marathon.reader.names_marathons(next_year))
 			
 			next_marathon_template = (
 				"ВНИМАНИЕ!!! МАРАФОН СЛЕДУЮЩЕЙ НЕДЕЛИ:" + "\n\n"
-				f"<b>\"{self.__Marathon.reader.names_marathons[index_excel + 1]}\"</b>" + "\n",
-				f"{self.__Marathon.reader.descriptions_marathons[index_excel + 1]}\n",
-				"<b>" + "📆 Даты проведения: " + f"{self.__find_date(need_number_week = self.number_week + 1, need_weekday = 1).strftime("%d.%m.%Y")} - {self.__find_date(need_number_week = self.number_week + 1, need_weekday = 7).strftime("%d.%m.%Y")}" + "</b>" + "\n",
+				f"<b>\"{self.__Marathon.reader.names_marathons(next_year)[index_excel]}\"</b>" + "\n",
+				f"{self.__Marathon.reader.descriptions_marathons(next_year)[index_excel]}\n",
+				"<b>" + "📆 Даты проведения: " + f"{self.__find_date(need_year = next_year, need_number_week = next_week_number, need_weekday = 1).strftime("%d.%m.%Y")} - {self.__find_date(need_year = next_year, need_number_week = next_week_number , need_weekday = 7).strftime("%d.%m.%Y")}" + "</b>" + "\n",
 				"<b><i>" + "Будем ждать тебя и твоих друзей, @tarobotX_bot! 🤗" + "</i></b>"
 			)
 			
-			Message = self.__Marathon.bot.send_message(
+			Message = self.__Marathon.bot.send_animation(
 				chat_id = Call.message.chat.id,
-				text = "\n".join(next_marathon_template),
+				animation = self.__Marathon.cacher.get_real_cached_file(
+					path = f"Data/Marathons/{next_year}/{next_week_number}/announcement.mp4",
+					autoupload_type = types.InputMediaVideo,
+					).file_id,
+				caption = "\n".join(next_marathon_template),
 				parse_mode = "HTML",
 				reply_markup = GeneralInlineKeyboards.for_delete()
 			)
@@ -480,12 +496,12 @@ class Decorators:
 				self.__Marathon.bot.answer_callback_query(Call.id)
 				return
 			
-			numbers_week: tuple = self.__Marathon.reader.numbers_week
+			numbers_week: tuple = self.__Marathon.reader.numbers_week(self.year)
 			index_excel = numbers_week.index(str(self.number_week))
 
 			text_announcement = (
-				f"<b>МАРАФОН \"{self.__Marathon.reader.names_marathons[index_excel]}\"</b>\n",
-				f"{self.__Marathon.reader.descriptions_marathons[index_excel]}\n",
+				f"<b>МАРАФОН \"{self.__Marathon.reader.names_marathons(self.year)[index_excel]}\"</b>\n",
+				f"{self.__Marathon.reader.descriptions_marathons(self.year)[index_excel]}\n",
 				"<b><i>Присоединяйся, нас уже много! ✅</i></b>"
 			)
 

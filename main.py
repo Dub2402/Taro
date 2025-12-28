@@ -207,16 +207,18 @@ def ProcessInfo(Message: types.Message):
 def ProcessCommandStart(Message: types.Message):
 	if not usermanager.is_user_exists(Message.from_user.id):  
 		user = usermanager.auth(Message.from_user)
-
+		Functions.CloseAdminPanel(Bot, AdminPanel, user)
+		
 		if Message.text != "/start" and int(Message.text.split(" ")[-1]) != user.id: 
 			user.set_property("invited_by", int(Message.text.split(" ")[-1]))
 			AscendData(user = user).set_count_referal()
 
 		EnergyExchanger.push_mail(user)
 		
-	else: user = usermanager.auth(Message.from_user)
-
-	Functions.CloseAdminPanel(Bot, AdminPanel, user)
+	else: 
+		user = usermanager.auth(Message.from_user)
+		Functions.CloseAdminPanel(Bot, AdminPanel, user)
+	
 	if not user.has_property("registration_date"): user.set_property("registration_date", datetime.now().strftime("%d.%m.%Y"))
 	sender.send_start_messages(user)
 
