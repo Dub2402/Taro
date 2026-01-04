@@ -29,6 +29,7 @@ from Source.Core.Cacher import Cacher
 from dublib.Engine.Configurator import Config
 from dublib.TelebotUtils import TeleMaster
 from dublib.Engine.GetText import GetText
+from dublib.Methods.Data import Zerotify
 from dublib.Methods.System import Clear
 
 from datetime import datetime
@@ -171,7 +172,15 @@ except ImportError: pass
 @Bot.message_handler(commands = ["admin"])
 def Command(Message: types.Message):
 	User = usermanager.auth(Message.from_user)
-	AdminPanel.open(User, "Панель управления открыта.")
+	Password = Message.text.split(" ")[1:]
+	Password = " ".join(Password).strip()
+
+	if not AdminPanel.login(User, Zerotify(Password)):
+		Bot.send_message(User.id, "Доступ запрещён.")
+
+	else:
+		Keyboard = AdminPanel.open(User)
+		Bot.send_message(User.id, "Панель управления открыта.", reply_markup = Keyboard)
 
 @Bot.message_handler(commands = ["new"])
 def ProcessCommandStart(Message: types.Message):
@@ -208,7 +217,7 @@ def ProcessCommandStart(Message: types.Message):
 	if not usermanager.is_user_exists(Message.from_user.id):  
 		user = usermanager.auth(Message.from_user)
 		Functions.CloseAdminPanel(Bot, AdminPanel, user)
-		
+
 		if Message.text != "/start" and int(Message.text.split(" ")[-1]) != user.id: 
 			user.set_property("invited_by", int(Message.text.split(" ")[-1]))
 			AscendData(user = user).set_count_referal()
