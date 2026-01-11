@@ -12,17 +12,6 @@ from time import sleep
 from telebot import TeleBot, types
 
 import random
-
-#==========================================================================================#
-# >>>>> НАБОР INLINE_KEYBOARDS <<<<< #
-#==========================================================================================#
-
-class YesNoInlineTemplates:
-	"""Набор Inline-keyboards"""
-
-	def OpenCard() -> types.InlineKeyboardMarkup:
-		"""Клавиатура открытия карты."""
-		return types.InlineKeyboardMarkup([[types.InlineKeyboardButton(_("Открыть карту"), callback_data = "open_card")]])
 	
 #==========================================================================================#
 # >>>>> DECORATORS <<<<< #
@@ -47,21 +36,6 @@ class Decorators:
 	def inline_keyboards(self):
 		"""Обработка inline_keyboards."""
 
-		@self.__YesNo.bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("yes_no"))
-		def yes_no(Call: types.CallbackQuery):
-			user = self.__YesNo.users.auth(Call.from_user)
-			if not self.__YesNo.subscription.IsSubscripted(user): 
-				self.__YesNo.bot.answer_callback_query(Call.id)
-				return
-			
-			self.__YesNo.bot.send_message(
-				Call.message.chat.id, 
-				text = _("Загадай ситуацию, где ответ должен быть <b>Да</b> или <b>Нет</b>.\n\nКак будешь готов, нажми на \"Открыть карту\""), 
-				reply_markup = YesNoInlineTemplates.OpenCard(),
-				parse_mode = "HTML")
-			
-			self.__YesNo.bot.answer_callback_query(Call.id)
-
 		@self.__YesNo.bot.callback_query_handler(func = lambda Callback: Callback.data.startswith("open_card"))
 		def InlineButtonCardDay(Call: types.CallbackQuery):
 			user = self.__YesNo.users.auth(Call.from_user)
@@ -69,15 +43,14 @@ class Decorators:
 				self.__YesNo.bot.answer_callback_query(Call.id)
 				return
 			
-			self.__YesNo.masterbot.safely_delete_messages(
-				Call.message.chat.id,
-				Call.message.id
-			)
+
 
 			stiker_message = self.__YesNo.bot.send_message(
 				chat_id = Call.message.chat.id, 
 				text = "❤️"
 				)
+			
+			self.__YesNo.bot.answer_callback_query(Call.id)
 
 			if stiker_message.id: sleep(3.125)
 
@@ -104,8 +77,6 @@ class Decorators:
 				caption = f"<b>{card}</b>\n\nВаш ответ: <b>{value}</b>",
 				reply_markup = InlineKeyboards.for_delete("Благодарю!"),
 				parse_mode = "HTML")
-			
-			self.__YesNo.bot.answer_callback_query(Call.id)
 
 #==========================================================================================#
 # >>>>> ОСНОВНОЙ КЛАСС <<<<< #

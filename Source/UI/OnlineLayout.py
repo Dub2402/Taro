@@ -25,7 +25,7 @@ def end_layout() -> types.InlineKeyboardMarkup:
 	"""
 	Menu = types.InlineKeyboardMarkup()
 
-	energy_exchange = types.InlineKeyboardButton(_("Взять расклад у Мастера 🔥"), callback_data = "send_order_layout")
+	energy_exchange = types.InlineKeyboardButton(_("Взять расклад у Мастера 🔥"), url = "https://t.me/m/jIn3AGYkNmNi")
 	mailing_card_day = types.InlineKeyboardButton(_("Благодарю за расклад!"), callback_data = "send_main_menu")
 
 	Menu.add(energy_exchange, mailing_card_day, row_width= 1) 

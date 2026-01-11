@@ -730,7 +730,7 @@ class Exchanger:
 
 	def close(self, user: UserData):
 		"""
-		Редактирует меню обмена энергии в меню дополнительных опций.
+		Редактирует меню обмена энергии в основное меню.
 		
 		:param user: Данные пользователя.
 		:type user: UserData
@@ -744,12 +744,12 @@ class Exchanger:
 		self.bot.edit_message_media(
 			media = types.InputMediaAnimation(
 				media = file.file_id,
-				caption = "<b>ДОП. ОПЦИИ</b>",
+				caption = None,
 				parse_mode = "HTML"
 			),
 			chat_id = user.id,
 			message_id = Options(user).menu_message_id,
-			reply_markup = InlineTemplates.additional_options(user)
+			reply_markup = InlineKeyboards.main_menu(user)
 		)
 
 	def push_mails(self):

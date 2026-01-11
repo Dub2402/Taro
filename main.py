@@ -26,6 +26,8 @@ from Source.Core.CustomUsersManager import CustomUsersManager
 from Source.Core.AdminCommands import Informator
 from Source.Core.Cacher import Cacher
 
+from Support.Format import format_card_day
+
 from dublib.Engine.Configurator import Config
 from dublib.TelebotUtils import TeleMaster
 from dublib.Engine.GetText import GetText
@@ -162,6 +164,8 @@ scheduler.add_job(mailer.letters_mailing, "cron", day = "8, 18, 28", hour = "9-2
 scheduler.add_job(update_think_card, 'cron', day_of_week = "mon, wed, fri", hour = 0, minute = 0, args = [usermanager])
 
 scheduler.start()
+
+format_card_day()
 
 try:
 	from Source.Modules.InternalСaching import InternalCaching
@@ -343,7 +347,6 @@ def ProcessText(Message: types.Message):
 			user.set_property("Generation", False)
 
 	elif user.expected_type == "new_common_question":
-		print(Message.text)
 		LayoutsExamplesObject.add_unmoderated_common(Message.text)
 		Text = (
 			"Ваш вопрос сохранён.",
@@ -458,7 +461,7 @@ def InlineButtonRemoveReminder(Call: types.CallbackQuery):
 
 	text = (
 		_("Дорогой мой друг, задай мне вопрос, который больше всего тебя волнует!") + "\n",
-		"<b><i>" + _("ТРЕНДЫ ЗАПРОСОВ") + " 📈:" + "</i></b>",
+		"<b><i>" + _("ТОПЫ ЗАПРОСОВ") + " 📈:" + "</i></b>",
 		"<b>- </b>" + "<i>" + LoveQuestion + "</i>",
 		"<b>- </b>" + "<i>" + CommonQuestions[0] + "</i>",
 		"<b>- </b>" + "<i>" + CommonQuestions[1] + "</i>",
@@ -485,24 +488,21 @@ def InlineButtonRemoveReminder(Call: types.CallbackQuery):
 
 	data = ThinkCard_Data(user = user)
 
-	if "_" not in Call.data and data.number_card == None:
-		MasterBot.safely_delete_messages(Call.message.chat.id, data.messages)
-		data.zeroing_messages()
+	MasterBot.safely_delete_messages(Call.message.chat.id, data.messages)
+	data.zeroing_messages()
+
+	if "_" not in Call.data:
 		introdution_message: types.Message = main_think.sender.needed_message(ThinkCard_Manager().needed_folder(), user, 0, inline = InlineKeyboards.SendThinkCard())
 		data.add_messages(message_id = introdution_message.id)
 
 	else:
-		if "_" in Call.data: data.set_number_card(int(Call.data.split("_")[-1]))
-
-		MasterBot.safely_delete_messages(Call.message.chat.id, data.messages)
-		data.zeroing_messages()
 		introdution_message: types.Message = main_think.sender.needed_message(ThinkCard_Manager().needed_folder(), user, 0)
 		data.add_messages(message_id = introdution_message.id)
 		
 		message_with_selected_card = main_think.sender.needed_message(
 			ThinkCard_Manager().needed_folder(), 
 			user, 
-			data.number_card, 
+			Call.data.split("_")[-1], 
 			"\n<b><i>С любовью, Галина Таро Мастер!</i></b>", 
 			inline = ThinkCard_InlineKeyboard.about())
 		data.add_messages(message_with_selected_card.id)

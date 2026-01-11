@@ -39,22 +39,22 @@ class InlineTemplates:
 		menu = types.InlineKeyboardMarkup()
 		buttons = []
 
-		UserOptions = ExchangeOptions(user)
-		Notifications = " (" + str(len(UserOptions.mails)) + ")" if UserOptions.mails else ""
-
 		determinations_first = {
-			_("Девиз на сегодня"): "motto_day",
-			Notifications + _(" Обмен энергией"): "energy_exchange"
+			_("Всё о Таро"): "all_taro",
+			_("Расклад у Мастера🔥"): "order_layout"
 		}
 
 		determinations_second = {
 			_("МОЙ УРОВЕНЬ ТАРОБОТА 🏆"): "level_tarobot",
-			_("Марафон недели 🏁"): "marathons"
+			# _("Марафон недели 🏁"): "marathons"
 		}
 
 		determinations_third = {
+			_("Рассылка карты"): "mailing_card_day",
+			_("Перезапуск бота"): "restart_bot",
 			_("◀️ Назад"): "main_menu",
-			_("Настройки"): "menu_settings"
+			_("Поделиться!"): "share"
+			# _("Настройки"): "menu_settings"
 		}
 
 		for string in determinations_first.keys(): buttons.append(types.InlineKeyboardButton(string, callback_data = determinations_first[string]))
@@ -76,28 +76,20 @@ class InlineTemplates:
 		menu = types.InlineKeyboardMarkup()
 		buttons = []
 
-		determinations_first = {
-			_("Рассылка карты дня"): "mailing_card_day",
-			_("Перезапуск бота"): "restart_bot"
-		}
-
 		determinations_second = {
 			_("Обратная связь"): "feedback",
-			_("Поделиться!"): "share"
 			}
 		
 		determinations_third = {
 			_("◀️ Назад"): "additional_options"
 		}
 
-		for string in determinations_first.keys(): menu.add(types.InlineKeyboardButton(string, callback_data = determinations_first[string]), row_width = 1)
 		for string in determinations_second.keys(): buttons.append(types.InlineKeyboardButton(string, callback_data = determinations_second[string]))
 		menu.add(*buttons, row_width = 2)
 		for string in determinations_third.keys(): menu.add(types.InlineKeyboardButton(string, callback_data = determinations_third[string]), row_width = 1)
 
 		return menu	
 	
-
 	def restart_bot() -> types.InlineKeyboardMarkup:
 		"""
 		Inline-клавиатура: перезапуск бота: 

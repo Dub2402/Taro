@@ -300,7 +300,7 @@ class Decorators:
 			
 			today = datetime.today().strftime("%d.%m.%Y")
 
-			with open(f"Materials/Texts/{today}.txt") as file:
+			with open(f"Materials/Texts_bot/{today}.txt") as file:
 				text = file.read()
 
 			appeals = True if self.__Mailer.appeals.is_mailing_day() else False
@@ -494,7 +494,7 @@ class Mailer:
 			if User.has_property("mailing") and User.get_property("mailing"):
 				today = datetime.today().strftime("%d.%m.%Y")
 				text = None
-				with open(f"Materials/Texts/{today}.txt") as file:
+				with open(f"Materials/Texts_bot/{today}.txt") as file:
 					text = file.read()
 				
 				self.__send_card_day(User = User, video = self.__cacher.get_real_cached_file(f"Materials/Video/{today}.mp4", types.InputMediaVideo).file_id, text = text)

@@ -59,8 +59,8 @@ class CM_Statistics(SM_Statistics):
 		UsersCount = len(self._Panel.users_manager.users)
 		BlockedUsersCount = 0
 
-		for user in  self._Panel.users_manager.users:
-			if user.is_chat_forbidden: BlockedUsersCount += 1
+		for CurrentUser in  self._Panel.users_manager.users:
+			if CurrentUser.is_chat_forbidden: BlockedUsersCount += 1
 
 		Counts = (
 			len(self._Panel.users_manager.premium_users),

@@ -1,4 +1,5 @@
 from Source.Modules.EnergyExchange.Options import Options as ExchangeOptions
+from Source.Modules.EnergyExchange.Options import Options
 
 from telebot import types
 
@@ -64,20 +65,23 @@ class InlineKeyboards:
 		:return: Клавиатура главного меню
 		:rtype: types.InlineKeyboardMarkup
 		"""
+
+		UserOptions = Options(user)
+		Notifications = " (" + str(len(UserOptions.mails)) + ")" if UserOptions.mails else ""
 		
 		Menu = types.InlineKeyboardMarkup()
 		
 		CardDay = types.InlineKeyboardButton(_("Карта дня"), callback_data = "card_day")
-		YesNo = types.InlineKeyboardButton(_("Да/Нет"), callback_data = "yes_no")
-		Additional_options = types.InlineKeyboardButton((_("Доп. опции") + " " + "+"), callback_data = "additional_options")
-		OrderLayout = types.InlineKeyboardButton(_("Расклад у Мастера🔥"), callback_data = "order_layout")
 		ThinkCard = types.InlineKeyboardButton(_("Загадай карту"), callback_data = "ThinkCard")
+		MottoDay = types.InlineKeyboardButton(_("Девиз на сегодня"), callback_data ="motto_day")
+		EnergyExchange = types.InlineKeyboardButton(Notifications + _(" Обмен энергией"), callback_data = "energy_exchange")
+		YesNo = types.InlineKeyboardButton(_("Да/Нет"), callback_data = "open_card")
+		Additional_options = types.InlineKeyboardButton((_("Ещё...") + " "), callback_data = "additional_options")
 		Online_layout = types.InlineKeyboardButton(_("Онлайн расклад💫"), callback_data = "Online_Layout")
-		All_Taro = types.InlineKeyboardButton(_("Всё о Таро"), callback_data = "all_taro")
 	
-		Menu.add(CardDay, YesNo, row_width = 2) 
-		Menu.add(All_Taro, Additional_options, row_width = 2) 
-		Menu.add(ThinkCard, OrderLayout, row_width = 2)
+		Menu.add(CardDay, ThinkCard, row_width = 2) 
+		Menu.add(MottoDay, EnergyExchange, row_width = 2) 
+		Menu.add(YesNo, Additional_options, row_width = 2)
 		Menu.add(Online_layout, row_width = 1) 
 
 		return Menu
@@ -86,10 +90,10 @@ class InlineKeyboards:
 		Menu = types.InlineKeyboardMarkup()
 
 		value_card = types.InlineKeyboardButton(_("Значение карт"), callback_data = "value_card")
-		History = types.InlineKeyboardButton(_("История Таро"), url = "https://raskladtaro.site/taro/history")
-		What_is = types.InlineKeyboardButton(_("Что такое Таро?"),url = "https://raskladtaro.site/taro/determination")
-		Work_with = types.InlineKeyboardButton(_("Работа с картами"), url = "https://raskladtaro.site/taro/work")
-		Back = types.InlineKeyboardButton(_("◀️ Назад"), callback_data = "main_menu")
+		History = types.InlineKeyboardButton(_("История Таро"), url = "galina-taro.vercel.app/taro/history")
+		What_is = types.InlineKeyboardButton(_("Что такое Таро?"),url = "galina-taro.vercel.app/taro/determination")
+		Work_with = types.InlineKeyboardButton(_("Работа с картами"), url = "galina-taro.vercel.app/taro/work")
+		Back = types.InlineKeyboardButton(_("◀️ Назад"), callback_data = "additional_options")
 	
 		Menu.add(value_card, History, What_is, Work_with, Back, row_width= 1) 
 
@@ -165,6 +169,6 @@ class InlineKeyboards:
 		}
 
 		for String in Determinations.keys(): Menu.add(types.InlineKeyboardButton(String, url = Determinations[String]), row_width = 1)
-		Menu.add(types.InlineKeyboardButton(_("◀️ Назад"), callback_data = "main_menu"))
+		Menu.add(types.InlineKeyboardButton(_("◀️ Назад"), callback_data = "additional_options"))
 
 		return Menu
