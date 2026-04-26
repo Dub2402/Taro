@@ -252,7 +252,7 @@ class ExchangerInlineTemplates:
 
 		Menu = types.InlineKeyboardMarkup()
 		Mail = types.InlineKeyboardButton(Notifications + " " + _("Моя почта"), callback_data = "ee_mails")
-		NewMessage = types.InlineKeyboardButton(_("Написать послание" + " " + "+"), callback_data = "ee_message")
+		NewMessage = types.InlineKeyboardButton(_("Написать сообщение" + " " + "+"), callback_data = "ee_message")
 		Whatit = types.InlineKeyboardButton(_("Что это?"), callback_data = "what_it")
 		Back = types.InlineKeyboardButton("◀️ " + _("Назад"), callback_data = "ee_close")
 		Menu.add(Mail, NewMessage, Whatit, Back, row_width = 1)
@@ -328,7 +328,7 @@ class Decorators:
 			User.clear_temp_properties()
 
 			Text = (
-				_("<i>" + "Ваше послание успешно отправлено на проверку!" + "</i>"),
+				_("<i>" + "Ваше сообщение успешно отправлено на проверку!" + "</i>"),
 				_("<b>" + "Спасибо за ваш вклад в развитие Таробота!" + "</b>"),
 				_("Если вы в хорошем настроении, то напишите ещё что-то. Вам это вернётся <b>в 10 раз больше!</b>" + " 😊")
 			)
@@ -389,7 +389,7 @@ class Decorators:
 				return
 
 			if UserOptions.mails: 
-				UserOptions.add_removable_messages(bot.send_message(Call.from_user.id, _("ВХОДЯЩИЕ ПОСЛАНИЯ:")).id)
+				UserOptions.add_removable_messages(bot.send_message(Call.from_user.id, _("ВХОДЯЩИЕ СООБЩЕНИЯ:")).id)
 
 				for Mail in UserOptions.mails:
 					UserOptions.add_removable_messages(bot.send_message(Call.from_user.id, Mail, reply_markup = ExchangerInlineTemplates.accept()).id)
@@ -406,7 +406,7 @@ class Decorators:
 
 			else:
 				Text = (
-					_("У вас пока нет входящих посланий! Но не переживайте!"),
+					_("У вас пока нет входящих сообщений! Но не переживайте!"),
 					_("<b>Вы самый лучший человек на планете Земля! Хорошего вам дня!)</b>" + " 💋")
 				)
 				bot.send_message(
@@ -426,7 +426,7 @@ class Decorators:
 				return
 			
 			Text = (
-				"<b>" + _("Обмен энергией ") + "</b>" + _("- это уникальная система поддержки, разработанная для наших пользователей с целью обмена светлой и целебной энергией!"),
+				"<b>" + _("Тебе сообщение ") + "</b>" + _("- это уникальная система поддержки, разработанная для наших пользователей с целью обмена светлой и целебной энергией!"),
 				_("Весь мир существует по законам обмена энергией. И наш бот - <b>Таробот</b>, тому не исключение. Только мы генерируем для вас энергию тепла, любви и добра!"),
 				_("<i>Стань участником программы взаимной поддержки и напиши свое собственное послание. Оно прилетит абсолютно рандомному пользователю нашего бота и поднимет ему настроение 🤗</i>"),
 				_("<b><i>А кто-то может написать и тебе!)</i></b>")
@@ -709,7 +709,7 @@ class Exchanger:
 			self.bot.edit_message_media(
 				media = types.InputMediaAnimation(
 					media = File.file_id,
-					caption = "<b>" + _("💟 ОБМЕН ЭНЕРГИЕЙ") + "</b>",
+					caption = "<b>" + _("💟 ТЕБЕ СООБЩЕНИЕ") + "</b>",
 					parse_mode = "HTML"
 				),
 				chat_id = user.id,
@@ -720,7 +720,7 @@ class Exchanger:
 		else:
 			try: 
 				self.bot.edit_message_caption(
-					caption = "<b>" + _("💟 ОБМЕН ЭНЕРГИЕЙ") + "</b>",
+					caption = "<b>" + _("💟 ТЕБЕ СООБЩЕНИЕ") + "</b>",
 					parse_mode = "HTML",
 					chat_id = user.id,
 					message_id = message_id,

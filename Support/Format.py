@@ -7,7 +7,7 @@ def format_card_day():
 	if not os.path.exists("Materials/Texts_bot"): MakeRootDirectories("Materials/Texts_bot")
 	for file_original in ListDir("Materials/Texts"):
 
-		if file_original in ListDir("Materials/Texts_bot"): return
+		if file_original in ListDir("Materials/Texts_bot"): continue
 		else:
 			with open(f"Materials/Texts/{file_original}") as file:
 				text = file.read()

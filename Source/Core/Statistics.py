@@ -79,7 +79,7 @@ class CM_Statistics(SM_Statistics):
 			f"👤 Всего пользователей: <b>{UsersCount}</b>",
 			f"⭐ Из них Premium: <b>{Counts[0]}</b> (<i>{Percentages[0]}%</i>)",
 			f"🧩 Активных за сутки: <b>{Counts[1]}</b> (<i>{Percentages[1]}%</i>)",
-			f"😏 Рефералов: <b>{Counts[2]}</b> (<i>{Counts[2]}%</i>)",
+			f"😏 Рефералов: <b>{Counts[2]}</b> (<i>{Percentages[2]}%</i>)",
 			f"⛔ Заблокировали: <b>{Counts[3]}</b> (<i>{Percentages[3]}%</i>)"
 		)
 

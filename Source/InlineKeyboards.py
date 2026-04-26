@@ -74,7 +74,7 @@ class InlineKeyboards:
 		CardDay = types.InlineKeyboardButton(_("Карта дня"), callback_data = "card_day")
 		ThinkCard = types.InlineKeyboardButton(_("Загадай карту"), callback_data = "ThinkCard")
 		MottoDay = types.InlineKeyboardButton(_("Девиз на сегодня"), callback_data ="motto_day")
-		EnergyExchange = types.InlineKeyboardButton(Notifications + _(" Обмен энергией"), callback_data = "energy_exchange")
+		EnergyExchange = types.InlineKeyboardButton(Notifications + _(" Тебе сообщение"), callback_data = "energy_exchange")
 		YesNo = types.InlineKeyboardButton(_("Да/Нет"), callback_data = "open_card")
 		Additional_options = types.InlineKeyboardButton((_("Ещё...") + " "), callback_data = "additional_options")
 		Online_layout = types.InlineKeyboardButton(_("Онлайн расклад💫"), callback_data = "Online_Layout")
@@ -159,13 +159,13 @@ class InlineKeyboards:
 		Menu = types.InlineKeyboardMarkup()
 
 		Determinations = {
-			_("💔 Личная жизнь"): "https://t.me/m/XVa5Zsn0OTli",
-			_("💫 Ближайшее будущее"): "https://t.me/m/6cDunvn0ZThi",
-			_("🧿 Дальнее будущее"): "https://t.me/m/_1rfsRNfY2Ri",
-			_("💼 Карьера и работа"): "https://t.me/m/o4AQSvQ_NGIy",
-			_("💵 Финансы"): "https://t.me/m/3JgIK6ycYjVi",
-			_("😭 Чёрная полоса"): "https://t.me/m/5Dr14DlUNGUy",
-			_("🤔 Свой вопрос"): "https://t.me/m/jIn3AGYkNmNi"
+			_("💔 Личная жизнь"): "https://t.me/m/EAtlSreSMGEy",
+			_("💫 Ближайшее будущее"): "https://t.me/m/0LzEU0bdZTZi",
+			_("🧿 Дальнее будущее"): "https://t.me/m/HjHMZt4gMWFi",
+			_("💼 Карьера и работа"): "https://t.me/m/d_w1xEioNmVi",
+			_("💵 Финансы"): "https://t.me/m/tzjnh2uTY2My",
+			_("😭 Чёрная полоса"): "https://t.me/m/wHlaKPdvNzQy",
+			_("🤔 Свой вопрос"): "https://t.me/m/DmIZFszBODFi"
 		}
 
 		for String in Determinations.keys(): Menu.add(types.InlineKeyboardButton(String, url = Determinations[String]), row_width = 1)

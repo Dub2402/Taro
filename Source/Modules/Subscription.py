@@ -18,11 +18,19 @@ class InlineKeyboards:
 		menu = types.InlineKeyboardMarkup()
 
 		determinations = {
-			_("Твой Таролог🌙"): "https://t.me/+ns_u9dpjys1jMjFi",
-			_("Послания Вселенной🔆"): "https://t.me/+9U9SMzbOwY1iNzFi"
+			_("Таро для души🪽"): "https://t.me/love_tarology",
+			_("Тебе Послание✨"): "https://t.me/tebe_pos"
 		}
 		menu.add(*[types.InlineKeyboardButton(text = name, url = link) for name, link in determinations.items()], row_width = 1)
 		menu.add(types.InlineKeyboardButton(_("Я подписался!"), callback_data="Subscribe"))
+
+		return menu
+	
+	def taro_soul() -> types.InlineKeyboardMarkup:
+		menu = types.InlineKeyboardMarkup()
+
+		menu.add(*[types.InlineKeyboardButton(text = "Вернуться на канал", url = "https://t.me/love_tarology")], row_width = 1)
+		menu.add(types.InlineKeyboardButton(_("Спокойно! Я еще вернусь!"), callback_data= "for_delete"))
 
 		return menu
 
@@ -39,7 +47,7 @@ class Subscription:
 		
 		Text = (
 			("<b><i>" + _("Друзья, чтобы использовать бот, подпишитесь на 2 наших канала спонсора! 💔") + "</i></b>"),
-			_("Как подпишетесь - нажмите на кнопку:\n\"Я подписался!\"")
+			_("Как подпишетесь - нажмите на кнопку: \"Я подписался!\"")
 		)
 		
 		Message = self.__masterbot.bot.send_message(
@@ -94,7 +102,7 @@ class Subscription:
 
 		if not User.has_property("was_channels_member"): User.set_property("was_channels_member", False) 
 
-		if User.has_permissions(["developer", "admin"]): return True
+		if User.has_permissions(["developer"]): return True
 
 		if not self.__chanel: return True
 
